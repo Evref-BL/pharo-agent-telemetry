@@ -25,6 +25,8 @@ services:
     command: ["--config=/etc/otelcol/otelcol.yaml"]
     environment:
       COLLECTOR_TOKEN: ${COLLECTOR_TOKEN:?set COLLECTOR_TOKEN in .env}
+      SAMPLING_PERCENTAGE: ${SAMPLING_PERCENTAGE:-100}
+      ARCHIVE_MAX_FILES: ${ARCHIVE_MAX_FILES:?start with ./start.sh, or set ARCHIVE_MAX_FILES}
     user: "${ARCHIVE_UID:-10001}:${ARCHIVE_GID:-10001}"
     volumes:
       - ./otelcol.yaml:/etc/otelcol/otelcol.yaml:ro

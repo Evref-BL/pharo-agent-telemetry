@@ -36,8 +36,13 @@ git clone <this repository> /srv/pharo-agent-telemetry
 cd /srv/pharo-agent-telemetry/collector
 cp .env.example .env            # set SITE_ADDRESS and COLLECTOR_TOKEN
 install -d -o 10001 -g 10001 -m 0770 archive
-docker compose up -d
+./start.sh
 ```
+
+`start.sh` caps the archive at half the free space of its disk, so it never
+fills the disk should the import stop: past the cap, the oldest files go.
+`SAMPLING_PERCENTAGE` in `.env` keeps only that share of the traces, a call's
+spans all together; it stays at 100 unless the volume outgrows the import.
 
 Then set `publicEndpoint` and `publicToken` in [src/collector.js](src/collector.js)
 and publish the package.

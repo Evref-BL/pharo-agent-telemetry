@@ -52,6 +52,7 @@ before(async () => {
     ARCHIVE_DIR: archive,
     HTTP_PORT: `127.0.0.1:${port}`,
     HTTPS_PORT: `127.0.0.1:${await freePort()}`,
+    ARCHIVE_MAX_FILES: "10",
   };
   compose("up", "-d", "--wait");
   // Caddy answers before the collector is listening behind it.
@@ -139,4 +140,49 @@ test("the archive keeps what the allowlist allows, and nothing else", { skip: !d
   const kept = attributes(child.span.attributes);
   assert.equal(kept["session.id"].stringValue, "4b1d3a1e-0000-4000-8000-000000000000");
   assert.equal(kept["gen_ai.tool.name"].stringValue.length, longestValue);
+});
+
+/** One component's span of a call, sent on its own as that component would. */
+const componentSpan = (service, traceId, spanId) => JSON.stringify({
+  resourceSpans: [{
+    resource: { attributes: [{ key: "service.name", value: { stringValue: service } }] },
+    scopeSpans: [{ scope: { name: service }, spans: [{
+      traceId,
+      spanId,
+      name: "tools/call class_get",
+      kind: 2,
+      startTimeUnixNano: "1763630000000000000",
+      endTimeUnixNano: "1763630000250000000",
+    }] }],
+  }],
+});
+
+test("sampling keeps or drops all of a call's spans together", { skip: !dockerRuns, timeout: 180_000 }, async () => {
+  env = { ...env, SAMPLING_PERCENTAGE: "50" };
+  compose("up", "-d", "--wait", "otelcol");
+  const before = (await archivedSpans(0)).length;
+  const traces = Array.from({ length: 60 }, (_, index) => `5a${index.toString(16).padStart(2, "0")}${"0".repeat(26)}${index.toString(16).padStart(2, "0")}`);
+  for (const traceId of traces) {
+    for (const [service, spanId] of [["pharo-agent", "b000000000000001"], ["pharo-mcp", "b000000000000002"]]) {
+      for (let attempt = 0; ; attempt += 1) {
+        const response = await fetch(`${endpoint}/v1/traces`, {
+          method: "POST",
+          body: componentSpan(service, traceId, spanId),
+          headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+        }).catch(() => undefined);
+        if (response?.status === 200) break;
+        if (attempt > 40) throw new Error(`the collector refused a span: ${response?.status}`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+  }
+  // The batch processor holds spans up to five seconds before the file has them.
+  await new Promise((resolve) => setTimeout(resolve, 8_000));
+  const sampled = (await archivedSpans(0)).slice(before).filter(({ span }) => traces.includes(span.traceId));
+  const perTrace = Object.groupBy(sampled, ({ span }) => span.traceId);
+  const kept = Object.keys(perTrace).length;
+  assert.ok(kept > 10 && kept < 50, `kept ${kept} of 60 traces`);
+  for (const [traceId, spans] of Object.entries(perTrace)) {
+    assert.deepEqual(spans.map(({ resource }) => attributes(resource.attributes)["service.name"].stringValue).sort(), ["pharo-agent", "pharo-mcp"], traceId);
+  }
 });

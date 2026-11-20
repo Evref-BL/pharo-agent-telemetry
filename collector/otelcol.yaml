@@ -21,6 +21,14 @@ processors:
     limit_mib: 400
     spike_limit_mib: 100
 
+  # Keeps SAMPLING_PERCENTAGE of the traces, all of 100 unless set. Decided by
+  # the trace id, so the plugin's, PLexus's and the image's spans of one call,
+  # sent apart, are kept or dropped together.
+  probabilistic_sampler:
+    mode: hash_seed
+    hash_seed: 22
+    sampling_percentage: ${env:SAMPLING_PERCENTAGE:-100}
+
   # Events can carry exception messages and stacks: none is kept.
   filter/events:
     error_mode: ignore
@@ -62,9 +70,12 @@ exporters:
     format: json
     flush_interval: 1s
     rotation:
+      # ARCHIVE_MAX_FILES rotated files at most, which start.sh sets from the
+      # disk's free space: should the import stop, the oldest files go rather
+      # than the disk filling.
       max_megabytes: 10
       max_days: 400
-      max_backups: 10000
+      max_backups: ${env:ARCHIVE_MAX_FILES}
 
 service:
   extensions: [bearertokenauth, health_check]
@@ -76,5 +87,5 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, filter/events, transform/allowlist, redaction, batch]
+      processors: [memory_limiter, probabilistic_sampler, filter/events, transform/allowlist, redaction, batch]
       exporters: [file/archive]

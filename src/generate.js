@@ -2,6 +2,8 @@
 // collector/allowlist.json.
 import fs from "node:fs";
 import path from "node:path";
+import { publicEndpoint, publicToken } from "./collector.js";
+import { collectorSettings } from "./settings.js";
 
 /**
  * @typedef {{
@@ -128,7 +130,11 @@ service:
  *
  * @param {Allowlist} allowlist
  */
-export function participantsPage(allowlist) {
+export function participantsPage(allowlist, collector = { endpoint: publicEndpoint, token: publicToken }) {
+  const settings = Object.entries(collectorSettings({
+    endpoint: collector.endpoint ?? "https://<the collector, once deployed>",
+    token: collector.token ?? "TOKEN",
+  })).map(([key, value]) => `${key}=${value}`).join("\n").replace("Bearer%20TOKEN", "Bearer%20<its token>");
   const rows = (attributes) => Object.entries(attributes).map(([name, description]) => `| \`${name}\` | ${description} |`).join("\n");
   return `<!-- Generated from collector/allowlist.json by \`npm run generate\`. Do not edit. -->
 # What the Pharo tools send when you join
@@ -196,5 +202,27 @@ made before joining send nothing until they are made again.
 
 If the collector cannot be reached, the tools stop trying for a while and
 never slow down or fail a call because of it.
+
+### With Pharo alone
+
+Using Pharo MCP in your own image, without Node? Joining is the same file,
+written by hand or from Pharo. Its content:
+
+\`\`\`text
+${settings}
+\`\`\`
+
+Then load MCP's \`Telemetry\` group and switch your server to it once:
+
+\`\`\`smalltalk
+Metacello new
+	githubUser: 'Evref-BL' project: 'MCP' commitish: 'main' path: 'src';
+	baseline: 'MCP';
+	load: #( 'default' 'Telemetry' ).
+(MCP startOnPort: 4000) useOpenTelemetryObservability
+\`\`\`
+
+The image reads the file at every start, so deleting it is leaving, from the
+next start on.
 `;
 }

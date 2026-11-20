@@ -98,3 +98,32 @@ made before joining send nothing until they are made again.
 
 If the collector cannot be reached, the tools stop trying for a while and
 never slow down or fail a call because of it.
+
+### With Pharo alone
+
+Using Pharo MCP in your own image, without Node? Joining is the same file,
+written by hand or from Pharo. Its content:
+
+```text
+OTEL_EXPORTER_OTLP_ENDPOINT=https://<the collector, once deployed>
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer%20<its token>
+OTEL_TRACES_EXPORTER=otlp
+OTEL_BSP_SCHEDULE_DELAY=1000
+OTEL_METRICS_EXPORTER=none
+OTEL_LOGS_EXPORTER=none
+OTEL_RESOURCE_ATTRIBUTES=deployment.environment.name=field
+```
+
+Then load MCP's `Telemetry` group and switch your server to it once:
+
+```smalltalk
+Metacello new
+	githubUser: 'Evref-BL' project: 'MCP' commitish: 'main' path: 'src';
+	baseline: 'MCP';
+	load: #( 'default' 'Telemetry' ).
+(MCP startOnPort: 4000) useOpenTelemetryObservability
+```
+
+The image reads the file at every start, so deleting it is leaving, from the
+next start on.

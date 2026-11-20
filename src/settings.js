@@ -35,6 +35,9 @@ export function collectorSettings({ endpoint, token, protocol = "http/protobuf",
     OTEL_EXPORTER_OTLP_PROTOCOL: protocol,
     ...(token ? { OTEL_EXPORTER_OTLP_HEADERS: `authorization=Bearer%20${encodeURIComponent(token)}` } : {}),
     OTEL_TRACES_EXPORTER: "otlp",
+    // A Pharo image stopped without saving loses what it had not sent yet:
+    // send every second rather than every five.
+    OTEL_BSP_SCHEDULE_DELAY: "1000",
     OTEL_METRICS_EXPORTER: "none",
     OTEL_LOGS_EXPORTER: "none",
     OTEL_RESOURCE_ATTRIBUTES: `deployment.environment.name=${environment}`,

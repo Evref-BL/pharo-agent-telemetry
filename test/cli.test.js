@@ -38,6 +38,7 @@ test("join writes traces-only settings with the token as a header, and leave del
   assert.match(text, /^OTEL_EXPORTER_OTLP_ENDPOINT=https:\/\/c\.test$/m);
   assert.match(text, /^OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer%20t%20k$/m);
   assert.match(text, /^OTEL_TRACES_EXPORTER=otlp$/m);
+  assert.match(text, /^OTEL_BSP_SCHEDULE_DELAY=1000$/m);
   assert.match(text, /^OTEL_METRICS_EXPORTER=none$/m);
   assert.match(text, /^OTEL_LOGS_EXPORTER=none$/m);
   assert.match(text, /^OTEL_RESOURCE_ATTRIBUTES=deployment.environment.name=field$/m);

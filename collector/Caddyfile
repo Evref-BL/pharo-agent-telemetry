@@ -1,0 +1,24 @@
+# Only /v1/traces is served, bodies are capped, and nothing about the client
+# (address, forwarded headers) reaches the collector. Caddy writes no access
+# log unless asked to.
+{$SITE_ADDRESS} {
+	@traces {
+		method POST
+		path /v1/traces
+	}
+	handle @traces {
+		request_body {
+			max_size 4MB
+		}
+		reverse_proxy otelcol:4318 {
+			header_up -X-Forwarded-For
+			header_up -X-Forwarded-Host
+			header_up -X-Forwarded-Proto
+			header_up -X-Real-Ip
+			header_up -User-Agent
+		}
+	}
+	handle {
+		respond 404
+	}
+}

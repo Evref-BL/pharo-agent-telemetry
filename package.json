@@ -1,0 +1,24 @@
+{
+  "name": "@evref-bl/pharo-agent-telemetry",
+  "version": "0.1.0",
+  "description": "Join, preview or leave the Pharo agent tools' field telemetry, and the collector that receives it.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "pharo-agent-telemetry": "bin/pharo-agent-telemetry.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "docs",
+    "collector/allowlist.json",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.15.0"
+  },
+  "scripts": {
+    "generate": "node scripts/generate.js",
+    "test": "node scripts/generate.js --check && node --test --test-concurrency=1 test/*.test.js"
+  }
+}

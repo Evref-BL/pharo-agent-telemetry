@@ -1,0 +1,80 @@
+# Generated from allowlist.json by `npm run generate`. Do not edit.
+extensions:
+  bearertokenauth:
+    token: ${env:COLLECTOR_TOKEN}
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+        max_request_body_size: 4194304
+        include_metadata: false
+        auth:
+          authenticator: bearertokenauth
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 400
+    spike_limit_mib: 100
+
+  # Events can carry exception messages and stacks: none is kept.
+  filter/events:
+    error_mode: ignore
+    traces:
+      spanevent:
+        - "true"
+
+  transform/allowlist:
+    error_mode: ignore
+    trace_statements:
+      - context: resource
+        statements:
+          - "keep_keys(attributes, [\"service.name\", \"service.version\", \"telemetry.sdk.name\", \"telemetry.sdk.language\", \"telemetry.sdk.version\", \"os.type\", \"process.runtime.name\", \"process.runtime.version\", \"process.runtime.description\", \"deployment.environment.name\", \"pharo_agent.agent_host\"])"
+          - "truncate_all(attributes, 256)"
+      - context: scope
+        statements:
+          - "keep_keys(attributes, [])"
+      - context: span
+        statements:
+          - "keep_keys(attributes, [\"session.id\", \"mcp.method.name\", \"mcp.protocol.version\", \"mcp.session.id\", \"gen_ai.operation.name\", \"gen_ai.tool.name\", \"error.type\", \"network.transport\", \"network.protocol.name\", \"pharo_agent.argument.names\", \"pharo_agent.argument.unknown_names\", \"pharo_agent.client.name\", \"pharo_agent.client.version\", \"plexus.image.from_base\", \"plexus.image.save\", \"pharo.mcp.dispatch_path\", \"pharo.mcp.argument.names\", \"pharo.mcp.argument.unknown_names\", \"pharo.mcp.input.bytes\", \"pharo.mcp.output.bytes\", \"pharo.mcp.output_budget.exceeded\", \"pharo.mcp.error.kind\", \"pharo.mcp.error.code\", \"pharo.mcp.error.schema.violation_count\", \"pharo.mcp.exception.type\"])"
+          - "truncate_all(attributes, 256)"
+          - "set(status.message, \"\")"
+          - "set(name, \"_OTHER\") where not IsMatch(name, \"^[A-Za-z0-9_.-]{1,64}(/[A-Za-z0-9_.-]{1,64})?( [A-Za-z0-9_-]{1,64})?$\")"
+
+  redaction:
+    allow_all_keys: true
+    blocked_values:
+      - "(?is)^.*(/Users/|/home/|[A-Z]:\\\\Users\\\\).*$"
+      - "(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}.*$"
+      - "(?s)^.*\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b.*$"
+    summary: silent
+
+  batch:
+    timeout: 5s
+
+exporters:
+  file/archive:
+    path: /archive/traces.jsonl
+    format: json
+    flush_interval: 1s
+    rotation:
+      max_megabytes: 10
+      max_days: 400
+      max_backups: 10000
+
+service:
+  extensions: [bearertokenauth, health_check]
+  telemetry:
+    logs:
+      level: warn
+    metrics:
+      level: none
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, filter/events, transform/allowlist, redaction, batch]
+      exporters: [file/archive]

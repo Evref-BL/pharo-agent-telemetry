@@ -18,7 +18,7 @@ Where it ran:
 
 | Attribute | What it is |
 | --- | --- |
-| `service.name` | Which tool sent the span: pharo-agent, plexus or pharo-mcp. |
+| `service.name` | Which tool sent the span: plexus or pharo-mcp, or pharo-agent from plugin releases before 0.20. |
 | `service.version` | That tool's version. |
 | `telemetry.sdk.name` | The OpenTelemetry SDK that sent it. |
 | `telemetry.sdk.language` | The SDK's language: nodejs or pharo. |
@@ -27,8 +27,8 @@ Where it ran:
 | `process.runtime.name` | nodejs or pharo. |
 | `process.runtime.version` | Node's version, or Pharo's version and build. |
 | `process.runtime.description` | The Pharo VM's build. |
-| `deployment.environment.name` | field for participants, eval for our own evaluation runs. |
-| `pharo_agent.agent_host` | The agent host the project was set up for: claude or codex. |
+| `deployment.environment.name` | field for participants, eval for our own evaluation runs, check for npm run check-deployment. |
+| `pharo_agent.agent_host` | The agent host the project was set up for, claude or codex, from plugin releases before 0.20. |
 
 What happened:
 
@@ -43,12 +43,14 @@ What happened:
 | `error.type` | How a call failed: tool_error, a JSON-RPC code, or a class from Pharo, MCP or Node. |
 | `network.transport` | pipe or tcp. |
 | `network.protocol.name` | http. |
-| `pharo_agent.argument.names` | The names of the arguments a call gave, never their values. |
-| `pharo_agent.argument.unknown_names` | Argument names the CLI refused. |
-| `pharo_agent.client.name` | The agent host's name as it introduces itself, for example claude-code. |
-| `pharo_agent.client.version` | The agent host's version. |
+| `pharo_agent.argument.names` | The names of the arguments a call to the plugin gave, never their values, from plugin releases before 0.20. |
+| `pharo_agent.argument.unknown_names` | Argument names the plugin's command refused, from plugin releases before 0.20. |
+| `pharo_agent.client.name` | The agent host's name as it introduces itself to the plugin, from plugin releases before 0.20. |
+| `pharo_agent.client.version` | The agent host's version, from plugin releases before 0.20. |
 | `plexus.client.name` | The agent host's name as it introduces itself to PLexus's server, for example claude-code. |
 | `plexus.client.version` | The agent host's version. |
+| `plexus.argument.names` | The names of the arguments a call to PLexus's server gave, never their values. |
+| `plexus.argument.unknown_names` | Argument names a call gave that PLexus's own image tools do not take. |
 | `plexus.image.from_base` | Whether a new image was copied from a prepared base. |
 | `plexus.image.save` | Whether stopping an image saved it. |
 | `pharo.mcp.dispatch_path` | How the image dispatched the request. |

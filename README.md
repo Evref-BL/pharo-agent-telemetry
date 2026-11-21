@@ -29,8 +29,20 @@ log, which would hold the client's address. Both containers' logs rotate. The Op
 only what [collector/allowlist.json](collector/allowlist.json) allows, and
 writes OTLP JSON lines to `archive/traces.jsonl`, rotated every 10 MB.
 
-On a Debian VM with Docker, a DNS name pointing at it, and ports 80 and 443
-open:
+## Deploying
+
+What only people can decide comes first:
+
+1. The controller and the address participants write to, and the DPO's
+   reading of [docs/participants.md](docs/participants.md) and the
+   allowlist, which make the GDPR notice for the connection.
+2. A VM in the EU with Docker, a DNS name pointing at it, ports 80 and 443
+   open, and SSH for the import job. Its provider is the processor the
+   notice names.
+3. The Elasticsearch keys and the GitLab project of
+   `pharo-agent-telemetry-import`, whose README lists them.
+
+Then, on the VM:
 
 ```sh
 git clone <this repository> /srv/pharo-agent-telemetry
@@ -45,14 +57,31 @@ fills the disk should the import stop: past the cap, the oldest files go.
 `SAMPLING_PERCENTAGE` in `.env` keeps only that share of the traces, a call's
 spans all together; it stays at 100 unless the volume outgrows the import.
 
+From anywhere, check what participants rely on: the token is required,
+nothing but `/v1/traces` is served, and a span is taken. The span it sends
+says `deployment.environment.name=check`, so a report leaves it out.
+
+```sh
+npm run check-deployment -- https://<SITE_ADDRESS> <COLLECTOR_TOKEN>
+```
+
 Then set `publicEndpoint`, `publicToken`, `controller` and `host` in
 [src/collector.js](src/collector.js), run `npm run generate`, and publish the
 package. `join` refuses the project's collector until all four are set, and
-the participants page, which is the GDPR notice for the connection, says what
-is missing until then. Have the DPO read that page and the allowlist first.
+the participants page says what is missing until then.
 
 The import job reads the archive over SSH as a user in the archive's group,
-and deletes each rotated file once Elasticsearch holds its spans.
+and deletes each rotated file once Elasticsearch holds its spans. Its
+README says how to set it up.
+
+At any time, `npm run audit -- <archive files>` says what an archive holds,
+by tool and span, and fails on anything the allowlist does not allow. On the
+VM, without Node:
+
+```sh
+docker run --rm -v /srv/pharo-agent-telemetry:/r:ro -w /r node:24-alpine \
+  node scripts/audit-archive.js collector/archive/traces.jsonl
+```
 
 Locally, `SITE_ADDRESS=http://:80` and `HTTP_PORT=127.0.0.1:4318` serve plain
 HTTP on `http://127.0.0.1:4318`.
@@ -62,4 +91,6 @@ HTTP on `http://127.0.0.1:4318`.
 Edit `collector/allowlist.json`, then `npm run generate`, which rewrites
 `collector/otelcol.yaml` and `docs/participants.md`. `npm test` fails while
 either is stale, and runs the collector in Docker against a span carrying
-everything the allowlist forbids.
+everything the allowlist forbids. A tool that starts sending an attribute
+needs it here too, or the collector drops it: run a session against a local
+collector and `npm run audit` its archive to see what arrives.

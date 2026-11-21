@@ -9,7 +9,9 @@ import os from "node:os";
 import path from "node:path";
 import { after, before, test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { longestValue } from "../src/generate.js";
+import { audit } from "../src/audit.js";
+import { checkDeployment } from "../src/check.js";
+import { longestValue, readAllowlist } from "../src/generate.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const composeFile = path.join(root, "collector", "compose.yaml");
@@ -103,6 +105,12 @@ test("a request without the token is refused and archives nothing", { skip: !doc
   assert.equal((await send({ authorization: "Bearer wrong" })).status, 401);
 });
 
+test("npm run check-deployment finds everything a participant relies on", { skip: !dockerRuns }, async () => {
+  const results = await checkDeployment(endpoint, token);
+  assert.deepEqual(results.filter((result) => !result.held), []);
+  assert.equal(results.length, 5);
+});
+
 test("only /v1/traces is served", { skip: !dockerRuns }, async () => {
   assert.equal((await send({ authorization: `Bearer ${token}` }, `${endpoint}/v1/logs`)).status, 404);
   assert.equal((await fetch(`${endpoint}/`)).status, 404);
@@ -142,6 +150,10 @@ test("the archive keeps what the allowlist allows, and nothing else", { skip: !d
   const kept = attributes(child.span.attributes);
   assert.equal(kept["session.id"].stringValue, "4b1d3a1e-0000-4000-8000-000000000000");
   assert.equal(kept["gen_ai.tool.name"].stringValue.length, longestValue);
+
+  // What npm run audit says of a deployed collector's archive.
+  const lines = fs.readFileSync(path.join(archive, "traces.jsonl"), "utf8").split("\n");
+  assert.deepEqual(audit(lines, readAllowlist(root)).problems, []);
 });
 
 /** One component's span of a call, sent on its own as that component would. */

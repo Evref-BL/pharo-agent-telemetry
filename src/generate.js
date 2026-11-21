@@ -28,7 +28,7 @@ const quoted = (text) => JSON.stringify(text);
 /** An OTTL list of string literals. */
 const ottlList = (names) => `[${names.map(quoted).join(", ")}]`;
 
-/** A span name that is an operation, optionally followed by one tool or command name: `tools/call class_get`, `plexus.image.make`, `pharo-agent help`. */
+/** A span name that is an operation, optionally followed by one tool or command name: `tools/call class_get`, `plexus.image.create`, `pharo-agent help`. */
 export const spanNamePattern = "^[A-Za-z0-9_.-]{1,64}(/[A-Za-z0-9_.-]{1,64})?( [A-Za-z0-9_-]{1,64})?$";
 
 /** The longest string value kept; the tools send names and versions, never longer. */

@@ -14,12 +14,12 @@
     "pharo_agent.agent_host": "The agent host the project was set up for: claude or codex."
   },
   "span": {
-    "session.id": "A random value that groups the calls of one working session. Renewed after thirty idle minutes; never tied to a person.",
+    "session.id": "A random value that groups the calls of one working session, made anew for each session; never tied to a person, a machine or another session.",
     "mcp.method.name": "The MCP method: tools/call, tools/list, ...",
     "mcp.protocol.version": "The MCP protocol version, a date.",
     "mcp.session.id": "The random id the image's MCP server gives its connection.",
     "gen_ai.operation.name": "execute_tool for a tool call.",
-    "gen_ai.tool.name": "The tool's name, when it reads as an identifier.",
+    "gen_ai.tool.name": "The tool's name, when it reads as an identifier, including a name the agent asked for that no tool has.",
     "error.type": "How a call failed: tool_error, a JSON-RPC code, or a class from Pharo, MCP or Node.",
     "network.transport": "pipe or tcp.",
     "network.protocol.name": "http.",
@@ -27,6 +27,8 @@
     "pharo_agent.argument.unknown_names": "Argument names the CLI refused.",
     "pharo_agent.client.name": "The agent host's name as it introduces itself, for example claude-code.",
     "pharo_agent.client.version": "The agent host's version.",
+    "plexus.client.name": "The agent host's name as it introduces itself to PLexus's server, for example claude-code.",
+    "plexus.client.version": "The agent host's version.",
     "plexus.image.from_base": "Whether a new image was copied from a prepared base.",
     "plexus.image.save": "Whether stopping an image saved it.",
     "pharo.mcp.dispatch_path": "How the image dispatched the request.",

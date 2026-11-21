@@ -24,7 +24,8 @@ environment configures no OpenTelemetry of its own; `leave` deletes it.
 ## The collector
 
 Caddy takes HTTPS and passes `POST /v1/traces` on, without the client's
-address or headers. The OpenTelemetry Collector checks the shared token, keeps
+address or headers, and logs no request: neither an access log nor the error
+log, which would hold the client's address. Both containers' logs rotate. The OpenTelemetry Collector checks the shared token, keeps
 only what [collector/allowlist.json](collector/allowlist.json) allows, and
 writes OTLP JSON lines to `archive/traces.jsonl`, rotated every 10 MB.
 
@@ -44,8 +45,11 @@ fills the disk should the import stop: past the cap, the oldest files go.
 `SAMPLING_PERCENTAGE` in `.env` keeps only that share of the traces, a call's
 spans all together; it stays at 100 unless the volume outgrows the import.
 
-Then set `publicEndpoint` and `publicToken` in [src/collector.js](src/collector.js)
-and publish the package.
+Then set `publicEndpoint`, `publicToken`, `controller` and `host` in
+[src/collector.js](src/collector.js), run `npm run generate`, and publish the
+package. `join` refuses the project's collector until all four are set, and
+the participants page, which is the GDPR notice for the connection, says what
+is missing until then. Have the DPO read that page and the allowlist first.
 
 The import job reads the archive over SSH as a user in the archive's group,
 and deletes each rotated file once Elasticsearch holds its spans.

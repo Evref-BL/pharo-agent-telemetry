@@ -12,6 +12,7 @@
       "spans": [{
         "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
         "spanId": "00f067aa0ba902b7",
+        "traceState": "vendor=ada-laptop",
         "name": "tools/call class_get",
         "kind": 2,
         "startTimeUnixNano": "1763630000000000000",

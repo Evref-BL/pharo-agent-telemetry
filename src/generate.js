@@ -2,7 +2,7 @@
 // collector/allowlist.json.
 import fs from "node:fs";
 import path from "node:path";
-import { publicEndpoint, publicToken } from "./collector.js";
+import { controller, host, publicEndpoint, publicToken } from "./collector.js";
 import { collectorSettings } from "./settings.js";
 
 /**
@@ -96,6 +96,7 @@ ${ottl("keep_keys(attributes, [])")}
 ${ottl(`keep_keys(attributes, ${ottlList(Object.keys(allowlist.span))})`)}
 ${ottl(`truncate_all(attributes, ${longestValue})`)}
 ${ottl('set(status.message, "")')}
+${ottl('set(trace_state, "")')}
 ${ottl(`set(name, "_OTHER") where not IsMatch(name, ${quoted(spanNamePattern)})`)}
 
   redaction:
@@ -135,26 +136,37 @@ service:
 `;
 }
 
+/** What the page says where a fact is not settled yet. */
+const unsettled = (what) => `*${what}: not set yet. Nobody can join until it is.*`;
+
 /**
- * What a participant reads before joining: what is kept, what never is, how
- * long, and how to leave.
+ * What a participant reads before joining: what is kept, what never is, who
+ * answers for it, on what basis, for how long, their rights, and how to leave.
+ * It is the GDPR's notice (Art. 13) for the one moment personal data is
+ * processed, the connection, and says why the archive itself is anonymous.
  *
  * @param {Allowlist} allowlist
  */
-export function participantsPage(allowlist, collector = { endpoint: publicEndpoint, token: publicToken }) {
+export function participantsPage(allowlist, collector = { endpoint: publicEndpoint, token: publicToken, controller, host }) {
   const settings = Object.entries(collectorSettings({
     endpoint: collector.endpoint ?? "https://<the collector, once deployed>",
     token: collector.token ?? "TOKEN",
   })).map(([key, value]) => `${key}=${value}`).join("\n").replace("Bearer%20TOKEN", "Bearer%20<its token>");
   const rows = (attributes) => Object.entries(attributes).map(([name, description]) => `| \`${name}\` | ${description} |`).join("\n");
-  return `<!-- Generated from collector/allowlist.json by \`npm run generate\`. Do not edit. -->
+  const who = collector.controller
+    ? `${collector.controller.name} decides why and how this data is processed, the GDPR's controller. Write to ${collector.controller.contact} with any question, or to withdraw.`
+    : unsettled("The controller and how to reach them");
+  const where = collector.host
+    ? `The collector runs on a virtual machine at ${collector.host.provider}, in ${collector.host.region}, which processes the data on the controller's behalf. Once a day a job copies what it received to ${collector.host.archive}, and deletes it from the machine.`
+    : unsettled("Where the collector runs");
+  return `<!-- Generated from collector/allowlist.json and src/collector.js by \`npm run generate\`. Do not edit. -->
 # What the Pharo tools send when you join
 
 The Pharo agent tools (the pharo-agent plugin, PLexus and Pharo MCP) can
 record how agents use them, so the tools can change to fit that use: tools
 nobody reaches, arguments agents expect but the tools do not take, answers
 that are too long, mistakes agents repair. Joining is opt-in, and nothing is
-sent until you join.
+sent until you join. The tools never ask you to.
 
 ## What is sent
 
@@ -181,20 +193,57 @@ ${rows(allowlist.span)}
 - Exception messages and stacks.
 - Paths, image names, project names, the names of your classes, methods or
   packages.
-- Host names, user names, email addresses, IP addresses.
-- Any identifier of you. There are no participant ids: your data cannot be
-  told apart from anyone else's, and there is nothing to delete per person.
+- Host names, user names, email addresses.
+- Any identifier of you or your machine. There are no participant ids.
 
 The tools enforce this before sending, and the collector again: it keeps only
 the attributes listed above, shortens any value to ${longestValue} characters,
 replaces a span name that is not an operation and a tool name with \`_OTHER\`, drops
-span events and status messages, and masks any value that contains
-${Object.keys(allowlist.blockedValues).join(", ")}, whole. It records nothing about the
-connection: no address, no headers.
+span events, status messages and trace state, and masks any value that contains
+${Object.keys(allowlist.blockedValues).join(", ")}, whole.
+
+## Is it anonymous?
+
+The archive is. A session's calls share a \`session.id\`, so the order of
+calls within one session can be studied, but a session cannot be linked to
+another session, to a machine or to a person, and nothing in a span says who
+sent it.
+
+One thing about you does reach the server, as it reaches any server you
+connect to: your IP address, so that the connection can be made. The proxy in
+front of the collector passes it on to nothing, and writes it nowhere: it
+keeps no access log, and its error log, which would hold it, is switched off.
+That moment is the only processing of personal data here, and this page is
+its notice.
+
+## Who answers for it
+
+${who}
+
+${where}
+
+## Why, and on what basis
+
+To change the tools from how agents use them, rather than from our own
+sessions alone. The basis is your consent: running \`join\` after reading this
+page gives it, and \`leave\` withdraws it, at any time and with no effect on
+what the tools do for you.
 
 ## How long
 
-Raw spans are kept for twelve months. Reports derived from them are kept.
+The collector keeps what it receives until the next daily copy, and at most
+until half its disk is full. Raw spans are kept twelve months in
+Elasticsearch, then deleted. Reports derived from them hold counts, never
+spans, and are kept.
+
+## Your rights
+
+You can withdraw at any time with \`leave\`, and nothing is sent from then on.
+Access, correction and erasure apply to data about a person; since nothing in
+the archive is about one, or can be traced back to one, there is nothing to
+look up, correct or delete for you (GDPR Art. 11), and what was sent before
+you left stays in the archive, as anonymous as it arrived. You can complain to
+your data protection authority; in France, the CNIL (cnil.fr).
 
 ## Joining and leaving
 
@@ -227,7 +276,7 @@ Then load MCP's \`Telemetry\` group and switch your server to it once:
 
 \`\`\`smalltalk
 Metacello new
-	githubUser: 'Evref-BL' project: 'MCP' commitish: 'main' path: 'src';
+	githubUser: 'Evref-BL' project: 'MCP' commitish: 'v4.x.x' path: 'src';
 	baseline: 'MCP';
 	load: #( 'default' 'Telemetry' ).
 (MCP startOnPort: 4000) useOpenTelemetryObservability

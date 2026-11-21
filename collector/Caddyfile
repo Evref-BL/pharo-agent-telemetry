@@ -1,6 +1,14 @@
 # Only /v1/traces is served, bodies are capped, and nothing about the client
 # (address, forwarded headers) reaches the collector. Caddy writes no access
-# log unless asked to.
+# log unless asked to, and the loggers that would write a request's address
+# (a failed request, a failed upstream, a failed TLS handshake) write nothing:
+# what Caddy still logs is its own start and its certificates.
+{
+	log default {
+		exclude http.log.error http.handlers.reverse_proxy http.stdlib
+	}
+}
+
 {$SITE_ADDRESS} {
 	@traces {
 		method POST

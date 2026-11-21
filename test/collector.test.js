@@ -35,6 +35,7 @@ let endpoint;
 let env;
 
 const compose = (...args) => execFileSync("docker", ["compose", "-p", project, "-f", composeFile, ...args], {
+  maxBuffer: 16 * 1024 * 1024,
   env: { ...process.env, ...env },
   stdio: ["ignore", "pipe", "pipe"],
   encoding: "utf8",
@@ -132,6 +133,7 @@ test("the archive keeps what the allowlist allows, and nothing else", { skip: !d
   assert.deepEqual(call.span.events ?? [], []);
   assert.equal(call.span.status.code, 2);
   assert.equal(call.span.status.message ?? "", "");
+  assert.equal(call.span.traceState ?? "", "");
 
   const child = spans.find(({ span }) => span.spanId === "00f067aa0ba902b8");
   assert.ok(child);
@@ -185,4 +187,15 @@ test("sampling keeps or drops all of a call's spans together", { skip: !dockerRu
   for (const [traceId, spans] of Object.entries(perTrace)) {
     assert.deepEqual(spans.map(({ resource }) => attributes(resource.attributes)["service.name"].stringValue).sort(), ["pharo-agent", "pharo-mcp"], traceId);
   }
+});
+
+test("a request the proxy cannot pass on leaves no client address in its log", { skip: !dockerRuns }, async () => {
+  // Last, since it stops the collector: Caddy logs a failed upstream with the
+  // request, its address included, unless told not to.
+  compose("stop", "otelcol");
+  const response = await send({ authorization: `Bearer ${token}` });
+  assert.equal(response.status, 502);
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  const logs = compose("logs", "caddy");
+  assert.equal(/remote_ip|client_ip|remote_addr/.test(logs), false, logs);
 });

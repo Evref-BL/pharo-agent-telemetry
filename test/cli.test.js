@@ -6,6 +6,8 @@ import path from "node:path";
 import test from "node:test";
 import { describeRequest, startPreview } from "../src/preview.js";
 import { readSettings, settingsFile } from "../src/settings.js";
+import { missingForJoin } from "../src/collector.js";
+import { participantsPage } from "../src/generate.js";
 
 const binary = new URL("../bin/pharo-agent-telemetry.js", import.meta.url).pathname;
 const allowlist = JSON.parse(fs.readFileSync(new URL("../collector/allowlist.json", import.meta.url), "utf8"));
@@ -50,7 +52,7 @@ test("join writes traces-only settings with the token as a header, and leave del
 }));
 
 test("join refuses before the collector exists, and never replaces settings it did not write unless forced", () => withConfigHome((home, file) => {
-  assert.match(cli(home, "join").stderr, /not deployed yet/);
+  assert.match(cli(home, "join").stderr, /its endpoint, token, controller, host are not set yet/);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, "OTEL_EXPORTER_OTLP_ENDPOINT=http://mine\n");
   const refused = cli(home, "join", "--endpoint", "https://c.test");
@@ -85,4 +87,28 @@ test("a span is described with its duration, attributes and resource", () => {
   const lines = describeRequest(fixture, allowlist);
   assert.ok(lines.includes("    1 event(s)   (dropped by the collector)"));
   assert.ok(lines.includes('    pharo_agent.argument.names = ["name"]'));
+});
+
+test("the page names who answers for the data and where it is once they are set, and says so while they are not", () => {
+  const unset = participantsPage(allowlist, {});
+  assert.match(unset, /The controller and how to reach them: not set yet/);
+  assert.match(unset, /Where the collector runs: not set yet/);
+  const set = participantsPage(allowlist, {
+    endpoint: "https://c.test",
+    token: "t",
+    controller: { name: "Example SA", contact: "privacy@example.test" },
+    host: { provider: "Example Cloud", region: "Paris", archive: "Example's Elasticsearch, in France" },
+  });
+  assert.doesNotMatch(set, /not set yet/);
+  assert.match(set, /Example SA decides why and how/);
+  assert.match(set, /privacy@example\.test/);
+  assert.match(set, /at Example Cloud, in Paris/);
+  assert.match(set, /to Example's Elasticsearch, in France/);
+  assert.match(set, /consent/);
+  assert.match(set, /CNIL/);
+});
+
+test("join refuses the project's collector while anything about it is missing", () => {
+  assert.deepEqual(missingForJoin({}), ["endpoint", "token", "controller", "host"]);
+  assert.deepEqual(missingForJoin({ endpoint: "https://c.test", token: "t", controller: { name: "n", contact: "c" }, host: { provider: "p", region: "r", archive: "a" } }), []);
 });

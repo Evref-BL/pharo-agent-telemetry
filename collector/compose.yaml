@@ -18,6 +18,11 @@ services:
       - caddy-config:/config
     depends_on:
       - otelcol
+    logging: &logs
+      driver: local
+      options:
+        max-size: "1m"
+        max-file: "3"
 
   otelcol:
     image: otel/opentelemetry-collector-contrib:0.164.0
@@ -31,6 +36,7 @@ services:
     volumes:
       - ./otelcol.yaml:/etc/otelcol/otelcol.yaml:ro
       - ${ARCHIVE_DIR:-./archive}:/archive
+    logging: *logs
     deploy:
       resources:
         limits:

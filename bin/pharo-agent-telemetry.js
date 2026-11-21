@@ -2,7 +2,7 @@
 // Join, preview or leave the Pharo agent tools' field telemetry.
 import fs from "node:fs";
 import { parseArgs } from "node:util";
-import { publicEndpoint, publicToken } from "../src/collector.js";
+import { missingForJoin, publicEndpoint, publicToken } from "../src/collector.js";
 import { startPreview } from "../src/preview.js";
 import { collectorSettings, readSettings, removeSettings, settingsFile, settingsText, writeSettings } from "../src/settings.js";
 
@@ -43,7 +43,8 @@ if (values.help || command === undefined) {
 } else if (command === "join") {
   const endpoint = values.endpoint ?? publicEndpoint;
   const token = values.token ?? (values.endpoint ? undefined : publicToken);
-  if (!endpoint) fail("The project's collector is not deployed yet. Give --endpoint to send to another one.");
+  const missing = values.endpoint ? [] : missingForJoin();
+  if (missing.length > 0) fail(`The project's collector is not ready: its ${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} not set yet. Give --endpoint to send to another one.`);
   const current = readSettings(file);
   if (current?.writer === "other" && !values.force) {
     fail(`${file} holds OpenTelemetry settings this command did not write. Run join --force to replace them.`);

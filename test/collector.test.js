@@ -1,33 +1,26 @@
-// The collector as deployed, in Docker: a span carrying everything the
-// allowlist forbids goes in through Caddy, and the archive must hold none of
-// it. Skipped where Docker is not running.
+// The collector as deployed, in Docker: the rule fixtures go in through
+// Caddy and the archive must hold exactly what each expects, as the agent's
+// filter does; a span carrying everything forbidden leaves none of it.
+// Skipped where Docker is not running.
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
-import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { after, before, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { audit } from "../src/audit.js";
 import { checkDeployment } from "../src/check.js";
-import { longestValue, readAllowlist } from "../src/generate.js";
+import { readAllowlist } from "../src/generate.js";
+import { freePort } from "../src/install.js";
+import { comparable, expectedSpans, hash, ruleFixtures, testKey } from "./support.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const composeFile = path.join(root, "collector", "compose.yaml");
-const fixture = fs.readFileSync(new URL("./fixtures/forbidden.json", import.meta.url), "utf8");
+const forbidden = fs.readFileSync(new URL("./fixtures/forbidden.json", import.meta.url), "utf8");
 const token = "test-token";
 const project = `pat-collector-test-${process.pid}`;
 const dockerRuns = spawnSync("docker", ["info"], { stdio: "ignore" }).status === 0;
-
-/** A localhost port nothing listens on. */
-async function freePort() {
-  const server = net.createServer();
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(undefined)));
-  const { port } = /** @type {net.AddressInfo} */ (server.address());
-  await new Promise((resolve) => server.close(() => resolve(undefined)));
-  return port;
-}
 
 /** @type {string} */
 let archive;
@@ -52,10 +45,12 @@ before(async () => {
   env = {
     SITE_ADDRESS: "http://:80",
     COLLECTOR_TOKEN: token,
+    ID_HASH_KEY: testKey,
     ARCHIVE_DIR: archive,
     HTTP_PORT: `127.0.0.1:${port}`,
     HTTPS_PORT: `127.0.0.1:${await freePort()}`,
-    ARCHIVE_MAX_FILES: "10",
+    ARCHIVE_MAX_MB: "1000",
+    GUARD_INTERVAL: "1",
   };
   compose("up", "-d", "--wait");
   // Caddy answers before the collector is listening behind it.
@@ -76,33 +71,31 @@ after(() => {
 }, { timeout: 120_000 });
 
 /** @param {Record<string, string>} headers */
-const send = (headers, url = `${endpoint}/v1/traces`) => fetch(url, {
+const send = (body, headers, url = `${endpoint}/v1/traces`) => fetch(url, {
   method: "POST",
-  body: fixture,
+  body,
   headers: { "content-type": "application/json", ...headers },
 });
 
-/** The spans the archive holds, once it holds `count` of them. */
-async function archivedSpans(count) {
-  const file = path.join(archive, "traces.jsonl");
+/** The archive's lines, from every daily file. */
+function archiveLines() {
+  return fs.readdirSync(archive).filter((name) => /^traces-.*\.jsonl$/.test(name)).sort()
+    .flatMap((name) => fs.readFileSync(path.join(archive, name), "utf8").split("\n").filter(Boolean));
+}
+
+/** The archived requests, once `done` says they hold what is awaited. */
+async function archived(done) {
   for (let attempt = 0; attempt < 60; attempt += 1) {
-    if (fs.existsSync(file)) {
-      const spans = fs.readFileSync(file, "utf8").split("\n").filter(Boolean).flatMap((line) =>
-        JSON.parse(line).resourceSpans.flatMap((resourceSpans) =>
-          resourceSpans.scopeSpans.flatMap((scopeSpans) =>
-            scopeSpans.spans.map((span) => ({ resource: resourceSpans.resource, scope: scopeSpans.scope, span })))));
-      if (spans.length >= count) return spans;
-    }
+    const requests = archiveLines().map((line) => JSON.parse(line));
+    if (done(requests)) return requests;
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   throw new Error("the archive never received the spans");
 }
 
-const attributes = (list = []) => Object.fromEntries(list.map(({ key, value }) => [key, value]));
-
 test("a request without the token is refused and archives nothing", { skip: !dockerRuns }, async () => {
-  assert.equal((await send({})).status, 401);
-  assert.equal((await send({ authorization: "Bearer wrong" })).status, 401);
+  assert.equal((await send(forbidden, {})).status, 401);
+  assert.equal((await send(forbidden, { authorization: "Bearer wrong" })).status, 401);
 });
 
 test("npm run check-deployment finds everything a participant relies on", { skip: !dockerRuns }, async () => {
@@ -112,55 +105,50 @@ test("npm run check-deployment finds everything a participant relies on", { skip
 });
 
 test("only /v1/traces is served", { skip: !dockerRuns }, async () => {
-  assert.equal((await send({ authorization: `Bearer ${token}` }, `${endpoint}/v1/logs`)).status, 404);
+  assert.equal((await send(forbidden, { authorization: `Bearer ${token}` }, `${endpoint}/v1/logs`)).status, 404);
   assert.equal((await fetch(`${endpoint}/`)).status, 404);
 });
 
-test("the archive keeps what the allowlist allows, and nothing else", { skip: !dockerRuns }, async () => {
-  assert.equal((await send({ authorization: `Bearer ${token}` })).status, 200);
-  const spans = await archivedSpans(2);
-  const raw = JSON.stringify(spans);
-  for (const secret of ["adas-laptop", "/Users/ada", "ada@example.org", "Secret", "4242", "127.0.0.1", "10.0.0.7"]) {
-    assert.equal(raw.includes(secret), false, `${secret} reached the archive: ${raw}`);
+test("the collector keeps of each rule fixture exactly what the agent's filter keeps", { skip: !dockerRuns, timeout: 120_000 }, async () => {
+  const fixtures = ruleFixtures();
+  for (const fixture of fixtures) {
+    assert.equal((await send(JSON.stringify(fixture.request), { authorization: `Bearer ${token}` })).status, 200, fixture.name);
   }
+  const traces = (fixture) => new Set(fixture.request.resourceSpans.flatMap((each) => each.scopeSpans.flatMap((scoped) => scoped.spans.map((span) => hash("trace", span.traceId.toLowerCase(), 32)))));
+  const total = fixtures.reduce((sum, fixture) => sum + fixture.expected.length, 0);
+  const ours = (requests) => comparable(requests).filter((span) => fixtures.some((fixture) => traces(fixture).has(span.trace)));
+  await archived((requests) => ours(requests).length >= total);
+  // Whatever the batch still held has reached the file by now.
+  await new Promise((resolve) => setTimeout(resolve, 6_000));
+  const spans = ours(await archived(() => true));
+  for (const fixture of fixtures) {
+    assert.deepEqual(spans.filter((span) => traces(fixture).has(span.trace)), expectedSpans(fixture), `${fixture.name}: ${fixture.about}`);
+  }
+  for (const line of archiveLines()) {
+    for (const resourceSpans of JSON.parse(line).resourceSpans) {
+      assert.match(resourceSpans.resource.attributes.find(({ key }) => key === "fileexporter.path_segment").value.stringValue, /^\d{4}-\d{2}-\d{2}$/);
+    }
+  }
+});
 
-  const call = spans.find(({ span }) => span.spanId === "00f067aa0ba902b7");
-  assert.ok(call);
-  assert.deepEqual(Object.keys(attributes(call.resource.attributes)).sort(), ["service.name", "service.version"]);
-  assert.deepEqual(call.scope.attributes ?? [], []);
-  assert.deepEqual(Object.keys(attributes(call.span.attributes)).sort(), [
-    "error.type",
-    "gen_ai.tool.name",
-    "pharo.mcp.input.bytes",
-    "plexus.argument.names",
-    "plexus.client.name",
-    "plexus.client.version",
-  ]);
-  assert.equal(call.span.name, "tools/call class_get");
-  assert.equal(call.span.traceId, "4bf92f3577b34da6a3ce929d0e0e4736");
-  assert.deepEqual(call.span.events ?? [], []);
-  assert.equal(call.span.status.code, 2);
-  assert.equal(call.span.status.message ?? "", "");
-  assert.equal(call.span.traceState ?? "", "");
-
-  const child = spans.find(({ span }) => span.spanId === "00f067aa0ba902b8");
-  assert.ok(child);
-  assert.equal(child.span.name, "_OTHER");
-  assert.equal(child.span.parentSpanId, "00f067aa0ba902b7");
-  const kept = attributes(child.span.attributes);
-  assert.equal(kept["session.id"].stringValue, "4b1d3a1e-0000-4000-8000-000000000000");
-  assert.equal(kept["gen_ai.tool.name"].stringValue.length, longestValue);
-
-  // What npm run audit says of a deployed collector's archive.
-  const lines = fs.readFileSync(path.join(archive, "traces.jsonl"), "utf8").split("\n");
-  assert.deepEqual(audit(lines, readAllowlist(root)).problems, []);
+test("nothing forbidden reaches the archive, and npm run audit finds nothing in it", { skip: !dockerRuns }, async () => {
+  assert.equal((await send(forbidden, { authorization: `Bearer ${token}` })).status, 200);
+  const kept = hash("trace", "4bf92f3577b34da6a3ce929d0e0e4736", 32);
+  await archived((requests) => comparable(requests).some((span) => span.trace === kept));
+  const raw = archiveLines().join("\n");
+  for (const secret of ["adas-laptop", "/Users/ada", "ada@example.org", "Secret", "4242", "127.0.0.1", "10.0.0.7", "fe80", "4bf92f3577b34da6a3ce929d0e0e4736", "00f067aa0ba902b7", "4b1d3a1e", "1763630000"]) {
+    assert.equal(raw.includes(secret), false, `${secret} reached the archive`);
+  }
+  const ours = JSON.stringify(comparable(archiveLines().map((line) => JSON.parse(line))).filter((span) => span.trace === kept));
+  for (const secret of ["acme", "Acme", "AAAA", "class_get", "built by"]) assert.equal(ours.includes(secret), false, `${secret} reached the archive: ${ours}`);
+  assert.deepEqual(audit(archiveLines(), readAllowlist(root)).problems, []);
 });
 
 /** One component's span of a call, sent on its own as that component would. */
 const componentSpan = (service, traceId, spanId) => JSON.stringify({
   resourceSpans: [{
     resource: { attributes: [{ key: "service.name", value: { stringValue: service } }] },
-    scopeSpans: [{ scope: { name: service }, spans: [{
+    scopeSpans: [{ scope: { name: service === "plexus" ? "@evref-bl/plexus" : "mcp-pharo" }, spans: [{
       traceId,
       spanId,
       name: "tools/call class_get",
@@ -174,16 +162,11 @@ const componentSpan = (service, traceId, spanId) => JSON.stringify({
 test("sampling keeps or drops all of a call's spans together", { skip: !dockerRuns, timeout: 180_000 }, async () => {
   env = { ...env, SAMPLING_PERCENTAGE: "50" };
   compose("up", "-d", "--wait", "otelcol");
-  const before = (await archivedSpans(0)).length;
   const traces = Array.from({ length: 60 }, (_, index) => `5a${index.toString(16).padStart(2, "0")}${"0".repeat(26)}${index.toString(16).padStart(2, "0")}`);
   for (const traceId of traces) {
     for (const [service, spanId] of [["plexus", "b000000000000001"], ["pharo-mcp", "b000000000000002"]]) {
       for (let attempt = 0; ; attempt += 1) {
-        const response = await fetch(`${endpoint}/v1/traces`, {
-          method: "POST",
-          body: componentSpan(service, traceId, spanId),
-          headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-        }).catch(() => undefined);
+        const response = await send(componentSpan(service, traceId, spanId), { authorization: `Bearer ${token}` }).catch(() => undefined);
         if (response?.status === 200) break;
         if (attempt > 40) throw new Error(`the collector refused a span: ${response?.status}`);
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -192,21 +175,41 @@ test("sampling keeps or drops all of a call's spans together", { skip: !dockerRu
   }
   // The batch processor holds spans up to five seconds before the file has them.
   await new Promise((resolve) => setTimeout(resolve, 8_000));
-  const sampled = (await archivedSpans(0)).slice(before).filter(({ span }) => traces.includes(span.traceId));
-  const perTrace = Object.groupBy(sampled, ({ span }) => span.traceId);
+  const hashed = new Set(traces.map((traceId) => hash("trace", traceId, 32)));
+  const sampled = comparable(await archived(() => true)).filter((span) => hashed.has(span.trace));
+  const perTrace = Object.groupBy(sampled, (span) => span.trace);
   const kept = Object.keys(perTrace).length;
   assert.ok(kept > 10 && kept < 50, `kept ${kept} of 60 traces`);
   for (const [traceId, spans] of Object.entries(perTrace)) {
-    assert.deepEqual(spans.map(({ resource }) => attributes(resource.attributes)["service.name"].stringValue).sort(), ["pharo-mcp", "plexus"], traceId);
+    assert.deepEqual(spans.map((span) => span.resource["service.name"]).sort(), ["pharo-mcp", "plexus"], traceId);
   }
 });
 
-test("a request the proxy cannot pass on leaves no client address in its log", { skip: !dockerRuns }, async () => {
+test("past its cap the archive refuses new spans rather than lose any", { skip: !dockerRuns, timeout: 60_000 }, async () => {
+  const before = archiveLines().length;
+  env = { ...env, ARCHIVE_MAX_MB: "0" };
+  compose("up", "-d", "--wait", "guard");
+  let status;
+  for (let attempt = 0; attempt < 20 && status !== 507; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    status = (await send(componentSpan("plexus", "5b000000000000000000000000000001", "b000000000000003"), { authorization: `Bearer ${token}` })).status;
+  }
+  assert.equal(status, 507);
+  assert.ok(archiveLines().length >= before, "nothing was deleted");
+  env = { ...env, ARCHIVE_MAX_MB: "1000" };
+  compose("up", "-d", "--wait", "guard");
+});
+
+test("a request the proxy cannot pass on leaves no client address in its log", { skip: !dockerRuns, timeout: 60_000 }, async () => {
   // Last, since it stops the collector: Caddy logs a failed upstream with the
   // request, its address included, unless told not to.
   compose("stop", "otelcol");
-  const response = await send({ authorization: `Bearer ${token}` });
-  assert.equal(response.status, 502);
+  let response;
+  for (let attempt = 0; attempt < 20 && response?.status !== 502; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    response = await send(forbidden, { authorization: `Bearer ${token}` });
+  }
+  assert.equal(response?.status, 502);
   await new Promise((resolve) => setTimeout(resolve, 500));
   const logs = compose("logs", "caddy");
   assert.equal(/remote_ip|client_ip|remote_addr/.test(logs), false, logs);

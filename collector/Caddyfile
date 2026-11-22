@@ -3,7 +3,8 @@
 # collector. Caddy writes no access log unless asked to, and the loggers that
 # would write a request's address (a failed request, a failed upstream, a
 # failed TLS handshake) write nothing: what Caddy still logs is its own start
-# and its certificates.
+# and its certificates. While guard.sh says the archive is full, new spans are
+# refused rather than old ones deleted.
 {
 	servers {
 		timeouts {
@@ -22,6 +23,11 @@
 		path /v1/traces
 	}
 	handle @traces {
+		@full file {
+			root /guard
+			try_files /full
+		}
+		respond @full 507
 		request_body {
 			max_size 4MB
 		}

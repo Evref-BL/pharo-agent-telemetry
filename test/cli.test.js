@@ -458,13 +458,16 @@ test("leave and status from a shell without join's XDG_CONFIG_HOME find the agen
 test("join writes through a settings file's symbolic link, and leave puts back what the file it points to held", { skip: process.platform === "win32" }, () => withHome(({ home, cli, settings }) => {
   const real = path.join(home, "dotfiles", "pharo-mcp.env");
   fs.mkdirSync(path.dirname(real), { recursive: true });
-  fs.writeFileSync(real, "# my notes\n");
+  fs.writeFileSync(real, "# my notes\n", { mode: 0o644 });
+  fs.chmodSync(real, 0o644);
   fs.mkdirSync(path.dirname(settings.mcp), { recursive: true });
   fs.symlinkSync(real, settings.mcp);
   const joined = cli("join", "--endpoint", "https://c.test");
   assert.equal(joined.status, 0, joined.stderr);
   assert.ok(fs.lstatSync(settings.mcp).isSymbolicLink());
   assert.equal(readSettings(real)?.writer, "joined");
+  // The file keeps its permissions; only the backup is its owner's alone.
+  assert.equal(mode(real), 0o644);
   assert.equal(fs.readFileSync(`${settings.mcp}.before-join`, "utf8"), "# my notes\n");
   assert.equal(mode(`${settings.mcp}.before-join`), 0o600);
   assert.ok(joined.stdout.includes(`What was yours: ${settings.mcp}.before-join, which leave puts back.`), joined.stdout);
@@ -472,6 +475,7 @@ test("join writes through a settings file's symbolic link, and leave puts back w
   assert.equal(left.status, 0, left.stderr);
   assert.ok(fs.lstatSync(settings.mcp).isSymbolicLink());
   assert.equal(fs.readFileSync(real, "utf8"), "# my notes\n");
+  assert.equal(mode(real), 0o644);
   assert.equal(fs.existsSync(`${settings.mcp}.before-join`), false);
 }));
 

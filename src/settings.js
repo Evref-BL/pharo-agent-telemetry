@@ -164,16 +164,28 @@ function target(file) {
   return isLink(file) ? fs.realpathSync(file) : file;
 }
 
+/** A file's permissions, or undefined when there is no file. */
+function modeOf(file) {
+  try {
+    return fs.statSync(file).mode & 0o777;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Writes the file whole, so a tool starting meanwhile reads all of it or
- * none; through a symbolic link, into the file it points to.
+ * none; through a symbolic link, into the file it points to. A file that is
+ * there keeps its permissions, unless `mode` says otherwise; a new one is
+ * readable by its owner only.
  *
  * @param {string} file
  * @param {string} text
  * @param {number} [mode]
  */
-export function writeSettings(file, text, mode = 0o600) {
+export function writeSettings(file, text, mode) {
   const written = target(file);
+  mode ??= modeOf(written) ?? 0o600;
   fs.mkdirSync(path.dirname(written), { recursive: true });
   const temporary = `${written}.${process.pid}.tmp`;
   fs.writeFileSync(temporary, text, { mode });
@@ -190,10 +202,13 @@ export function backUp(file, backup, text = fs.readFileSync(file, "utf8")) {
   writeSettings(backup, text, 0o600);
 }
 
-/** Puts a backup back where it was taken, through a symbolic link if the file is one, and removes it. */
+/**
+ * Puts a backup back where it was taken, through a symbolic link if the file
+ * is one, and removes it. The file keeps its own permissions: the backup's
+ * are its owner's only, whatever the file's were.
+ */
 export function restoreBackup(file, backup) {
-  const mode = fs.statSync(backup).mode & 0o777;
-  writeSettings(file, fs.readFileSync(backup, "utf8"), mode);
+  writeSettings(file, fs.readFileSync(backup, "utf8"));
   fs.rmSync(backup, { force: true });
 }
 
@@ -229,7 +244,7 @@ export function removeSettings(file, { force = false } = {}) {
   if (current === undefined) return "absent";
   if (force || (current.writer !== "other" && !current.others)) {
     // A symbolic link stays, and points to what is left: nothing of ours.
-    if (isLink(file)) writeSettings(file, force ? "" : `${current.outside}${current.outside ? "\n" : ""}`, fs.statSync(file).mode & 0o777);
+    if (isLink(file)) writeSettings(file, force ? "" : `${current.outside}${current.outside ? "\n" : ""}`);
     else fs.rmSync(file, { force: true });
     return "removed";
   }
@@ -279,7 +294,7 @@ export function clearReachability(ports, env = process.env, platform = process.p
     if (state === null || typeof state !== "object" || !endpoints.some((endpoint) => endpoint in state)) return false;
     for (const endpoint of endpoints) delete state[endpoint];
     try {
-      writeSettings(file, JSON.stringify(state), 0o644);
+      writeSettings(file, JSON.stringify(state));
       return true;
     } catch {
       return false;

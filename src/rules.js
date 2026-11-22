@@ -488,21 +488,25 @@ export const sessionMemory = { sessions: 10_000, idle: 3_600_000 };
 
 /**
  * Where each span comes in its session: milliseconds from the first span of
- * that session this process saw, negative for one that started before it.
- * A session is forgotten an hour after its last span, the oldest first past
- * the cap.
+ * that session the agent saw, negative for one that started before it. A
+ * session is forgotten an hour after its last span, the oldest first past
+ * the cap. `sessions` is kept in the order of their last span, so the ones
+ * to forget are always first: a new session costs no scan of the others.
+ * The agent gives the map it keeps across its restarts.
  *
  * @param {() => number} [now]
+ * @param {Map<string, { first: bigint, seen: number }>} [sessions] hashed session ids, by last span
  */
-export function sessionOffsets(now = Date.now) {
-  const sessions = new Map();
+export function sessionOffsets(now = Date.now, sessions = new Map()) {
   return (session, start) => {
     const at = now();
     let entry = sessions.get(session);
     if (entry === undefined || at - entry.seen > sessionMemory.idle) {
       entry = { first: start, seen: at };
-      for (const [each, { seen }] of sessions) if (at - seen > sessionMemory.idle) sessions.delete(each);
-      if (sessions.size >= sessionMemory.sessions) sessions.delete(sessions.keys().next().value);
+      for (const [each, { seen }] of sessions) {
+        if (at - seen <= sessionMemory.idle && sessions.size < sessionMemory.sessions) break;
+        sessions.delete(each);
+      }
     }
     entry.seen = at;
     sessions.delete(session);
@@ -519,12 +523,12 @@ export function sessionOffsets(now = Date.now) {
  *
  * @param {any} allowlist
  * @param {string | undefined} key
- * @param {{ offsets?: boolean }} [options] `offsets: false` leaves out the places, as the collector, which cannot know them
+ * @param {{ offsets?: boolean, sessions?: Map<string, { first: bigint, seen: number }> }} [options] `offsets: false` leaves out the places, as the collector, which cannot know them; `sessions`, the first span of each session the agent saw, which it keeps across its restarts
  */
-export function createTransform(allowlist, key, { offsets = true } = {}) {
+export function createTransform(allowlist, key, { offsets = true, sessions } = {}) {
   const rules = compile(allowlist);
   const hash = typeof key === "string" && /^[0-9a-f]{32,128}$/.test(key) ? keyedHash(key) : undefined;
-  const sessionOffset = offsets ? sessionOffsets() : undefined;
+  const sessionOffset = offsets ? sessionOffsets(Date.now, sessions) : undefined;
   return (signal, request) => {
     if (signal !== "traces" || hash === undefined) return null;
     try {

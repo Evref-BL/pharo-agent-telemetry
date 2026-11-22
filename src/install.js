@@ -17,6 +17,9 @@ export const keyFile = "telemetry-transform.key";
 /** What the agent says it received and sent, as src/agent.js writes it. */
 export const stateFile = "state.json";
 
+/** The files the agent writes in its directory as it runs, which leave removes with the others. */
+export const agentFiles = [stateFile, "sessions.json", "catalog.json", "preview.json"];
+
 const validKey = (text) => /^[0-9a-f]{32,128}$/.test((text ?? "").trim());
 
 function readOrUndefined(file) {
@@ -103,7 +106,7 @@ export function installAgent(directory, config) {
  * @returns {string[]} the files removed
  */
 export function removeAgent(directory) {
-  const removed = [...Object.keys(packaged), configFile, keyFile, stateFile].map((name) => path.join(directory, name)).filter((file) => {
+  const removed = [...Object.keys(packaged), configFile, keyFile, ...agentFiles].flatMap((name) => [name, `${name}.tmp`]).map((name) => path.join(directory, name)).filter((file) => {
     if (!fs.existsSync(file)) return false;
     fs.rmSync(file, { force: true });
     return true;

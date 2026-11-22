@@ -8,7 +8,7 @@ import path from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
 import { filter } from "../src/telemetry-transform.mjs";
-import { compile, createTransform, offsetKey, transformTraces } from "../src/rules.js";
+import { compile, createTransform, offsetKey, sessionMemory, sessionOffsets, transformTraces } from "../src/rules.js";
 import { readAllowlist } from "../src/generate.js";
 import { comparable, expectedSpans, ruleFixtures, testKey } from "./support.js";
 
@@ -141,4 +141,29 @@ test("MCP's spans are kept only when they serve a call in a session, PLexus's of
   assert.notEqual(installed("traces", oneSpan("plexus", { kind: 1, session: "a" })), null);
   // A PLexus span without a session would hash to another trace than its image's spans, which have one.
   assert.equal(installed("traces", oneSpan("plexus", { kind: 1 })), null);
+});
+
+test("offsets go on across the agent's restarts, and a new session among twenty thousand costs no scan", () => {
+  const sessions = new Map();
+  const first = createTransform(allowlist, testKey, { sessions });
+  const span = (start) => oneSpan("pharo-mcp", { session: "a", start });
+  const offset = (request) => request.resourceSpans[0].scopeSpans[0].spans[0].attributes.find(({ key }) => key === "pharo_agent_telemetry.session.offset_ms")?.value.intValue;
+  assert.equal(offset(first("traces", span("1763630000000000000"))), "0");
+  // Another run of the agent, given the sessions the first remembered.
+  const second = createTransform(allowlist, testKey, { sessions });
+  assert.equal(offset(second("traces", span("1763630000500000000"))), "500");
+  let clock = 0;
+  const memory = new Map();
+  const place = sessionOffsets(() => clock, memory);
+  const began = performance.now();
+  for (let index = 0; index < 20_000; index += 1) {
+    clock += 1;
+    place(`s${index}`, BigInt(index));
+  }
+  assert.ok(performance.now() - began < 1_000, "20,000 sessions in under a second");
+  assert.equal(memory.size, sessionMemory.sessions);
+  assert.equal(memory.keys().next().value, `s${20_000 - sessionMemory.sessions}`);
+  clock += sessionMemory.idle + 1;
+  place("late", 0n);
+  assert.deepEqual([...memory.keys()], ["late"]);
 });

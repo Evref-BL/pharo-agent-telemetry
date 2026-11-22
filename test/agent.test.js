@@ -9,7 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import zlib from "node:zlib";
-import { backoff, bodyCap, createForwarder, healthPath, proof, queueCap, sendCap, startAgent, stopAgent, stopPath, whoListens } from "../src/agent.js";
+import { backoff, bodyCap, createForwarder, healthPath, identify, proof, queueCap, readSessions, sendCap, sessionsText, startAgent, stopAgent, stopPath, whoListens } from "../src/agent.js";
 import { freePort, installAgent } from "../src/install.js";
 import { offsetKey } from "../src/rules.js";
 import { filter } from "../src/telemetry-transform.mjs";
@@ -256,6 +256,11 @@ test("run from the files join copies, the agent sends what it keeps to the colle
     assert.equal(state.received.plexus.requests, 1);
     assert.equal(state.forwarded.sent, 1);
     assert.equal(state.forwarded.last.outcome, "sent");
+    // The sessions it saw outlive it, hashed, for the next run's offsets.
+    const sessions = readSessions(path.join(directory, "sessions.json"));
+    assert.ok(sessions.size > 0);
+    for (const session of sessions.keys()) assert.match(session, /^[0-9a-f]{32}$/);
+    assert.equal(fs.statSync(path.join(directory, "sessions.json")).mode & 0o777, 0o600);
     assert.equal(fs.statSync(path.join(directory, "state.json")).mode & 0o777, 0o600);
     assert.equal(received.length, 1);
     assert.equal(received[0].headers.authorization, "Bearer t0ken");
@@ -281,13 +286,17 @@ test("the agent proves it holds its key without giving it away, and stops only f
     assert.equal(await whoListens(port, "ff".repeat(32)), "other");
     const challenge = "ab".repeat(16);
     const answer = await (await fetch(`http://127.0.0.1:${port}${healthPath}?challenge=${challenge}`)).json();
-    assert.deepEqual(answer, { agent: "pharo-agent-telemetry", proof: proof(testKey, "health", challenge) });
+    assert.match(answer.instance, /^[0-9a-f]{32}$/);
+    assert.deepEqual(answer, { agent: "pharo-agent-telemetry", role: "agent", instance: answer.instance, proof: proof(testKey, "health", `${challenge}:${answer.instance}:agent`) });
     assert.equal(JSON.stringify(answer).includes(testKey), false);
     assert.equal((await fetch(`http://127.0.0.1:${port}${healthPath}?challenge=short`)).status, 400);
     assert.equal((await fetch(`http://127.0.0.1:${port}${healthPath}?challenge=${challenge}`, { headers: { origin: "https://evil.example" } })).status, 403);
-    const stop = (at, secret = testKey) => fetch(`http://127.0.0.1:${port}${stopPath}?at=${at}&proof=${proof(secret, "stop", String(at))}`, { method: "POST" }).then((response) => response.status);
+    const { instance } = await identify(port, testKey);
+    const stop = (at, secret = testKey, run = instance) => fetch(`http://127.0.0.1:${port}${stopPath}?at=${at}&instance=${run}&proof=${proof(secret, "stop", `${run}:${at}`)}`, { method: "POST" }).then((response) => response.status);
     assert.equal(await stop(clock, "ff".repeat(32)), 403);
     assert.equal(await stop(clock - 60_000), 403);
+    // A proof for another run of the agent, as one handed to an earlier run, is refused.
+    assert.equal(await stop(clock, testKey, "ab".repeat(16)), 403);
     assert.equal(stopped.signal.aborted, false);
     assert.equal(await stop(clock), 200);
     await closed;
@@ -304,7 +313,8 @@ test("a stop request is never taken twice, and without a key the agent answers n
   let stops = 0;
   const clock = 1_000_000;
   const { port, closed } = await startAgent({ port: 0, transform: () => null, keep: () => {}, signal: stopped.signal, secret: testKey, stop: () => { stops += 1; }, now: () => clock });
-  const stop = (at) => fetch(`http://127.0.0.1:${port}${stopPath}?at=${at}&proof=${proof(testKey, "stop", String(at))}`, { method: "POST" }).then((response) => response.status);
+  const { instance } = await identify(port, testKey);
+  const stop = (at) => fetch(`http://127.0.0.1:${port}${stopPath}?at=${at}&instance=${instance}&proof=${proof(testKey, "stop", `${instance}:${at}`)}`, { method: "POST" }).then((response) => response.status);
   assert.equal(await stop(clock), 200);
   assert.equal(await stop(clock), 403);
   stopped.abort();
@@ -314,4 +324,57 @@ test("a stop request is never taken twice, and without a key the agent answers n
     assert.equal(await whoListens(other, testKey), "other");
     assert.equal((await fetch(`http://127.0.0.1:${other}${stopPath}?at=1&proof=x`, { method: "POST" })).status, 404);
   });
+});
+
+test("a merged send the collector refuses is sent again request by request, so one refused request loses no other", async () => {
+  let release;
+  const held = new Promise((resolve) => { release = resolve; });
+  const sent = [];
+  const request = (name) => JSON.stringify({ resourceSpans: [{ resource: { attributes: [] }, scopeSpans: [{ scope: { name }, spans: [] }] }] });
+  const forwarder = createForwarder({ endpoint: "https://c.test", send: async (body) => {
+    sent.push(body);
+    if (sent.length === 1) await held;
+    return body.includes('"bad"') ? "refused" : true;
+  } });
+  forwarder.enqueue(request("first"));
+  for (const name of ["a", "bad", "c"]) forwarder.enqueue(request(name));
+  release();
+  await forwarder.idle();
+  assert.deepEqual(sent.slice(2), [request("a"), request("bad"), request("c")]);
+  assert.deepEqual({ ...forwarder.counts }, { sent: 3, failed: 0, dropped: 0, refused: 1 });
+});
+
+test("a stop is never asked of a port where the agent does not prove its key, and a preview says it is one", async () => {
+  const asked = [];
+  const impostor = http.createServer((request, response) => {
+    asked.push(`${request.method} ${request.url.split("?")[0]}`);
+    response.writeHead(200, { "content-type": "application/json" }).end('{"agent":"pharo-agent-telemetry","proof":"x"}');
+  });
+  await new Promise((resolve) => impostor.listen(0, "127.0.0.1", () => resolve(undefined)));
+  try {
+    assert.equal(await stopAgent(impostor.address().port, testKey, 1_000), false);
+    assert.deepEqual(asked, [`GET ${healthPath}`]);
+  } finally {
+    await new Promise((resolve) => impostor.close(() => resolve(undefined)));
+  }
+  const stopped = new AbortController();
+  const { port, closed } = await startAgent({ port: 0, transform: () => null, keep: () => {}, signal: stopped.signal, secret: testKey, role: "preview" });
+  assert.equal(await whoListens(port, testKey), "preview");
+  assert.equal(await stopAgent(port, testKey, 1_000), false);
+  stopped.abort();
+  await closed;
+});
+
+test("the sessions remembered are those of the last hour, in the order of their last span", () => {
+  const now = 10_000_000;
+  const sessions = new Map([["b", { first: 5n, seen: now - 10 }], ["a", { first: -7n, seen: now - 20 }], ["old", { first: 1n, seen: now - 3_600_001 }]]);
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "pat-sessions-"));
+  try {
+    fs.writeFileSync(path.join(directory, "sessions.json"), sessionsText(sessions, now));
+    assert.deepEqual([...readSessions(path.join(directory, "sessions.json"), now)], [["a", { first: -7n, seen: now - 20 }], ["b", { first: 5n, seen: now - 10 }]]);
+    fs.writeFileSync(path.join(directory, "sessions.json"), "not json");
+    assert.equal(readSessions(path.join(directory, "sessions.json"), now).size, 0);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
 });

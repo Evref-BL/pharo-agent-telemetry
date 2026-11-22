@@ -47,7 +47,8 @@ test("the agent's directory holds its code, its settings and its key, only its o
   fs.writeFileSync(path.join(directory, "agent.json"), '{"port":"4321"}');
   assert.equal(readAgentConfig(directory), undefined);
 
-  assert.equal(removeAgent(directory).length, 4);
+  fs.writeFileSync(path.join(directory, "sessions.json"), "[]");
+  assert.equal(removeAgent(directory).length, 5);
   assert.equal(fs.existsSync(directory), false);
   assert.deepEqual(agentStatus(directory), { present: false, version: undefined, current: false, key: false, config: undefined, state: undefined });
 }));

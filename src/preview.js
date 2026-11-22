@@ -77,6 +77,8 @@ export async function startPreview({ files, filter, key, print, signal, port }) 
   const started = await startAgent({
     port: port ?? (await freePort()),
     transform,
+    // With the joined agent's key, status and join know a preview from another program.
+    ...(key ? { secret: key, role: "preview" } : {}),
     keep: (request) => {
       for (const line of describeRequest(request)) print(line);
     },

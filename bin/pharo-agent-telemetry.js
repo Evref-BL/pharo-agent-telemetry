@@ -10,7 +10,7 @@ import { runAgent, stopAgent, whoListens } from "../src/agent.js";
 import { missingForJoin, publicEndpoint, publicToken } from "../src/collector.js";
 import { agentPorts, agentStatus, freePort, installAgent, packaged, readAgentConfig, readKey, removeAgent } from "../src/install.js";
 import { recoverPreview, startPreview } from "../src/preview.js";
-import { dryRun, installService, removeService, runCommand, serviceState, stableNode, startService } from "../src/service.js";
+import { dryRun, installService, realServices, removeService, runCommand, serviceState, stableNode, startService } from "../src/service.js";
 import {
   agentSettings, agentTool, backupSuffix, clearReachability, configDirectory, everyAgentDirectory, everySettingsFile, joinBackupSuffix, ownSettingNames,
   readSettings, removeSettings, settingsBlock, settingsFiles, writeSettings,
@@ -50,7 +50,10 @@ const agentDirectory = configDirectory(agentTool);
 // are written there instead of run, and nothing is installed; or
 // PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS to a directory of fake commands,
 // run instead of the real ones. Either way no agent starts.
-const run = process.env.PHARO_AGENT_TELEMETRY_DRY_RUN ? dryRun(process.env.PHARO_AGENT_TELEMETRY_DRY_RUN) : runCommand;
+// Otherwise this command, and nothing else, opts in to the real service manager.
+const run = process.env.PHARO_AGENT_TELEMETRY_DRY_RUN
+  ? dryRun(process.env.PHARO_AGENT_TELEMETRY_DRY_RUN)
+  : (command, args) => runCommand(command, args, { ...process.env, ...realServices });
 const faked = Boolean(process.env.PHARO_AGENT_TELEMETRY_DRY_RUN || process.env.PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS);
 const serviceOf = (directory) => ({ agent: path.join(directory, "agent.mjs"), run });
 const service = serviceOf(agentDirectory);

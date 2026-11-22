@@ -89,16 +89,53 @@ export function definedNode(content, platform = process.platform) {
     : raw.replace(/&quot;/g, '"').replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&");
 }
 
+/** What the command line, and it alone, sets in the environment it gives runCommand to reach the real service manager. */
+export const realServices = { PHARO_AGENT_TELEMETRY_SERVICES: "real" };
+
+/** Whether two paths name the same directory. */
+function sameDirectory(a, b) {
+  try {
+    return fs.realpathSync(a) === fs.realpathSync(b);
+  } catch {
+    return path.resolve(a) === path.resolve(b);
+  }
+}
+
 /**
- * Runs a command, quietly, and says how it ended. Under a test (node --test
- * sets NODE_TEST_CONTEXT) it refuses, unless the test gives a directory of
- * fake commands in PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS, which it then
- * runs instead: a test never reaches the real service manager.
+ * Why the real service manager is not reached from this environment, or
+ * undefined when it is: only when `env` opts in with `realServices`, as the
+ * command line does, never under node --test, and only for the account's own
+ * home. A home of another directory (a test's, a harness's) would define
+ * services that this account's service manager still runs.
+ *
+ * @param {Record<string, string | undefined>} env
+ */
+function realServicesRefused(env) {
+  if (env.PHARO_AGENT_TELEMETRY_SERVICES !== realServices.PHARO_AGENT_TELEMETRY_SERVICES) return "only the pharo-agent-telemetry command runs service commands";
+  if (env.NODE_TEST_CONTEXT) return "service commands are not run under a test";
+  let account;
+  try {
+    account = os.userInfo().homedir;
+  } catch {
+    return undefined;
+  }
+  const home = (process.platform === "win32" ? env.USERPROFILE : env.HOME) ?? os.homedir();
+  if (account && !sameDirectory(home, account)) return `this home, ${home}, is not the account's, ${account}, whose service manager would run the service`;
+  return undefined;
+}
+
+/**
+ * Runs a command, quietly, and says how it ended. It runs the fake command
+ * of the same name from PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS when that
+ * names a directory; else the real one only as `realServicesRefused` allows:
+ * a test or a harness that calls it, or runs the command line with a home of
+ * its own, reaches no real service manager.
  */
 export function runCommand(command, args, env = process.env) {
   const fakes = env.PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS;
-  if (!fakes && env.NODE_TEST_CONTEXT) {
-    throw new Error(`${command} is not run under a test: set PHARO_AGENT_TELEMETRY_DRY_RUN, or PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS to a directory of fake commands.`);
+  const refused = fakes ? undefined : realServicesRefused(env);
+  if (refused) {
+    throw new Error(`${command} is not run: ${refused}. A test sets PHARO_AGENT_TELEMETRY_DRY_RUN, or PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS to a directory of fake commands.`);
   }
   const result = spawnSync(fakes ? path.join(fakes, command) : command, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   return { status: result.status, stdout: result.stdout ?? "" };
@@ -268,6 +305,38 @@ export function installedDefinitions(options) {
 }
 
 /**
+ * The agent directories this home's service definitions run, under `home`
+ * only: a definition lives in the home (~/Library/LaunchAgents,
+ * ~/.config/systemd/user) whatever XDG_CONFIG_HOME the join saw, so leave
+ * and status find an agent a shell with another XDG_CONFIG_HOME installed. A
+ * definition copied from another home names that home's agent, and is left
+ * out. On Windows the task's definition is beside the agent: none is found
+ * this way.
+ *
+ * @param {{ platform?: NodeJS.Platform, home?: string }} [options]
+ * @returns {string[]}
+ */
+export function definedAgentDirectories({ platform = process.platform, home = os.homedir() } = {}) {
+  if (platform === "win32") return [];
+  const unxml = (text) => text.replace(/&quot;/g, '"').replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&");
+  const [directory, name, agentOf] = platform === "darwin"
+    ? [path.posix.join(home, "Library", "LaunchAgents"), /^org\.evref-bl\.pharo-agent-telemetry\.[0-9a-f]{12}\.plist$/,
+      (text) => [...text.matchAll(/<string>([^<]*)<\/string>/g)].map((match) => unxml(match[1])).find((each) => each.endsWith("/agent.mjs"))]
+    : [path.posix.join(home, ".config", "systemd", "user"), /^pharo-agent-telemetry-[0-9a-f]{12}\.service$/,
+      (text) => /^ExecStart="(?:[^"\\]|\\.)*" "((?:[^"\\]|\\.)*)"/m.exec(text)?.[1]?.replace(/\\(.)/g, "$1").replace(/%%/g, "%").replace(/\$\$/g, "$")];
+  let names;
+  try {
+    names = fs.readdirSync(directory).filter((each) => name.test(each));
+  } catch {
+    return [];
+  }
+  return [...new Set(names.flatMap((each) => {
+    const agent = agentOf(definitionText(path.join(directory, each), platform) ?? "");
+    return agent && agent.startsWith(`${home}/`) && serviceNames(agent, platform)[platform === "darwin" ? "label" : "unit"] === each.replace(/\.plist$/, "") ? [path.posix.dirname(agent)] : [];
+  }))];
+}
+
+/**
  * Writes the service's definition and starts it, again if it ran: a join
  * that changed the agent's files restarts it on them.
  *
@@ -362,10 +431,14 @@ export function serviceState(options) {
     return state === undefined ? "installed" : state === "running" ? "running" : "not running";
   }
   if (platform === "win32") {
+    // The task's state by its name in PowerShell, the same in every language Windows speaks; schtasks says it in the user's.
+    const asked = run("powershell", ["-NoProfile", "-NonInteractive", "-Command", `(Get-ScheduledTask -TaskName '${task}').State`]);
+    const state = asked.status === 0 ? asked.stdout.trim() : "";
+    if (state !== "") return state === "Running" ? "running" : "not running";
     const { status, stdout } = run("schtasks", ["/Query", "/TN", task, "/FO", "LIST"]);
     if (status !== 0) return "not running";
-    const state = /^Status:\s*(.+)$/m.exec(stdout)?.[1]?.trim();
-    return state === undefined ? "installed" : state === "Running" ? "running" : "not running";
+    const listed = /^Status:\s*(.+)$/m.exec(stdout)?.[1]?.trim();
+    return listed === undefined ? "installed" : listed === "Running" ? "running" : "not running";
   }
   const { stdout } = run("systemctl", ["--user", "is-active", unit]);
   const state = stdout.trim();

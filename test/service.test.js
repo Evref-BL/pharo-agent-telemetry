@@ -7,7 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { installedDefinitions, installService, removeService, runCommand, serviceDefinition, serviceNames, serviceState, startService } from "../src/service.js";
+import { definedAgentDirectories, installedDefinitions, installService, realServices, removeService, runCommand, serviceDefinition, serviceNames, serviceState, startService } from "../src/service.js";
 
 /** A runner that records each command, and answers as `answers` says. */
 function recorder(answers = () => ({ status: 0, stdout: "" })) {
@@ -40,10 +40,14 @@ test("each agent directory has a service of its own, named after it", () => {
   assert.deepEqual(serviceNames("C:\\Users\\A\\AppData\\Roaming\\pharo-agent-telemetry\\agent.mjs", "win32"), serviceNames("c:\\users\\a\\appdata\\roaming\\pharo-agent-telemetry\\agent.mjs", "win32"));
 });
 
-test("under a test, the default runner refuses to run a service command, but runs a fake one the test gives", () => withHome((home) => {
+test("the default runner reaches the real service manager only for the command line, outside a test, in the account's own home; a fake one a test gives runs", () => withHome((home) => {
   assert.ok(process.env.NODE_TEST_CONTEXT, "run by node --test");
-  assert.throws(() => runCommand("launchctl", ["print", "gui/0"]), /not run under a test/);
-  assert.throws(() => installService({ platform: "darwin", home, uid: 501, agent: path.join(home, "agent.mjs") }), /not run under a test/);
+  assert.throws(() => runCommand("launchctl", ["print", "gui/0"]), /only the pharo-agent-telemetry command runs service commands/);
+  assert.throws(() => installService({ platform: "darwin", home, uid: 501, agent: path.join(home, "agent.mjs") }), /only the pharo-agent-telemetry command/);
+  assert.throws(() => runCommand("launchctl", ["print", "gui/0"], { ...process.env, ...realServices }), /not run under a test/);
+  // A harness that runs the command line outside node --test, with a home of its own.
+  const outside = { ...process.env, ...realServices, NODE_TEST_CONTEXT: undefined, HOME: home, USERPROFILE: home };
+  assert.throws(() => runCommand("launchctl", ["print", "gui/0"], outside), /is not the account's/);
   if (process.platform === "win32") return;
   const fakes = path.join(home, "fakes");
   fs.mkdirSync(fakes);
@@ -176,21 +180,24 @@ test("the service's state, as each system reports it", () => withHome((home, age
   for (const platform of ["darwin", "linux", "win32"]) {
     assert.equal(serviceState({ platform, home, env: {}, agent, run: answer(0, "") }), "not installed", platform);
   }
+  // On Windows, PowerShell names the task's state in every language; schtasks, in the user's, only when PowerShell does not answer.
+  const windows = (powershell, schtasks) => recorder((command) => (command === "powershell" ? powershell : schtasks)).run;
   const cases = [
-    ["darwin", 0, "gui/501/org.evref-bl.pharo-agent-telemetry = {\n\tstate = running\n", "running"],
-    ["darwin", 0, "\tstate = not running\n", "not running"],
-    ["darwin", 113, "", "not running"],
-    ["linux", 0, "active\n", "running"],
-    ["linux", 3, "inactive\n", "not running"],
-    ["linux", 3, "failed\n", "not running"],
-    ["win32", 0, "TaskName:      \\pharo-agent-telemetry\r\nStatus:        Running\r\n", "running"],
-    ["win32", 0, "Status:        Ready\r\n", "not running"],
-    ["win32", 1, "", "not running"],
+    ["darwin", answer(0, "gui/501/org.evref-bl.pharo-agent-telemetry = {\n\tstate = running\n"), "running"],
+    ["darwin", answer(0, "\tstate = not running\n"), "not running"],
+    ["darwin", answer(113, ""), "not running"],
+    ["linux", answer(0, "active\n"), "running"],
+    ["linux", answer(3, "inactive\n"), "not running"],
+    ["linux", answer(3, "failed\n"), "not running"],
+    ["win32", windows({ status: 0, stdout: "Running\r\n" }, { status: 0, stdout: "Statut :       Pr\u00eat\r\n" }), "running"],
+    ["win32", windows({ status: 0, stdout: "Ready\r\n" }, { status: 0, stdout: "Status:        Running\r\n" }), "not running"],
+    ["win32", windows({ status: 1, stdout: "" }, { status: 0, stdout: "TaskName:      \\pharo-agent-telemetry\r\nStatus:        Running\r\n" }), "running"],
+    ["win32", windows({ status: 1, stdout: "" }, { status: 1, stdout: "" }), "not running"],
   ];
-  for (const [platform, status, stdout, state] of cases) {
+  for (const [platform, run, state] of cases) {
     const options = { platform, home, env: {}, uid: 501, agent, node: process.execPath, run: answer(0, "") };
     installService(options);
-    assert.equal(serviceState({ ...options, run: answer(status, stdout) }), state, `${platform}: ${stdout}`);
+    assert.equal(serviceState({ ...options, run }), state, platform);
     removeService(options);
   }
   // A node that went away with an upgrade.
@@ -199,3 +206,4 @@ test("the service's state, as each system reports it", () => withHome((home, age
   assert.equal(serviceState(gone), "without its node");
   removeService(gone);
 }));
+

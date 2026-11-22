@@ -1,0 +1,682 @@
+{
+  "about": "A client's name is kept only from the closed set of agent hosts, else _OTHER, from PLexus and from MCP alike, and its version to major and minor; the protocol version a client declared to MCP is a date; an evaluation's variant is kept only when the environment is eval.",
+  "request": {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "pharo-mcp"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "4.3.0"
+              }
+            },
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "eval"
+              }
+            },
+            {
+              "key": "pharo_agent_evals.variant",
+              "value": {
+                "stringValue": "mcp-main-0d25fa4"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "mcp-pharo"
+            },
+            "spans": [
+              {
+                "traceId": "1a00abababababababababababababab",
+                "spanId": "cccccccccccc0b20",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "c"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.name",
+                    "value": {
+                      "stringValue": "claude-code"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.version",
+                    "value": {
+                      "stringValue": "2.1.100"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2026-07-28"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1a00abababababababababababababab",
+                "spanId": "cccccccccccc0b21",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "c"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.name",
+                    "value": {
+                      "stringValue": "Visual Studio Code - Insiders"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.version",
+                    "value": {
+                      "stringValue": "1.101.0-insider"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1a00abababababababababababababab",
+                "spanId": "cccccccccccc0b22",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "c"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.name",
+                    "value": {
+                      "stringValue": "plexus"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.version",
+                    "value": {
+                      "stringValue": "0.21.0"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1a00abababababababababababababab",
+                "spanId": "cccccccccccc0b23",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "c"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.name",
+                    "value": {
+                      "stringValue": "Acme Internal Copilot for Alice Smith"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.version",
+                    "value": {
+                      "stringValue": "3.4.5-alice.smith"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1a00abababababababababababababab",
+                "spanId": "cccccccccccc0b24",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "c"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.name",
+                    "value": {
+                      "stringValue": "cursor-vscode (via mcp-remote 0.1.31)"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.version",
+                    "value": {
+                      "stringValue": "1.0.0"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1a00abababababababababababababab",
+                "spanId": "cccccccccccc0b25",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "c"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.name",
+                    "value": {
+                      "stringValue": "claude-code"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.version",
+                    "value": {
+                      "stringValue": "unknown"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "pharo-mcp"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "4.3.0"
+              }
+            },
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            },
+            {
+              "key": "pharo_agent_evals.variant",
+              "value": {
+                "stringValue": "mcp-main-0d25fa4"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "mcp-pharo"
+            },
+            "spans": [
+              {
+                "traceId": "1a00abababababababababababababab",
+                "spanId": "cccccccccccc0b26",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "c"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.name",
+                    "value": {
+                      "stringValue": "Zed"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.version",
+                    "value": {
+                      "stringValue": "0.1.0"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "plexus"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "0.21.0"
+              }
+            },
+            {
+              "key": "pharo_agent_evals.variant",
+              "value": {
+                "stringValue": "plugin-0.23.0"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "@evref-bl/plexus"
+            },
+            "spans": [
+              {
+                "traceId": "1a00abababababababababababababab",
+                "spanId": "cccccccccccc0b27",
+                "name": "tools/call image_list",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_list"
+                    }
+                  },
+                  {
+                    "key": "plexus.call.forwarded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "plexus.client.name",
+                    "value": {
+                      "stringValue": "codex-mcp-client"
+                    }
+                  },
+                  {
+                    "key": "plexus.client.version",
+                    "value": {
+                      "stringValue": "0.173.0-alpha.4"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.client.name",
+                    "value": {
+                      "stringValue": "opencode"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1a00abababababababababababababab",
+                "spanId": "cccccccccccc0b28",
+                "name": "tools/call image_list",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_list"
+                    }
+                  },
+                  {
+                    "key": "plexus.call.forwarded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "plexus.client.name",
+                    "value": {
+                      "stringValue": "Claude Code"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0",
+        "deployment.environment.name": "eval",
+        "pharo_agent_evals.variant": "mcp-main-0d25fa4"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1a00abababababababababababababab",
+      "span": "cccccccccccc0b20",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "c",
+        "pharo.mcp.client.name": "claude-code",
+        "pharo.mcp.client.version": "2.1",
+        "mcp.protocol.version": "2026-07-28",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0",
+        "deployment.environment.name": "eval",
+        "pharo_agent_evals.variant": "mcp-main-0d25fa4"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1a00abababababababababababababab",
+      "span": "cccccccccccc0b21",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "c",
+        "pharo.mcp.client.name": "Visual Studio Code - Insiders",
+        "pharo.mcp.client.version": "1.101",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0",
+        "deployment.environment.name": "eval",
+        "pharo_agent_evals.variant": "mcp-main-0d25fa4"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1a00abababababababababababababab",
+      "span": "cccccccccccc0b22",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "c",
+        "pharo.mcp.client.name": "plexus",
+        "pharo.mcp.client.version": "0.21",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0",
+        "deployment.environment.name": "eval",
+        "pharo_agent_evals.variant": "mcp-main-0d25fa4"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1a00abababababababababababababab",
+      "span": "cccccccccccc0b23",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "c",
+        "pharo.mcp.client.name": "_OTHER",
+        "pharo.mcp.client.version": "3.4",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0",
+        "deployment.environment.name": "eval",
+        "pharo_agent_evals.variant": "mcp-main-0d25fa4"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1a00abababababababababababababab",
+      "span": "cccccccccccc0b24",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "c",
+        "pharo.mcp.client.name": "_OTHER",
+        "pharo.mcp.client.version": "1.0",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0",
+        "deployment.environment.name": "eval",
+        "pharo_agent_evals.variant": "mcp-main-0d25fa4"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1a00abababababababababababababab",
+      "span": "cccccccccccc0b25",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "c",
+        "pharo.mcp.client.name": "claude-code",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1a00abababababababababababababab",
+      "span": "cccccccccccc0b26",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "c",
+        "pharo.mcp.client.name": "Zed",
+        "pharo.mcp.client.version": "0.1",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.21.0"
+      },
+      "scope": "@evref-bl/plexus",
+      "name": "tools/call image_list",
+      "kind": 2,
+      "trace": "1a00abababababababababababababab",
+      "span": "cccccccccccc0b27",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "image_list",
+        "plexus.call.forwarded": false,
+        "plexus.client.name": "codex-mcp-client",
+        "plexus.client.version": "0.173",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.21.0"
+      },
+      "scope": "@evref-bl/plexus",
+      "name": "tools/call image_list",
+      "kind": 2,
+      "trace": "1a00abababababababababababababab",
+      "span": "cccccccccccc0b28",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "image_list",
+        "plexus.call.forwarded": false,
+        "plexus.client.name": "_OTHER",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    }
+  ]
+}

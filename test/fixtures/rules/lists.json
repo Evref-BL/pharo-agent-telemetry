@@ -149,6 +149,12 @@
                         ]
                       }
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "lists-session"
+                    }
                   }
                 ]
               },
@@ -190,28 +196,28 @@
                       "arrayValue": {
                         "values": [
                           {
-                            "stringValue": "/arg0"
+                            "stringValue": "/class"
                           },
                           {
-                            "stringValue": "/arg1"
+                            "stringValue": "/name"
                           },
                           {
-                            "stringValue": "/arg2"
+                            "stringValue": "/side"
                           },
                           {
-                            "stringValue": "/arg3"
+                            "stringValue": "/scope/classes"
                           },
                           {
-                            "stringValue": "/arg4"
+                            "stringValue": "/package"
                           },
                           {
-                            "stringValue": "/arg5"
+                            "stringValue": "/selector"
                           },
                           {
-                            "stringValue": "/arg6"
+                            "stringValue": "/source"
                           },
                           {
-                            "stringValue": "/arg7"
+                            "stringValue": "/protocol"
                           }
                         ]
                       }
@@ -248,6 +254,12 @@
                           }
                         ]
                       }
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "lists-session"
                     }
                   }
                 ]
@@ -290,31 +302,31 @@
                       "arrayValue": {
                         "values": [
                           {
-                            "stringValue": "/arg0"
+                            "stringValue": "/class"
                           },
                           {
-                            "stringValue": "/arg1"
+                            "stringValue": "/name"
                           },
                           {
-                            "stringValue": "/arg2"
+                            "stringValue": "/side"
                           },
                           {
-                            "stringValue": "/arg3"
+                            "stringValue": "/scope/classes"
                           },
                           {
-                            "stringValue": "/arg4"
+                            "stringValue": "/package"
                           },
                           {
-                            "stringValue": "/arg5"
+                            "stringValue": "/selector"
                           },
                           {
-                            "stringValue": "/arg6"
+                            "stringValue": "/source"
                           },
                           {
-                            "stringValue": "/arg7"
+                            "stringValue": "/protocol"
                           },
                           {
-                            "stringValue": "/arg8"
+                            "stringValue": "/comment"
                           }
                         ]
                       }
@@ -345,6 +357,12 @@
                           }
                         ]
                       }
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "lists-session"
                     }
                   }
                 ]
@@ -387,52 +405,52 @@
                       "arrayValue": {
                         "values": [
                           {
-                            "stringValue": "tool_0"
+                            "stringValue": "class_create"
                           },
                           {
-                            "stringValue": "tool_1"
+                            "stringValue": "class_get"
                           },
                           {
-                            "stringValue": "tool_2"
+                            "stringValue": "class_remove"
                           },
                           {
-                            "stringValue": "tool_3"
+                            "stringValue": "class_search"
                           },
                           {
-                            "stringValue": "tool_4"
+                            "stringValue": "class_update"
                           },
                           {
-                            "stringValue": "tool_5"
+                            "stringValue": "critique_run"
                           },
                           {
-                            "stringValue": "tool_6"
+                            "stringValue": "debug_search"
                           },
                           {
-                            "stringValue": "tool_7"
+                            "stringValue": "debug_watch"
                           },
                           {
-                            "stringValue": "tool_8"
+                            "stringValue": "evaluate"
                           },
                           {
-                            "stringValue": "tool_9"
+                            "stringValue": "history_entry_apply"
                           },
                           {
-                            "stringValue": "tool_10"
+                            "stringValue": "history_entry_list"
                           },
                           {
-                            "stringValue": "tool_11"
+                            "stringValue": "history_entry_revert"
                           },
                           {
-                            "stringValue": "tool_12"
+                            "stringValue": "history_file_list"
                           },
                           {
-                            "stringValue": "tool_13"
+                            "stringValue": "history_lost_change_list"
                           },
                           {
-                            "stringValue": "tool_14"
+                            "stringValue": "history_lost_change_restore"
                           },
                           {
-                            "stringValue": "tool_15"
+                            "stringValue": "method_compile"
                           }
                         ]
                       }
@@ -454,6 +472,12 @@
                     "key": "pharo.mcp.argument.names",
                     "value": {
                       "stringValue": "name"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "lists-session"
                     }
                   }
                 ]
@@ -496,55 +520,55 @@
                       "arrayValue": {
                         "values": [
                           {
-                            "stringValue": "tool_0"
+                            "stringValue": "class_create"
                           },
                           {
-                            "stringValue": "tool_1"
+                            "stringValue": "class_get"
                           },
                           {
-                            "stringValue": "tool_2"
+                            "stringValue": "class_remove"
                           },
                           {
-                            "stringValue": "tool_3"
+                            "stringValue": "class_search"
                           },
                           {
-                            "stringValue": "tool_4"
+                            "stringValue": "class_update"
                           },
                           {
-                            "stringValue": "tool_5"
+                            "stringValue": "critique_run"
                           },
                           {
-                            "stringValue": "tool_6"
+                            "stringValue": "debug_search"
                           },
                           {
-                            "stringValue": "tool_7"
+                            "stringValue": "debug_watch"
                           },
                           {
-                            "stringValue": "tool_8"
+                            "stringValue": "evaluate"
                           },
                           {
-                            "stringValue": "tool_9"
+                            "stringValue": "history_entry_apply"
                           },
                           {
-                            "stringValue": "tool_10"
+                            "stringValue": "history_entry_list"
                           },
                           {
-                            "stringValue": "tool_11"
+                            "stringValue": "history_entry_revert"
                           },
                           {
-                            "stringValue": "tool_12"
+                            "stringValue": "history_file_list"
                           },
                           {
-                            "stringValue": "tool_13"
+                            "stringValue": "history_lost_change_list"
                           },
                           {
-                            "stringValue": "tool_14"
+                            "stringValue": "history_lost_change_restore"
                           },
                           {
-                            "stringValue": "tool_15"
+                            "stringValue": "method_compile"
                           },
                           {
-                            "stringValue": "tool_16"
+                            "stringValue": "method_get"
                           }
                         ]
                       }
@@ -568,6 +592,12 @@
                       "arrayValue": {
                         "values": []
                       }
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "lists-session"
                     }
                   }
                 ]
@@ -708,180 +738,8 @@
       "resource": {
         "service.name": "pharo-mcp",
         "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
-        "deployment.environment.name": "field"
-      },
-      "scope": "mcp-pharo",
-      "name": "tools/call class_get",
-      "kind": 2,
-      "trace": "0700abababababababababababababab",
-      "span": "cccccccccccc0028",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "class_get",
-        "pharo.mcp.tool.origin": "mcp",
-        "pharo.mcp.argument.names": [],
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "plexus",
-        "service.version": "0.19.0",
-        "process.runtime.name": "nodejs",
-        "process.runtime.version": "26",
-        "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
-        "deployment.environment.name": "field"
-      },
-      "scope": "@evref-bl/plexus",
-      "scopeVersion": "0.19.0",
-      "name": "tools/call image_start",
-      "kind": 2,
-      "trace": "0700abababababababababababababab",
-      "span": "cccccccccccc0029",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "image_start",
-        "plexus.argument.unknown_names": [
-          "display"
-        ],
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
-        "deployment.environment.name": "field"
-      },
-      "scope": "mcp-pharo",
-      "name": "tools/call class_get",
-      "kind": 2,
-      "trace": "0700abababababababababababababab",
-      "span": "cccccccccccc0025",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "class_get",
-        "pharo.mcp.tool.origin": "mcp",
-        "pharo.mcp.error.schema.paths": [
-          "/arg0",
-          "/arg1",
-          "/arg2",
-          "/arg3",
-          "/arg4",
-          "/arg5",
-          "/arg6",
-          "/arg7"
-        ],
-        "pharo.mcp.error.schema.keywords": [
-          "required",
-          "notBlank"
-        ],
-        "pharo.mcp.argument.options": [
-          "side=class",
-          "packages[]",
-          "scope.packages"
-        ],
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
-        "deployment.environment.name": "field"
-      },
-      "scope": "mcp-pharo",
-      "name": "tools/call class_get",
-      "kind": 2,
-      "trace": "0700abababababababababababababab",
-      "span": "cccccccccccc0027",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "class_get",
-        "pharo.mcp.tool.origin": "mcp",
-        "pharo.mcp.tool.refs": [
-          "tool_0",
-          "tool_1",
-          "tool_2",
-          "tool_3",
-          "tool_4",
-          "tool_5",
-          "tool_6",
-          "tool_7",
-          "tool_8",
-          "tool_9",
-          "tool_10",
-          "tool_11",
-          "tool_12",
-          "tool_13",
-          "tool_14",
-          "tool_15"
-        ],
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
-        "deployment.environment.name": "field"
-      },
-      "scope": "mcp-pharo",
-      "name": "tools/call class_get",
-      "kind": 2,
-      "trace": "0700abababababababababababababab",
-      "span": "cccccccccccc0026",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "class_get",
-        "pharo.mcp.tool.origin": "mcp",
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
         "os.type": "linux",
         "deployment.environment.name": "field"
       },
@@ -899,8 +757,174 @@
           "name",
           "side"
         ],
+        "session.id": "lists-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "0700abababababababababababababab",
+      "span": "cccccccccccc0025",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.error.schema.paths": [
+          "/class",
+          "/name",
+          "/side",
+          "/scope/classes",
+          "/package",
+          "/selector",
+          "/source",
+          "/protocol"
+        ],
+        "pharo.mcp.error.schema.keywords": [
+          "required",
+          "notBlank"
+        ],
+        "pharo.mcp.argument.options": [
+          "side=class",
+          "packages[]",
+          "scope.packages"
+        ],
+        "session.id": "lists-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "0700abababababababababababababab",
+      "span": "cccccccccccc0026",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "lists-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "0700abababababababababababababab",
+      "span": "cccccccccccc0027",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.tool.refs": [
+          "class_create",
+          "class_get",
+          "class_remove",
+          "class_search",
+          "class_update",
+          "critique_run",
+          "debug_search",
+          "debug_watch",
+          "evaluate",
+          "history_entry_apply",
+          "history_entry_list",
+          "history_entry_revert",
+          "history_file_list",
+          "history_lost_change_list",
+          "history_lost_change_restore",
+          "method_compile"
+        ],
+        "session.id": "lists-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "0700abababababababababababababab",
+      "span": "cccccccccccc0028",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.argument.names": [],
+        "session.id": "lists-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_start",
+      "kind": 2,
+      "trace": "0700abababababababababababababab",
+      "span": "cccccccccccc0029",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_start",
+        "plexus.argument.unknown_names": [
+          "display"
+        ],
+        "span.duration_ms": {
+          "double": 250
         }
       }
     }

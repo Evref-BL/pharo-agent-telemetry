@@ -209,7 +209,7 @@ test("a preview that was killed is put back as it was, or removed when there was
 
 test("a span is described with its week, ids, attributes and where it ran", () => {
   const [fixture] = ruleFixtures().filter(({ name }) => name === "kept-and-dropped");
-  const kept = filter(testKey)("traces", fixture.request);
+  const kept = filter(testKey, { offsets: false })("traces", fixture.request);
   const lines = describeRequest(kept);
   const [span] = expectedSpans(fixture);
   assert.ok(lines.some((line) => line.startsWith(`${span.name} (week of `) && line.includes(`trace ${span.trace}`)), lines.join("\n"));

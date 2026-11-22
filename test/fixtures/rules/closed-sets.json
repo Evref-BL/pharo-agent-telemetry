@@ -454,6 +454,12 @@
                     "value": {
                       "stringValue": "ClassNotFound"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
                   }
                 ]
               },
@@ -505,6 +511,12 @@
                     "key": "pharo.mcp.error.kind",
                     "value": {
                       "stringValue": "fatal"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
                     }
                   }
                 ]
@@ -564,6 +576,12 @@
                     "value": {
                       "stringValue": "2025-06-18"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
                   }
                 ]
               },
@@ -616,6 +634,12 @@
                     "value": {
                       "stringValue": "claude-code"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
                   }
                 ]
               },
@@ -650,6 +674,12 @@
                     "value": {
                       "stringValue": "mcp"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
                   }
                 ]
               }
@@ -667,87 +697,6 @@
         "process.runtime.name": "nodejs",
         "process.runtime.version": "26",
         "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
-        "deployment.environment.name": "field"
-      },
-      "scope": "@evref-bl/plexus",
-      "scopeVersion": "0.19.0",
-      "name": "tools/call image_start",
-      "kind": 2,
-      "trace": "1000abababababababababababababab",
-      "span": "cccccccccccc003b",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "image_start",
-        "error.type": "_OTHER",
-        "plexus.error.code": "_OTHER",
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
-        "deployment.environment.name": "field"
-      },
-      "scope": "mcp-pharo",
-      "name": "tools/call class_get",
-      "kind": 2,
-      "trace": "1000abababababababababababababab",
-      "span": "cccccccccccc003e",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "class_get",
-        "pharo.mcp.tool.origin": "mcp",
-        "pharo.mcp.exception.type": "_OTHER",
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "plexus",
-        "service.version": "0.19.0",
-        "process.runtime.name": "nodejs",
-        "process.runtime.version": "26",
-        "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
-        "deployment.environment.name": "field"
-      },
-      "scope": "@evref-bl/plexus",
-      "scopeVersion": "0.19.0",
-      "name": "tools/call image_start",
-      "kind": 2,
-      "trace": "1000abababababababababababababab",
-      "span": "cccccccccccc0038",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "image_start",
-        "error.type": "-32602",
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "plexus",
-        "service.version": "0.19.0",
-        "process.runtime.name": "nodejs",
-        "process.runtime.version": "26",
-        "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
         "deployment.environment.name": "field"
       },
       "scope": "@evref-bl/plexus",
@@ -762,37 +711,7 @@
         "gen_ai.tool.name": "image_start",
         "error.type": "TypeError",
         "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
-        "deployment.environment.name": "field"
-      },
-      "scope": "mcp-pharo",
-      "name": "tools/call class_get",
-      "kind": 2,
-      "trace": "1000abababababababababababababab",
-      "span": "cccccccccccc003f",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "class_get",
-        "pharo.mcp.tool.origin": "mcp",
-        "pharo.mcp.exception.type": "ZeroDivide",
-        "pharo.mcp.test.outcome": "passed",
-        "pharo.mcp.dispatch_path": "direct",
-        "mcp.protocol.version": "2025-06-18",
-        "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -803,7 +722,6 @@
         "process.runtime.name": "nodejs",
         "process.runtime.version": "26",
         "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
         "deployment.environment.name": "field"
       },
       "scope": "@evref-bl/plexus",
@@ -811,12 +729,14 @@
       "name": "tools/call image_start",
       "kind": 2,
       "trace": "1000abababababababababababababab",
-      "span": "cccccccccccc003c",
+      "span": "cccccccccccc0037",
       "start": "1763337600000000000",
       "attributes": {
+        "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_start",
+        "error.type": "_OTHER",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -827,7 +747,56 @@
         "process.runtime.name": "nodejs",
         "process.runtime.version": "26",
         "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_start",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0038",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_start",
+        "error.type": "-32602",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_start",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0039",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_start",
+        "error.type": "503",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
         "deployment.environment.name": "field"
       },
       "scope": "@evref-bl/plexus",
@@ -843,59 +812,56 @@
         "error.type": "stopped-unsaved",
         "plexus.error.code": "stopped-unsaved",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
     {
       "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
         "deployment.environment.name": "field"
       },
-      "scope": "mcp-pharo",
-      "name": "tools/call _OTHER",
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_start",
       "kind": 2,
       "trace": "1000abababababababababababababab",
-      "span": "cccccccccccc0041",
+      "span": "cccccccccccc003b",
       "start": "1763337600000000000",
       "attributes": {
         "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "_OTHER",
-        "pharo.mcp.tool.origin": "mcp",
+        "gen_ai.tool.name": "image_start",
+        "error.type": "_OTHER",
+        "plexus.error.code": "_OTHER",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
     {
       "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
         "deployment.environment.name": "field"
       },
-      "scope": "mcp-pharo",
-      "name": "tools/call class_get",
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_start",
       "kind": 2,
       "trace": "1000abababababababababababababab",
-      "span": "cccccccccccc0040",
+      "span": "cccccccccccc003c",
       "start": "1763337600000000000",
       "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "class_get",
-        "pharo.mcp.tool.origin": "mcp",
+        "gen_ai.tool.name": "image_start",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -903,10 +869,8 @@
       "resource": {
         "service.name": "pharo-mcp",
         "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
         "os.type": "linux",
         "deployment.environment.name": "field"
       },
@@ -924,60 +888,115 @@
         "pharo.mcp.exception.type": "MCPCommandError",
         "pharo.mcp.error.kind": "domain",
         "pharo.mcp.error.code": "ClassNotFound",
+        "session.id": "closed-sets-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
     {
       "resource": {
-        "service.name": "plexus",
-        "service.version": "0.19.0",
-        "process.runtime.name": "nodejs",
-        "process.runtime.version": "26",
-        "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
         "deployment.environment.name": "field"
       },
-      "scope": "@evref-bl/plexus",
-      "scopeVersion": "0.19.0",
-      "name": "tools/call image_start",
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
       "kind": 2,
       "trace": "1000abababababababababababababab",
-      "span": "cccccccccccc0037",
+      "span": "cccccccccccc003e",
       "start": "1763337600000000000",
       "attributes": {
         "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "image_start",
-        "error.type": "_OTHER",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.exception.type": "_OTHER",
+        "pharo.mcp.error.code": "_OTHER",
+        "session.id": "closed-sets-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
     {
       "resource": {
-        "service.name": "plexus",
-        "service.version": "0.19.0",
-        "process.runtime.name": "nodejs",
-        "process.runtime.version": "26",
-        "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
         "deployment.environment.name": "field"
       },
-      "scope": "@evref-bl/plexus",
-      "scopeVersion": "0.19.0",
-      "name": "tools/call image_start",
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
       "kind": 2,
       "trace": "1000abababababababababababababab",
-      "span": "cccccccccccc0039",
+      "span": "cccccccccccc003f",
       "start": "1763337600000000000",
       "attributes": {
         "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "image_start",
-        "error.type": "503",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.exception.type": "ZeroDivide",
+        "pharo.mcp.test.outcome": "passed",
+        "pharo.mcp.dispatch_path": "direct",
+        "mcp.protocol.version": "2025-06-18",
+        "session.id": "closed-sets-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0040",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "closed-sets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call _OTHER",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0041",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "_OTHER",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "closed-sets-session",
+        "span.duration_ms": {
+          "double": 250
         }
       }
     }

@@ -1,0 +1,545 @@
+{
+  "about": "MCP's spans are kept only as the server span of a call in a session: another kind, a span without session.id or with an empty one is someone else's code; PLexus's are kept of every kind, with a session or without. The agent's place in a session, pharo_agent_telemetry.session.offset_ms, is kept as a whole number, negative too, and only beside a session.",
+  "request": {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "pharo-mcp"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "4.3.0"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "mcp-pharo"
+            },
+            "spans": [
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b00",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "a"
+                    }
+                  },
+                  {
+                    "key": "pharo_agent_telemetry.session.offset_ms",
+                    "value": {
+                      "intValue": "250"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b01",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "a"
+                    }
+                  },
+                  {
+                    "key": "pharo_agent_telemetry.session.offset_ms",
+                    "value": {
+                      "intValue": "-1000"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b02",
+                "name": "tools/call class_get",
+                "kind": 1,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "a"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b03",
+                "name": "tools/call class_get",
+                "kind": 3,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "a"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b04",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b05",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": ""
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b06",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "intValue": "7"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b07",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "a"
+                    }
+                  },
+                  {
+                    "key": "pharo_agent_telemetry.session.offset_ms",
+                    "value": {
+                      "stringValue": "250"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "plexus"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "0.21.0"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "@evref-bl/plexus"
+            },
+            "spans": [
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b08",
+                "name": "tools/call image_list",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_list"
+                    }
+                  },
+                  {
+                    "key": "plexus.call.forwarded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "a"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b09",
+                "name": "tools/call image_list",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_list"
+                    }
+                  },
+                  {
+                    "key": "plexus.call.forwarded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b0a",
+                "name": "plexus.image.start",
+                "kind": 1,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_list"
+                    }
+                  },
+                  {
+                    "key": "plexus.call.forwarded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "a"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1900abababababababababababababab",
+                "spanId": "cccccccccccc0b0b",
+                "name": "tools/call image_list",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_list"
+                    }
+                  },
+                  {
+                    "key": "plexus.call.forwarded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "pharo_agent_telemetry.session.offset_ms",
+                    "value": {
+                      "intValue": "250"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1900abababababababababababababab",
+      "span": "cccccccccccc0b00",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "a",
+        "pharo_agent_telemetry.session.offset_ms": 250,
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1900abababababababababababababab",
+      "span": "cccccccccccc0b01",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "a",
+        "pharo_agent_telemetry.session.offset_ms": -1000,
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1900abababababababababababababab",
+      "span": "cccccccccccc0b07",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "a",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.21.0"
+      },
+      "scope": "@evref-bl/plexus",
+      "name": "tools/call image_list",
+      "kind": 2,
+      "trace": "1900abababababababababababababab",
+      "span": "cccccccccccc0b08",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "image_list",
+        "plexus.call.forwarded": false,
+        "session.id": "a",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.21.0"
+      },
+      "scope": "@evref-bl/plexus",
+      "name": "tools/call image_list",
+      "kind": 2,
+      "trace": "1900abababababababababababababab",
+      "span": "cccccccccccc0b09",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "image_list",
+        "plexus.call.forwarded": false,
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.21.0"
+      },
+      "scope": "@evref-bl/plexus",
+      "name": "plexus.image.start",
+      "kind": 1,
+      "trace": "1900abababababababababababababab",
+      "span": "cccccccccccc0b0a",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "image_list",
+        "plexus.call.forwarded": false,
+        "session.id": "a",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.21.0"
+      },
+      "scope": "@evref-bl/plexus",
+      "name": "tools/call image_list",
+      "kind": 2,
+      "trace": "1900abababababababababababababab",
+      "span": "cccccccccccc0b0b",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "image_list",
+        "plexus.call.forwarded": false,
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    }
+  ]
+}

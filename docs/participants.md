@@ -50,7 +50,7 @@ Never its events, links, trace state or status message, nor its scope's
 attributes. Any value that contains a home directory path, an email address, an IPv4 address, an IPv6 address is
 masked, whole, and the mask has no attribute's shape.
 
-Tool and argument names (`gen_ai.tool.name`, `plexus.argument.names`, `plexus.argument.unknown_names`, `pharo.mcp.argument.names`, `pharo.mcp.argument.unknown_names`, `pharo.mcp.argument.coerced`, `pharo.mcp.argument.options`, `pharo.mcp.tool.refs`, `pharo.mcp.error.schema.paths`) are kept only for MCP's own tools and for
+Tool and argument names (`gen_ai.tool.name`, `plexus.argument.names`, `plexus.argument.unknown_names`, `pharo.mcp.argument.names`, `pharo.mcp.argument.unknown_names`, `pharo.mcp.argument.options`, `pharo.mcp.tool.refs`, `pharo.mcp.error.schema.paths`) are kept only for MCP's own tools and for
 names no tool has (`pharo.mcp.tool.origin` `mcp` or `unknown`). For a
 tool another package added to an image (`other`, or no origin), the tool's
 name becomes `_OTHER` and the other names are dropped. PLexus names only its
@@ -63,12 +63,11 @@ Where it ran:
 | --- | --- | --- | --- |
 | `service.name` | plexus, pharo-mcp | Which tool sent the span. | one of `plexus`, `pharo-mcp` |
 | `service.version` | plexus, pharo-mcp | That tool's version. | a version |
-| `telemetry.sdk.version` | plexus, pharo-mcp | The OpenTelemetry SDK's version. | a version |
 | `os.type` | plexus, pharo-mcp | The OS family. | one of the OS types |
 | `process.runtime.name` | plexus, pharo-mcp | nodejs or pharo. | one of `nodejs`, `pharo` |
-| `process.runtime.version` | plexus, pharo-mcp | Node's major version, or Pharo's version without its build. | a version |
-| `process.runtime.description` | pharo-mcp | The Pharo VM's release, nothing else of its description. | a version |
+| `process.runtime.version` | plexus, pharo-mcp | Node's major version, or Pharo's major and minor. | a version |
 | `deployment.environment.name` | plexus, pharo-mcp | field for participants, eval for our own evaluation runs, preview while previewing, check for npm run check-deployment. | one of `field`, `eval`, `preview`, `check` |
+| `pharo_agent_evals.variant` | plexus, pharo-mcp | Which variant of an evaluation run sent the span: the build under test, which may report a released version. Kept only for eval. | text |
 
 What happened:
 
@@ -76,10 +75,10 @@ What happened:
 | --- | --- | --- | --- |
 | `session.id` | plexus, pharo-mcp | Groups the calls of one working session. PLexus makes it at random, or MCP when the call came without one, and either starts another after 30 minutes without a call; it is replaced by its keyed hash before it leaves your machine. | its keyed hash |
 | `mcp.method.name` | plexus, pharo-mcp | The MCP method. | one of `tools/call`, `tools/list` |
-| `mcp.protocol.version` | plexus, pharo-mcp | The MCP protocol version, a date. | a date |
-| `gen_ai.tool.name` | plexus, pharo-mcp | The tool's name, including a name the agent asked for that no tool has. | an identifier, else `_OTHER` |
+| `mcp.protocol.version` | pharo-mcp | The MCP protocol version the client's request declared, a date. | a date |
+| `gen_ai.tool.name` | plexus, pharo-mcp | The tool's name: one a project publishes, else a name the agent asked for that no tool has, or MCP's own, when made of words of the vocabulary. | an identifier, else `_OTHER` |
 | `error.type` | plexus, pharo-mcp | How a call failed: tool_error, a JSON-RPC or HTTP code, how a connection failed, a PLexus error code, or an exception class of Pharo, MCP or Node. | one of `tool_error`, `_OTHER`, `timeout`, `refused`, `closed`, `cancelled`, `invalid-name`, `no-such-image`, `image-exists`, `image-running`, `being-started`, `building`, `not-running`, `starting`, `no-endpoint`, `unknown-template`, `ambiguous-template`, `script-not-found`, `create-failed`, `start-failed`, `stop-failed`, `save-failed`, `stopped-unsaved`, `launcher-failed`, `invalid-arguments`, `no-image-running`, `several-images`, `none-takes-calls`, `Abort`, `ArgumentsCountMismatch`, `ArithmeticError`, `AssertionFailure`, `BlockCannotReturn`, `CannotReturn`, `CollectionIsEmpty`, `ConfirmationRequest`, `ContextCannotReturn`, `DomainError`, `DuplicatedSlotName`, `DuplicatedVariableError`, `Error`, `Exception`, `ExtensionConflictError`, `IllegalResumeAttempt`, `IncompatibleLayoutConflict`, `InformativeNotification`, `InstanceVariableNotFound`, `InvalidSlotName`, `KeyNotFound`, `MessageNotUnderstood`, `ModificationForbidden`, `NewUndeclaredWarning`, `NonBooleanReceiver`, `NotFound`, `NotYetImplemented`, `Notification`, `OutOfMemory`, `PackageConflictError`, `PrimitiveFailed`, `ProcessAlreadyTerminating`, `SelectorException`, `ShouldBeImplemented`, `ShouldNotImplement`, `SimulationExceptionWrapper`, `SizeMismatch`, `SlotNotFound`, `SubclassResponsibility`, `SubscriptOutOfBounds`, `SystemNotification`, `TimedOut`, `UndeclaredVariableError`, `UndeclaredVariableRead`, `UndeclaredVariableWrite`, `UnhandledError`, `UnhandledException`, `UnwindError`, `ValueNotFound`, `Warning`, `ZeroDivide`, `MCPCommandError`, `MCPHeaderMismatch`, `MCPResourceNotFound`, `MCPSyntaxError`, `MCPUnsupportedProtocolVersion`, `MCPInvalidToolInput`, `MCPMissingPromptArgument`, `MCPUnknownCompletionReference`, `MCPUnknownPrompt`, `AbortError`, `AggregateError`, `EvalError`, `RangeError`, `ReferenceError`, `SyntaxError`, `SystemError`, `TimeoutError`, `TypeError`, `URIError`, or a numeric code, else `_OTHER` |
-| `plexus.client.name` | plexus | The agent host's name as it introduces itself to PLexus's server, for example claude-code. | a product's name |
+| `plexus.client.name` | plexus | The agent host, as it introduces itself to PLexus's server, when it is one the allowlist knows. | one of the agent hosts, else `_OTHER` |
 | `plexus.client.version` | plexus | The agent host's version, major and minor. | a version |
 | `plexus.call.index` | plexus | Where the call comes in its session: 1 for the first. | a whole number from 1 |
 | `plexus.call.forwarded` | plexus | Whether PLexus passed the call on to an image, which then names the tool. | true or false |
@@ -89,24 +88,25 @@ What happened:
 | `plexus.image.save` | plexus | Whether stopping an image saved it. | true or false |
 | `pharo.mcp.tool.origin` | pharo-mcp | mcp for one of MCP's own tools, other for a tool another package added, unknown for a name no tool has. Names are kept only for mcp and unknown. | one of `mcp`, `other`, `unknown`, else `other` |
 | `pharo.mcp.dispatch_path` | pharo-mcp | How the image dispatched the request. | one of `direct`, `via_tool_call` |
-| `pharo.mcp.argument.names` | pharo-mcp | The names of the arguments the image received, never their values. | a list of at most 32, each an identifier |
-| `pharo.mcp.argument.unknown_names` | pharo-mcp | Argument names the tool does not declare. | a list of at most 32, each an identifier |
-| `pharo.mcp.argument.coerced` | pharo-mcp | Argument names whose values the tool accepted in another form than its schema says. | a list of at most 32, each an identifier |
+| `pharo.mcp.client.name` | pharo-mcp | The agent host, as it introduces itself to MCP's server, when it is one the allowlist knows: under PLexus, PLexus itself. | one of the agent hosts, else `_OTHER` |
+| `pharo.mcp.client.version` | pharo-mcp | Its version, major and minor. | a version |
+| `pharo.mcp.argument.names` | pharo-mcp | The names of the arguments the tool declares that the call gave, never their values. | a list of at most 32, each an identifier |
+| `pharo.mcp.argument.unknown_names` | pharo-mcp | Argument names the call gave that the tool does not declare. | a list of at most 32, each an identifier |
 | `pharo.mcp.argument.options` | pharo-mcp | The options the call chose, as the evaluations count them: a property, a value of an enumeration, or a list given for several targets. | a list of at most 32, each an option |
-| `pharo.mcp.input.bytes` | pharo-mcp | The size of the arguments. | a whole number from 0 |
-| `pharo.mcp.output.bytes` | pharo-mcp | The size of the answer. | a whole number from 0 |
+| `pharo.mcp.input.bytes` | pharo-mcp | The size of the arguments. | the lower bound of its bucket: 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608, 16777216 |
+| `pharo.mcp.output.bytes` | pharo-mcp | The size of the answer. | the lower bound of its bucket: 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608, 16777216 |
 | `pharo.mcp.result.count` | pharo-mcp | How many results a search answered. | the lower bound of its bucket: 0, 1, 2, 6, 21, 101 |
 | `pharo.mcp.result.more` | pharo-mcp | Whether there were more results than answered. | true or false |
-| `pharo.mcp.test.outcome` | pharo-mcp | How a test run ended. | one of `passed`, `failed`, `errored` |
+| `pharo.mcp.test.outcome` | pharo-mcp | How a test run ended. | one of `passed`, `failed`, `errored`, `none` |
 | `pharo.mcp.test.count` | pharo-mcp | How many tests ran. | the lower bound of its bucket: 0, 1, 2, 6, 21, 101 |
 | `pharo.mcp.tool.refs` | pharo-mcp | The tools a discovery call (tool_search, tool_get) named. | a list of at most 16, each an identifier |
 | `pharo.mcp.error.kind` | pharo-mcp | The kind of error MCP reported. | one of `input_schema`, `domain`, `tool_result`, `json_rpc`, `exception` |
-| `pharo.mcp.error.code` | pharo-mcp | MCP's own error code. | an identifier |
-| `pharo.mcp.error.schema.violation_count` | pharo-mcp | How many schema rules the arguments broke. | a whole number from 0 |
+| `pharo.mcp.error.code` | pharo-mcp | The error code MCP gave its answer. | an identifier, else `_OTHER` |
 | `pharo.mcp.error.schema.keywords` | pharo-mcp | Which schema rules they broke. | a list of at most 8, each one of the schema keywords |
 | `pharo.mcp.error.schema.paths` | pharo-mcp | Where in the tool's input they broke them. | a list of at most 8, each a JSON pointer |
 | `pharo.mcp.exception.type` | pharo-mcp | The nearest Pharo or MCP class of an exception. | one of the exception classes, else `_OTHER` |
-| `span.duration_ms` | plexus, pharo-mcp | How long the span took, in milliseconds, kept since its times are not. | a number |
+| `span.duration_ms` | plexus, pharo-mcp | How long the span took, in whole milliseconds, kept since its times are not. | a number |
+| `pharo_agent_telemetry.session.offset_ms` | plexus, pharo-mcp | When the span started, in milliseconds after the first span of its session the agent on your machine saw (negative when it saw a later one first): the order of a session's calls, never a time of day. | a whole number from 0 |
 
 ## What is never sent
 

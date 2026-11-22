@@ -401,12 +401,11 @@
         "service.version": "0.19.0",
         "os.type": "darwin",
         "process.runtime.name": "nodejs",
-        "process.runtime.version": "26",
-        "telemetry.sdk.version": "3.1.1"
+        "process.runtime.version": "26"
       },
       "scope": "@evref-bl/plexus",
       "scopeVersion": "0.19.0",
-      "name": "tools/call",
+      "name": "tools/call method_search",
       "kind": 2,
       "trace": "005e671cb0e895e0840dcd993de5672a",
       "span": "112875456022c5b8",
@@ -414,6 +413,7 @@
       "status": 2,
       "attributes": {
         "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "method_search",
         "session.id": "4def84f9-f585-4c16-bc92-fc723e483ab3",
         "plexus.call.index": 1,
         "plexus.call.forwarded": true,
@@ -422,18 +422,16 @@
         "plexus.error.code": "no-image-running",
         "error.type": "tool_error",
         "span.duration_ms": {
-          "double": 0.592
+          "double": 0
         }
       }
     },
     {
       "resource": {
         "service.name": "pharo-mcp",
-        "telemetry.sdk.version": "1.3.0",
         "service.version": "4.2.0",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
         "os.type": "darwin"
       },
       "scope": "mcp-pharo",
@@ -457,11 +455,10 @@
         "pharo.mcp.argument.options": [
           "query"
         ],
-        "pharo.mcp.input.bytes": 37,
-        "pharo.mcp.output.bytes": 1063,
+        "pharo.mcp.input.bytes": 32,
+        "pharo.mcp.output.bytes": 1024,
         "error.type": "tool_error",
         "pharo.mcp.error.kind": "input_schema",
-        "pharo.mcp.error.schema.violation_count": 1,
         "pharo.mcp.error.schema.keywords": [
           "type"
         ],
@@ -470,7 +467,7 @@
         ],
         "pharo.mcp.exception.type": "MCPInvalidToolInput",
         "span.duration_ms": {
-          "double": 0.421
+          "double": 0
         }
       }
     }

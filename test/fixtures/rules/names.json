@@ -1,0 +1,2568 @@
+{
+  "about": "From real runs: names a caller chose (argument names, an invented tool's, schema paths under an unknown property, another package's error code, a client's name) are kept only when made of vocabulary words or from a closed set, so keys like ghp_… or AcmeSecretProject never leave; a discovery call and a forwarded call keep only the tools a project publishes, pharo-image-fs's included.",
+  "request": {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "plexus"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "0.20.0"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "26.0.0"
+              }
+            },
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "3.1.1"
+              }
+            }
+          ],
+          "droppedAttributesCount": 0
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "@evref-bl/plexus",
+              "version": "0.20.0"
+            },
+            "spans": [
+              {
+                "traceId": "a6939320f03a0bc917cad7a4f24d3d8d",
+                "spanId": "4d8bfd61a7dfdd60",
+                "parentSpanId": "7bda561694f2de51",
+                "name": "tools/call acme_payroll_sync",
+                "kind": 3,
+                "startTimeUnixNano": "1795356144447000000",
+                "endTimeUnixNano": "1795356144448344667",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "acme_payroll_sync"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2025-06-18"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "tcp"
+                    }
+                  },
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "http"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 2
+                },
+                "links": [],
+                "droppedLinksCount": 0,
+                "flags": 257
+              },
+              {
+                "traceId": "3df17a471a273fa45beba2ff532e9a1c",
+                "spanId": "387c392155a128f1",
+                "name": "tools/call method_get",
+                "kind": 2,
+                "startTimeUnixNano": "1795356144544000000",
+                "endTimeUnixNano": "1795356144591725125",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "method_get"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "pipe"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "d6f5de28-00d7-4a43-a043-5a171ebc7c12"
+                    }
+                  },
+                  {
+                    "key": "plexus.call.index",
+                    "value": {
+                      "intValue": 11
+                    }
+                  },
+                  {
+                    "key": "plexus.call.forwarded",
+                    "value": {
+                      "boolValue": true
+                    }
+                  },
+                  {
+                    "key": "plexus.client.name",
+                    "value": {
+                      "stringValue": "claude-code"
+                    }
+                  },
+                  {
+                    "key": "plexus.client.version",
+                    "value": {
+                      "stringValue": "2"
+                    }
+                  },
+                  {
+                    "key": "plexus.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "image"
+                          },
+                          {
+                            "stringValue": "class"
+                          },
+                          {
+                            "stringValue": "selector"
+                          },
+                          {
+                            "stringValue": "AcmeSecretProject"
+                          },
+                          {
+                            "stringValue": "ghp_16C7e42F292c6912E7710c838347Ae178B4a"
+                          },
+                          {
+                            "stringValue": "AKIAIOSFODNN7EXAMPLE"
+                          },
+                          {
+                            "stringValue": "alice_smith_ssn_123456789"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 2
+                },
+                "links": [],
+                "droppedLinksCount": 0,
+                "flags": 257
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            },
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "pharo-mcp"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "1.3.0"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "4.2.1"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "14.0.0+build.791"
+              }
+            },
+            {
+              "key": "process.runtime.description",
+              "value": {
+                "stringValue": "CoInterpreter\rStackToRegisterMappingCogit\rv12.0.6-beta+0.bebdbaca8 - Commit: bebdbaca8 - Date: 2026-10-23 12:06:15 +0200"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "mcp-pharo",
+              "attributes": []
+            },
+            "spans": [
+              {
+                "traceId": "a6939320f03a0bc917cad7a4f24d3d8d",
+                "spanId": "b139cd090f466d57",
+                "parentSpanId": "4d8bfd61a7dfdd60",
+                "name": "tools/call acme_payroll_sync",
+                "kind": 2,
+                "startTimeUnixNano": "1795356144448317000",
+                "endTimeUnixNano": "1795356144448380000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "acme_payroll_sync"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "tcp"
+                    }
+                  },
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "http"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "other"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "d6f5de28-00d7-4a43-a043-5a171ebc7c12"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "acmeCustomerId"
+                          },
+                          {
+                            "stringValue": "acmeMode"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.options",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "acmeMode"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.input.bytes",
+                    "value": {
+                      "intValue": "44"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output.bytes",
+                    "value": {
+                      "intValue": "260"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output_budget.exceeded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.kind",
+                    "value": {
+                      "stringValue": "domain"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "AcmeLicenseExpired_alice_smith"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "MCPCommandError"
+                    }
+                  }
+                ],
+                "events": [],
+                "links": [],
+                "status": {
+                  "code": 2
+                },
+                "flags": 769
+              },
+              {
+                "traceId": "a02c77c62f40398f71b6acbe73820295",
+                "spanId": "fd74fd25f0f91d79",
+                "parentSpanId": "d5a04266a366f182",
+                "name": "tools/call tool_search",
+                "kind": 2,
+                "startTimeUnixNano": "1795356144491273000",
+                "endTimeUnixNano": "1795356144493483000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "tool_search"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "tcp"
+                    }
+                  },
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "http"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "d6f5de28-00d7-4a43-a043-5a171ebc7c12"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "query"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.options",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "query"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.input.bytes",
+                    "value": {
+                      "intValue": "24"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output.bytes",
+                    "value": {
+                      "intValue": "803"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output_budget.exceeded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.refs",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "acme_payroll_sync"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "events": [],
+                "links": [],
+                "status": {},
+                "flags": 769
+              },
+              {
+                "traceId": "3df17a471a273fa45beba2ff532e9a1c",
+                "spanId": "1d5cc693bb06ff45",
+                "parentSpanId": "2cca55e717030784",
+                "name": "tools/call method_get",
+                "kind": 2,
+                "startTimeUnixNano": "1795356144590038000",
+                "endTimeUnixNano": "1795356144590339000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "method_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "tcp"
+                    }
+                  },
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "http"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "d6f5de28-00d7-4a43-a043-5a171ebc7c12"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "AKIAIOSFODNN7EXAMPLE"
+                          },
+                          {
+                            "stringValue": "AcmeSecretProject"
+                          },
+                          {
+                            "stringValue": "alice_smith_ssn_123456789"
+                          },
+                          {
+                            "stringValue": "class"
+                          },
+                          {
+                            "stringValue": "ghp_16C7e42F292c6912E7710c838347Ae178B4a"
+                          },
+                          {
+                            "stringValue": "selector"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.unknown_names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "AKIAIOSFODNN7EXAMPLE"
+                          },
+                          {
+                            "stringValue": "AcmeSecretProject"
+                          },
+                          {
+                            "stringValue": "alice_smith_ssn_123456789"
+                          },
+                          {
+                            "stringValue": "ghp_16C7e42F292c6912E7710c838347Ae178B4a"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.options",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "class"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.input.bytes",
+                    "value": {
+                      "intValue": "215"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output.bytes",
+                    "value": {
+                      "intValue": "3992"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output_budget.exceeded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.kind",
+                    "value": {
+                      "stringValue": "input_schema"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.schema.violation_count",
+                    "value": {
+                      "intValue": "7"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.schema.keywords",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "additionalProperties"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.schema.paths",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "/AKIAIOSFODNN7EXAMPLE"
+                          },
+                          {
+                            "stringValue": "/AcmeSecretProject"
+                          },
+                          {
+                            "stringValue": "/alice_smith_ssn_123456789"
+                          },
+                          {
+                            "stringValue": "/ghp_16C7e42F292c6912E7710c838347Ae178B4a"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "MCPInvalidToolInput"
+                    }
+                  }
+                ],
+                "events": [],
+                "links": [],
+                "status": {
+                  "code": 2
+                },
+                "flags": 769
+              },
+              {
+                "traceId": "fb3366d721fd6f823480ab5cd001b573",
+                "spanId": "2c0e6954f8ff7f1d",
+                "parentSpanId": "fb28b9c05a4579a2",
+                "name": "tools/call acme_payroll_export_alice",
+                "kind": 2,
+                "startTimeUnixNano": "1795356144772213000",
+                "endTimeUnixNano": "1795356144772338000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "acme_payroll_export_alice"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "tcp"
+                    }
+                  },
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "http"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "unknown"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "d6f5de28-00d7-4a43-a043-5a171ebc7c12"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "acmeSecretArg"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.input.bytes",
+                    "value": {
+                      "intValue": "19"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output.bytes",
+                    "value": {
+                      "intValue": "475"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output_budget.exceeded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.kind",
+                    "value": {
+                      "stringValue": "domain"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "ToolNotFound"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "MCPCommandError"
+                    }
+                  }
+                ],
+                "events": [],
+                "links": [],
+                "status": {
+                  "code": 2
+                },
+                "flags": 769
+              },
+              {
+                "traceId": "253ec3512fb469725a6f59a0130c0f8f",
+                "spanId": "4a1d2dc2764d6bae",
+                "parentSpanId": "7eed488393c9a7af",
+                "name": "tools/call class_search",
+                "kind": 2,
+                "startTimeUnixNano": "1795356144635726000",
+                "endTimeUnixNano": "1795356144635848000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_search"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "tcp"
+                    }
+                  },
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "http"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "d6f5de28-00d7-4a43-a043-5a171ebc7c12"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "query"
+                          },
+                          {
+                            "stringValue": "scope"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.options",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "query"
+                          },
+                          {
+                            "stringValue": "scope.classes"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.input.bytes",
+                    "value": {
+                      "intValue": "76"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output.bytes",
+                    "value": {
+                      "intValue": "889"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output_budget.exceeded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.kind",
+                    "value": {
+                      "stringValue": "input_schema"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.schema.violation_count",
+                    "value": {
+                      "intValue": "1"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.schema.keywords",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "additionalProperties"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.schema.paths",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "/scope/AcmeNestedSecret"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "MCPInvalidToolInput"
+                    }
+                  }
+                ],
+                "events": [],
+                "links": [],
+                "status": {
+                  "code": 2
+                },
+                "flags": 769
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "plexus"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "0.20.0"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "26.0.0"
+              }
+            },
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "3.1.1"
+              }
+            }
+          ],
+          "droppedAttributesCount": 0
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "@evref-bl/plexus",
+              "version": "0.20.0"
+            },
+            "spans": [
+              {
+                "traceId": "2dc0fd6bbf74dca6bcf83696b2339f86",
+                "spanId": "5eb255efb2a209fd",
+                "name": "tools/call image_list",
+                "kind": 2,
+                "startTimeUnixNano": "1795356321588000000",
+                "endTimeUnixNano": "1795356321588063167",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_list"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "pipe"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "688f5915-5ccd-438a-8900-b6ab02bba087"
+                    }
+                  },
+                  {
+                    "key": "plexus.call.index",
+                    "value": {
+                      "intValue": 3
+                    }
+                  },
+                  {
+                    "key": "plexus.call.forwarded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "plexus.client.name",
+                    "value": {
+                      "stringValue": "Acme Internal Copilot for Alice Smith"
+                    }
+                  },
+                  {
+                    "key": "plexus.client.version",
+                    "value": {
+                      "stringValue": "3.4.5-alice.smith"
+                    }
+                  },
+                  {
+                    "key": "plexus.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "AcmeSecretProject_alice"
+                          },
+                          {
+                            "stringValue": "ghp_16C7e42F292c6912E7710c838347Ae178B4a"
+                          },
+                          {
+                            "stringValue": "project"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "plexus.argument.unknown_names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "AcmeSecretProject_alice"
+                          },
+                          {
+                            "stringValue": "ghp_16C7e42F292c6912E7710c838347Ae178B4a"
+                          },
+                          {
+                            "stringValue": "project"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "plexus.error.code",
+                    "value": {
+                      "stringValue": "invalid-arguments"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 2
+                },
+                "links": [],
+                "droppedLinksCount": 0,
+                "flags": 257
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            },
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "pharo-mcp"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "1.3.0"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "4.2.1"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "14.0.0+build.791"
+              }
+            },
+            {
+              "key": "process.runtime.description",
+              "value": {
+                "stringValue": "CoInterpreter\rStackToRegisterMappingCogit\rv12.0.6-beta+0.bebdbaca8 - Commit: bebdbaca8 - Date: 2026-10-23 12:06:15 +0200"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "mcp-pharo",
+              "attributes": []
+            },
+            "spans": [
+              {
+                "traceId": "086be956afe3a3d4229e15064d41cfb4",
+                "spanId": "c6121db10f6bbec6",
+                "parentSpanId": "43f06212ad648392",
+                "name": "tools/call acme_payroll_sync",
+                "kind": 2,
+                "startTimeUnixNano": "1795356321585407000",
+                "endTimeUnixNano": "1795356321585620000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "acme_payroll_sync"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "tcp"
+                    }
+                  },
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "http"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "unknown"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "688f5915-5ccd-438a-8900-b6ab02bba087"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "acmeCustomerId"
+                          },
+                          {
+                            "stringValue": "acmeInternalLedger"
+                          },
+                          {
+                            "stringValue": "acmeMode"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.input.bytes",
+                    "value": {
+                      "intValue": "70"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output.bytes",
+                    "value": {
+                      "intValue": "392"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output_budget.exceeded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.kind",
+                    "value": {
+                      "stringValue": "domain"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "ToolNotFound"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "MCPCommandError"
+                    }
+                  }
+                ],
+                "events": [],
+                "links": [],
+                "status": {
+                  "code": 2
+                },
+                "flags": 769
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "plexus"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "0.20.0"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "26.0.0"
+              }
+            },
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "3.1.1"
+              }
+            }
+          ],
+          "droppedAttributesCount": 0
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "@evref-bl/plexus",
+              "version": "0.20.0"
+            },
+            "spans": [
+              {
+                "traceId": "166d34d6c6db1ec0b35103f51fec7dc6",
+                "spanId": "7b890962ef950ce7",
+                "parentSpanId": "ce1792e5efeff04e",
+                "name": "tools/call pifs_list",
+                "kind": 3,
+                "startTimeUnixNano": "1795356059509000000",
+                "endTimeUnixNano": "1795356059510167666",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "pifs_list"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2025-06-18"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "tcp"
+                    }
+                  },
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "http"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0,
+                "flags": 257
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            },
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "pharo-mcp"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "1.3.0"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "4.2.1"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "14.0.0+build.791"
+              }
+            },
+            {
+              "key": "process.runtime.description",
+              "value": {
+                "stringValue": "CoInterpreter\rStackToRegisterMappingCogit\rv12.0.6-beta+0.bebdbaca8 - Commit: bebdbaca8 - Date: 2026-10-23 12:06:15 +0200"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "mcp-pharo",
+              "attributes": []
+            },
+            "spans": [
+              {
+                "traceId": "166d34d6c6db1ec0b35103f51fec7dc6",
+                "spanId": "bc6e6ba377997941",
+                "parentSpanId": "7b890962ef950ce7",
+                "name": "tools/call pifs_list",
+                "kind": 2,
+                "startTimeUnixNano": "1795356059509710000",
+                "endTimeUnixNano": "1795356059509744000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "pifs_list"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "tcp"
+                    }
+                  },
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "http"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "other"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "e84ac428-a9b6-4833-8faa-4f10048b10a1"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.input.bytes",
+                    "value": {
+                      "intValue": "2"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output.bytes",
+                    "value": {
+                      "intValue": "172"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output_budget.exceeded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  }
+                ],
+                "events": [],
+                "links": [],
+                "status": {},
+                "flags": 769
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            },
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "pharo-mcp"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "1.3.0"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "4.2.1"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "14.0.0+build.791"
+              }
+            },
+            {
+              "key": "process.runtime.description",
+              "value": {
+                "stringValue": "CoInterpreter\rStackToRegisterMappingCogit\rv12.0.6-beta+0.bebdbaca8 - Commit: bebdbaca8 - Date: 2026-10-23 12:06:15 +0200"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "mcp-pharo",
+              "attributes": []
+            },
+            "spans": [
+              {
+                "traceId": "a7014fc6b7550114f16452b99cce04b7",
+                "spanId": "c48199685c255453",
+                "parentSpanId": "d7513017cc512cdd",
+                "name": "tools/call tool_search",
+                "kind": 2,
+                "startTimeUnixNano": "1795356038621442000",
+                "endTimeUnixNano": "1795356038623844000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "tool_search"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "tcp"
+                    }
+                  },
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "http"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "37d73bf0-cbc4-4659-8c08-7308ebd1418c"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "query"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.options",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "query"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.input.bytes",
+                    "value": {
+                      "intValue": "27"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output.bytes",
+                    "value": {
+                      "intValue": "745"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output_budget.exceeded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.refs",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "pifs_list"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "events": [],
+                "links": [],
+                "status": {},
+                "flags": 769
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            },
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "pharo-mcp"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "1.3.0"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "4.2.1"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "14.0.0+build.791"
+              }
+            },
+            {
+              "key": "process.runtime.description",
+              "value": {
+                "stringValue": "CoInterpreter\rStackToRegisterMappingCogit\rv12.0.6-beta+0.bebdbaca8 - Commit: bebdbaca8 - Date: 2026-10-23 12:06:15 +0200"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "mcp-pharo",
+              "attributes": []
+            },
+            "spans": [
+              {
+                "traceId": "ce680b5a57c5ff0a712a21cfe58acb98",
+                "spanId": "1594fee7de7f4920",
+                "parentSpanId": "250c9316c6d69511",
+                "name": "tools/call method_add",
+                "kind": 2,
+                "startTimeUnixNano": "1795356058484916000",
+                "endTimeUnixNano": "1795356058485043000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "method_add"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "network.transport",
+                    "value": {
+                      "stringValue": "tcp"
+                    }
+                  },
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "http"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "unknown"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "e84ac428-a9b6-4833-8faa-4f10048b10a1"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "class"
+                          },
+                          {
+                            "stringValue": "source"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.input.bytes",
+                    "value": {
+                      "intValue": "40"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output.bytes",
+                    "value": {
+                      "intValue": "509"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output_budget.exceeded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.kind",
+                    "value": {
+                      "stringValue": "domain"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "ToolNotFound"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "MCPCommandError"
+                    }
+                  }
+                ],
+                "events": [],
+                "links": [],
+                "status": {
+                  "code": 2
+                },
+                "flags": 769
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.20.0",
+        "os.type": "darwin",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.20.0",
+      "name": "tools/call _OTHER",
+      "kind": 3,
+      "trace": "a6939320f03a0bc917cad7a4f24d3d8d",
+      "span": "4d8bfd61a7dfdd60",
+      "parent": "7bda561694f2de51",
+      "start": "1794787200000000000",
+      "status": 2,
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "_OTHER",
+        "error.type": "tool_error",
+        "span.duration_ms": {
+          "double": 1
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.20.0",
+        "os.type": "darwin",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.20.0",
+      "name": "tools/call method_get",
+      "kind": 2,
+      "trace": "3df17a471a273fa45beba2ff532e9a1c",
+      "span": "387c392155a128f1",
+      "start": "1794787200000000000",
+      "status": 2,
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "method_get",
+        "session.id": "d6f5de28-00d7-4a43-a043-5a171ebc7c12",
+        "plexus.call.index": 11,
+        "plexus.call.forwarded": true,
+        "plexus.client.name": "claude-code",
+        "plexus.client.version": "2",
+        "error.type": "tool_error",
+        "span.duration_ms": {
+          "double": 47
+        }
+      }
+    },
+    {
+      "resource": {
+        "deployment.environment.name": "field",
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "darwin"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call _OTHER",
+      "kind": 2,
+      "trace": "a6939320f03a0bc917cad7a4f24d3d8d",
+      "span": "b139cd090f466d57",
+      "parent": "4d8bfd61a7dfdd60",
+      "start": "1794787200000000000",
+      "status": 2,
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "_OTHER",
+        "pharo.mcp.dispatch_path": "direct",
+        "pharo.mcp.tool.origin": "other",
+        "session.id": "d6f5de28-00d7-4a43-a043-5a171ebc7c12",
+        "pharo.mcp.input.bytes": 32,
+        "pharo.mcp.output.bytes": 256,
+        "error.type": "tool_error",
+        "pharo.mcp.error.kind": "domain",
+        "pharo.mcp.exception.type": "MCPCommandError",
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    },
+    {
+      "resource": {
+        "deployment.environment.name": "field",
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "darwin"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call tool_search",
+      "kind": 2,
+      "trace": "a02c77c62f40398f71b6acbe73820295",
+      "span": "fd74fd25f0f91d79",
+      "parent": "d5a04266a366f182",
+      "start": "1794787200000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "tool_search",
+        "pharo.mcp.dispatch_path": "direct",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "d6f5de28-00d7-4a43-a043-5a171ebc7c12",
+        "pharo.mcp.argument.names": [
+          "query"
+        ],
+        "pharo.mcp.argument.options": [
+          "query"
+        ],
+        "pharo.mcp.input.bytes": 16,
+        "pharo.mcp.output.bytes": 512,
+        "pharo.mcp.tool.refs": [
+          "_OTHER"
+        ],
+        "span.duration_ms": {
+          "double": 2
+        }
+      }
+    },
+    {
+      "resource": {
+        "deployment.environment.name": "field",
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "darwin"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call method_get",
+      "kind": 2,
+      "trace": "3df17a471a273fa45beba2ff532e9a1c",
+      "span": "1d5cc693bb06ff45",
+      "parent": "2cca55e717030784",
+      "start": "1794787200000000000",
+      "status": 2,
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "method_get",
+        "pharo.mcp.dispatch_path": "direct",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "d6f5de28-00d7-4a43-a043-5a171ebc7c12",
+        "pharo.mcp.argument.options": [
+          "class"
+        ],
+        "pharo.mcp.input.bytes": 128,
+        "pharo.mcp.output.bytes": 2048,
+        "error.type": "tool_error",
+        "pharo.mcp.error.kind": "input_schema",
+        "pharo.mcp.error.schema.keywords": [
+          "additionalProperties"
+        ],
+        "pharo.mcp.exception.type": "MCPInvalidToolInput",
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    },
+    {
+      "resource": {
+        "deployment.environment.name": "field",
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "darwin"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call _OTHER",
+      "kind": 2,
+      "trace": "fb3366d721fd6f823480ab5cd001b573",
+      "span": "2c0e6954f8ff7f1d",
+      "parent": "fb28b9c05a4579a2",
+      "start": "1794787200000000000",
+      "status": 2,
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "_OTHER",
+        "pharo.mcp.dispatch_path": "direct",
+        "pharo.mcp.tool.origin": "unknown",
+        "session.id": "d6f5de28-00d7-4a43-a043-5a171ebc7c12",
+        "pharo.mcp.input.bytes": 16,
+        "pharo.mcp.output.bytes": 256,
+        "error.type": "tool_error",
+        "pharo.mcp.error.kind": "domain",
+        "pharo.mcp.error.code": "ToolNotFound",
+        "pharo.mcp.exception.type": "MCPCommandError",
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    },
+    {
+      "resource": {
+        "deployment.environment.name": "field",
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "darwin"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_search",
+      "kind": 2,
+      "trace": "253ec3512fb469725a6f59a0130c0f8f",
+      "span": "4a1d2dc2764d6bae",
+      "parent": "7eed488393c9a7af",
+      "start": "1794787200000000000",
+      "status": 2,
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_search",
+        "pharo.mcp.dispatch_path": "direct",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "d6f5de28-00d7-4a43-a043-5a171ebc7c12",
+        "pharo.mcp.argument.names": [
+          "query",
+          "scope"
+        ],
+        "pharo.mcp.argument.options": [
+          "query",
+          "scope.classes"
+        ],
+        "pharo.mcp.input.bytes": 64,
+        "pharo.mcp.output.bytes": 512,
+        "error.type": "tool_error",
+        "pharo.mcp.error.kind": "input_schema",
+        "pharo.mcp.error.schema.keywords": [
+          "additionalProperties"
+        ],
+        "pharo.mcp.exception.type": "MCPInvalidToolInput",
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.20.0",
+        "os.type": "darwin",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.20.0",
+      "name": "tools/call image_list",
+      "kind": 2,
+      "trace": "2dc0fd6bbf74dca6bcf83696b2339f86",
+      "span": "5eb255efb2a209fd",
+      "start": "1794787200000000000",
+      "status": 2,
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_list",
+        "session.id": "688f5915-5ccd-438a-8900-b6ab02bba087",
+        "plexus.call.index": 3,
+        "plexus.call.forwarded": false,
+        "plexus.client.name": "_OTHER",
+        "plexus.client.version": "3.4",
+        "plexus.error.code": "invalid-arguments",
+        "error.type": "tool_error",
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    },
+    {
+      "resource": {
+        "deployment.environment.name": "field",
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "darwin"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call _OTHER",
+      "kind": 2,
+      "trace": "086be956afe3a3d4229e15064d41cfb4",
+      "span": "c6121db10f6bbec6",
+      "parent": "43f06212ad648392",
+      "start": "1794787200000000000",
+      "status": 2,
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "_OTHER",
+        "pharo.mcp.dispatch_path": "direct",
+        "pharo.mcp.tool.origin": "unknown",
+        "session.id": "688f5915-5ccd-438a-8900-b6ab02bba087",
+        "pharo.mcp.input.bytes": 64,
+        "pharo.mcp.output.bytes": 256,
+        "error.type": "tool_error",
+        "pharo.mcp.error.kind": "domain",
+        "pharo.mcp.error.code": "ToolNotFound",
+        "pharo.mcp.exception.type": "MCPCommandError",
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.20.0",
+        "os.type": "darwin",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.20.0",
+      "name": "tools/call pifs_list",
+      "kind": 3,
+      "trace": "166d34d6c6db1ec0b35103f51fec7dc6",
+      "span": "7b890962ef950ce7",
+      "parent": "ce1792e5efeff04e",
+      "start": "1794787200000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "pifs_list",
+        "span.duration_ms": {
+          "double": 1
+        }
+      }
+    },
+    {
+      "resource": {
+        "deployment.environment.name": "field",
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "darwin"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call pifs_list",
+      "kind": 2,
+      "trace": "166d34d6c6db1ec0b35103f51fec7dc6",
+      "span": "bc6e6ba377997941",
+      "parent": "7b890962ef950ce7",
+      "start": "1794787200000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "pifs_list",
+        "pharo.mcp.dispatch_path": "direct",
+        "pharo.mcp.tool.origin": "other",
+        "session.id": "e84ac428-a9b6-4833-8faa-4f10048b10a1",
+        "pharo.mcp.input.bytes": 2,
+        "pharo.mcp.output.bytes": 128,
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    },
+    {
+      "resource": {
+        "deployment.environment.name": "field",
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "darwin"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call tool_search",
+      "kind": 2,
+      "trace": "a7014fc6b7550114f16452b99cce04b7",
+      "span": "c48199685c255453",
+      "parent": "d7513017cc512cdd",
+      "start": "1794787200000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "tool_search",
+        "pharo.mcp.dispatch_path": "direct",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "37d73bf0-cbc4-4659-8c08-7308ebd1418c",
+        "pharo.mcp.argument.names": [
+          "query"
+        ],
+        "pharo.mcp.argument.options": [
+          "query"
+        ],
+        "pharo.mcp.input.bytes": 16,
+        "pharo.mcp.output.bytes": 512,
+        "pharo.mcp.tool.refs": [
+          "pifs_list"
+        ],
+        "span.duration_ms": {
+          "double": 2
+        }
+      }
+    },
+    {
+      "resource": {
+        "deployment.environment.name": "field",
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "darwin"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call method_add",
+      "kind": 2,
+      "trace": "ce680b5a57c5ff0a712a21cfe58acb98",
+      "span": "1594fee7de7f4920",
+      "parent": "250c9316c6d69511",
+      "start": "1794787200000000000",
+      "status": 2,
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "method_add",
+        "pharo.mcp.dispatch_path": "direct",
+        "pharo.mcp.tool.origin": "unknown",
+        "session.id": "e84ac428-a9b6-4833-8faa-4f10048b10a1",
+        "pharo.mcp.argument.names": [
+          "class",
+          "source"
+        ],
+        "pharo.mcp.input.bytes": 32,
+        "pharo.mcp.output.bytes": 256,
+        "error.type": "tool_error",
+        "pharo.mcp.error.kind": "domain",
+        "pharo.mcp.error.code": "ToolNotFound",
+        "pharo.mcp.exception.type": "MCPCommandError",
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    }
+  ]
+}

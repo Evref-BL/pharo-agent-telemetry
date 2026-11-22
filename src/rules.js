@@ -13,6 +13,9 @@ const kindNames = ["SPAN_KIND_UNSPECIFIED", "SPAN_KIND_INTERNAL", "SPAN_KIND_SER
 const statusNames = ["STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR"];
 const clientKind = 3;
 
+/** The kinds a service may require, by the name the allowlist gives them. */
+export const kinds = { internal: 1, server: 2, client: 3, producer: 4, consumer: 5 };
+
 /** A week in nanoseconds, and a Monday at midnight UTC: times are kept to the week they fall in. */
 const week = 604_800_000_000_000n;
 const monday = 345_600_000_000_000n;
@@ -20,11 +23,40 @@ const monday = 345_600_000_000_000n;
 /** 2^63: no int64 reaches it, nor a time in nanoseconds the collector and Elasticsearch read (2262). */
 const int64 = 9_223_372_036_854_775_808n;
 
+/** The longest duration in milliseconds a span's int64 times can give, rounded up: a double past it is no duration. */
+export const longestMilliseconds = 9_300_000_000_000;
+
 /** What a value that holds an address, a path or an email becomes before its shape is checked. */
 export const masked = "****";
 
 /** The operation a span named `tools/call <tool>` performed; the tool after it is the span's gen_ai.tool.name. */
 export const toolCall = "tools/call";
+
+/** The attributes the rules read beyond their own value: the tool, whose it is, and the session. */
+export const toolKey = "gen_ai.tool.name";
+export const originKey = "pharo.mcp.tool.origin";
+export const forwardedKey = "plexus.call.forwarded";
+export const sessionKey = "session.id";
+
+/** The attribute the agent adds: where a span comes in its session, which times kept to the week lose. */
+export const offsetKey = "pharo_agent_telemetry.session.offset_ms";
+
+/**
+ * A name as the vocabulary check reads it: each camelCase word boundary
+ * (`className`, `HTTPServer`) made a `_`, in lower case. Written as the two
+ * replacements and the case change the collector's OTTL makes.
+ */
+export const wordBoundaries = [["([A-Z])([A-Z][a-z])", "$1_$2"], ["([a-z0-9])([A-Z])", "$1_$2"]];
+
+/** A name with its word boundaries made `_`, in lower case. */
+export function wordForm(name) {
+  return wordBoundaries.reduce((text, [pattern, replacement]) => text.replace(new RegExp(pattern, "g"), replacement), name).toLowerCase();
+}
+
+/** The words of a name, as the vocabulary check reads them. */
+export function nameWords(name) {
+  return wordForm(name).split(/[_-]/);
+}
 
 /** A pattern written for Go's RE2 as a JavaScript RegExp: a leading `(?flags)` becomes the RegExp's flags. */
 export function regExp(pattern) {
@@ -35,16 +67,61 @@ export function regExp(pattern) {
 const escaped = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const unanchored = (pattern) => pattern.replace(/^\^/, "").replace(/\$$/, "");
 
+/** An alternation of words that shares their prefixes, a pattern both RE2 and JavaScript read: `(?:class(?:es)?|...)`. */
+export function alternation(words) {
+  const trie = new Map();
+  for (const word of words) {
+    let node = trie;
+    for (const character of word) {
+      if (!node.has(character)) node.set(character, new Map());
+      node = node.get(character);
+    }
+    node.set("", new Map());
+  }
+  const emit = (node) => {
+    const branches = [...node].filter(([character]) => character !== "").sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([character, child]) => `${escaped(character)}${emit(child)}`);
+    if (branches.length === 0) return "";
+    const group = branches.length === 1 && !node.has("") ? branches[0] : `(?:${branches.join("|")})`;
+    return node.has("") ? `${group}?` : group;
+  };
+  return `(?:${emit(trie)})`;
+}
+
+/**
+ * The patterns a value's word form must match to be made of the
+ * vocabulary's words, the same for both filters: a name (`class_name`, from
+ * `className`), as itself or as the elements of a list, written as the JSON
+ * text OTTL's String() makes of a list of strings (`["class_name","side"]`);
+ * or a list of JSON pointers of names and indices (`/scope/classes/0`).
+ */
+function wordPatterns(words) {
+  const word = alternation([...new Set(words)].sort());
+  const end = '"[,\\]]';
+  const list = (element) => `^\\[(?:\\]|(?:${element})+)$`;
+  return {
+    name: { scalar: `^(?:${word}[_-])*${word}$`, list: list(`"(?:${word}(?:[_-]|${end}))+`) },
+    pointer: { list: list(`"(?:${end}|/(?:(?:${word}|[0-9]{1,3})(?:[_/-]|${end}))+)`) },
+  };
+}
+
 /**
  * The allowlist, made ready to apply: for each attribute, the one pattern
  * (RE2 and JavaScript alike) its value, or each element of its list, must
  * match, and what else the allowlist says of it.
  *
- * @param {any} allowlist collector/allowlist.json
+ * @param {any} allowlist collector/allowlist.json with the catalog's sets
  */
 export function compile(allowlist) {
   const sets = allowlist.sets ?? {};
   const named = allowlist.patterns ?? {};
+  const members = (names) => [].concat(names ?? []).flatMap((name) => {
+    if (!(name in sets)) throw new Error(`No set named ${name}.`);
+    return sets[name];
+  });
+  const words = wordPatterns(members(allowlist.vocabulary).flatMap((each) => nameWords(each)).filter((word) => word.length > 1));
+  const publishedNames = new Set(members(allowlist.published));
+  const publishedPattern = `^(?:${[...publishedNames].sort().map(escaped).join("|")})$`;
   const source = (spec) => {
     const parts = [];
     for (const value of [].concat(spec.values ?? [])) for (const each of sets[value] ?? [value]) parts.push(escaped(String(each)));
@@ -62,18 +139,23 @@ export function compile(allowlist) {
       test: pattern === undefined ? undefined : regExp(pattern),
       extract,
       extractTests: extract && Object.fromEntries(Object.entries(extract).map(([service, each]) => [service, regExp(each)])),
+      wordsPattern: spec.words && words[spec.words][spec.type === "string[]" ? "list" : "scalar"],
+      wordsTest: spec.words && regExp(words[spec.words][spec.type === "string[]" ? "list" : "scalar"]),
     };
   });
-  const services = Object.fromEntries(Object.entries(allowlist.services).map(([service, { scope, spans, tools }]) => {
+  const services = Object.fromEntries(Object.entries(allowlist.services).map(([service, { scope, spans, tools, kinds: required, requires }]) => {
     const names = spans.map((name) => (name === toolCall ? `${escaped(name)}(?: [\\s\\S]*)?` : escaped(name)));
     const namePattern = `^(?:${names.join("|")})$`;
+    const own = tools === undefined ? undefined : members(tools);
     return [service, {
       scope,
       namePattern,
       names: regExp(namePattern),
-      tools,
-      toolPattern: tools && `^(?:${tools.map(escaped).join("|")})$`,
-      ownTools: tools && new Set(tools),
+      tools: own,
+      toolPattern: own && `^(?:${own.map(escaped).join("|")})$`,
+      ownTools: own && new Set(own),
+      kinds: required?.map((name) => kinds[name]),
+      requires: requires ?? [],
     }];
   }));
   const blocked = Object.entries(allowlist.blockedValues ?? {}).map(([what, pattern]) => ({ what, pattern, test: regExp(pattern) }));
@@ -85,6 +167,10 @@ export function compile(allowlist) {
     blocked,
     versionPattern,
     version: regExp(versionPattern),
+    published: publishedNames,
+    publishedPattern,
+    words,
+    nameWords: regExp(words.name.scalar),
   };
 }
 
@@ -132,9 +218,9 @@ function write({ type, value }) {
  * @param {any} spec the attribute's compiled entry
  * @param {ReturnType<typeof read>} value
  * @param {string} service
- * @param {{ hash?: (tag: string, value: string, length?: number) => string, why: (reason: string) => void }} options
+ * @param {{ hash?: (tag: string, value: string, length?: number) => string, week: bigint, why: (reason: string) => void }} options
  */
-function keep(rules, spec, value, service, { hash, why }) {
+function keep(rules, spec, value, service, { hash, week: weekStart, why }) {
   if (spec.from && !spec.from.includes(service)) return why(`is not sent by ${service}`);
   let { type, value: v } = value;
   if (spec.type === "double" && type === "int") {
@@ -161,6 +247,10 @@ function keep(rules, spec, value, service, { hash, why }) {
     if (spec.otherwise === undefined) return why(hit ? `holds ${hit.what}` : "does not have its shape");
     v = spec.otherwise;
   }
+  if (type === "string" && spec.wordsTest && !spec.wordsTest.test(wordForm(v))) {
+    if (spec.otherwise === undefined) return why("holds a word the vocabulary does not have");
+    v = spec.otherwise;
+  }
   if (type === "int") {
     if (spec.min !== undefined && v < BigInt(spec.min)) return why(`is under ${spec.min}`);
     if (spec.buckets) {
@@ -169,11 +259,22 @@ function keep(rules, spec, value, service, { hash, why }) {
     }
   }
   if (type === "double" && spec.min !== undefined && !(v >= spec.min)) return why(`is under ${spec.min}`);
+  if (type === "double" && spec.whole) {
+    if (!(v < longestMilliseconds)) return why("is longer than any span");
+    v = Math.trunc(v);
+  }
   if (type === "list") {
     if (spec.max !== undefined && v.length > spec.max) return why(`holds more than ${spec.max} elements`);
-    if (v.some((each) => each.type !== "string" || (spec.test && !spec.test.test(each.value)))) return why("holds an element without its shape");
+    if (v.some((each) => each.type !== "string")) return why("holds an element that is not a string");
+    if (spec.published) {
+      v = v.map((each) => (rules.published.has(each.value) ? each : { type: "string", value: spec.otherwise }));
+    } else {
+      if (spec.test && v.some((each) => !spec.test.test(each.value))) return why("holds an element without its shape");
+      // The list as the JSON text the collector's String() makes of it, so both filters read the same text.
+      if (spec.wordsTest && !spec.wordsTest.test(wordForm(JSON.stringify(v.map((each) => each.value))))) return why("holds a word the vocabulary does not have");
+    }
   }
-  if (spec.hash && hash) v = hash(spec.hash, v);
+  if (spec.hash && hash) v = hash(spec.hash, `${weekStart}:${v}`);
   return { type, value: v };
 }
 
@@ -202,6 +303,13 @@ function keepAll(rules, specs, attributes, service, options, where) {
   for (const spec of specs) {
     if (spec.default !== undefined && !kept.has(spec.key) && (!spec.from || spec.from.includes(service))) kept.set(spec.key, { type: "string", value: spec.default });
   }
+  for (const spec of specs) {
+    if (!spec.when || !kept.has(spec.key)) continue;
+    if (Object.entries(spec.when).some(([key, value]) => kept.get(key)?.value !== value)) {
+      kept.delete(spec.key);
+      options.report(`${where}: ${spec.key} is kept only beside ${Object.entries(spec.when).map(([key, value]) => `${key} ${value}`).join(", ")}`);
+    }
+  }
   return kept;
 }
 
@@ -219,8 +327,40 @@ function enumValue(value, names) {
   return Number.isInteger(value) ? value : -1;
 }
 
-/** Microseconds as milliseconds, as OTTL computes them: Double(Microseconds(duration)) / 1000.0. */
-const milliseconds = (duration) => Number(duration / 1000n) / 1000;
+/** The Monday at midnight UTC of the week a time falls in. */
+const weekOf = (start) => start - ((((start - monday) % week) + week) % week);
+
+/**
+ * The tool's name, whose it is, and the names that go with it, as the rules
+ * keep them: names only of tools a project publishes, or that MCP answered
+ * for and that are made of the vocabulary's words.
+ */
+function keepNames(rules, attributes, service, kind) {
+  const names = rules.span.filter((spec) => spec.name);
+  const tool = attributes.get(toolKey);
+  const published = tool !== undefined && rules.published.has(tool.value);
+  if (service === "pharo-mcp") {
+    const origin = attributes.get(originKey)?.value;
+    if (tool !== undefined && !published && (origin === "other" || !rules.nameWords.test(wordForm(tool.value)))) attributes.set(toolKey, { type: "string", value: "_OTHER" });
+    if (origin === "other") {
+      for (const spec of rules.span.filter((each) => each.own)) attributes.delete(spec.key);
+      if (!published) {
+        for (const spec of names) {
+          if (!attributes.has(spec.key)) continue;
+          if (spec.nameOther === undefined) attributes.delete(spec.key);
+          else attributes.set(spec.key, { type: "string", value: spec.nameOther });
+        }
+      }
+    }
+  }
+  const { ownTools } = rules.services[service];
+  if (ownTools) {
+    if (tool !== undefined && !published) attributes.set(toolKey, { type: "string", value: "_OTHER" });
+    const own = tool !== undefined && ownTools.has(tool.value);
+    const forwarded = attributes.get(forwardedKey)?.value === true || kind === clientKind || !own;
+    if (forwarded) for (const spec of names) if (!spec.tool) attributes.delete(spec.key);
+  }
+}
 
 /**
  * One span as the rules keep it, or undefined when they drop it.
@@ -231,7 +371,8 @@ function keepSpan(rules, span, service, options) {
   const where = `span ${typeof span?.name === "string" ? span.name : "?"}`;
   const drop = (reason) => { options.report(`${where}: ${reason}`); return undefined; };
   if (span === null || typeof span !== "object") return drop("is not a span");
-  if (typeof span.name !== "string" || !rules.services[service].names.test(span.name)) return drop("is not an operation of ours");
+  const rulesOf = rules.services[service];
+  if (typeof span.name !== "string" || !rulesOf.names.test(span.name)) return drop("is not an operation of ours");
   if (Array.isArray(span.links) && span.links.length > 0) return drop("has links");
   if (!hex(span.traceId, 32) || !hex(span.spanId, 16)) return drop("has no valid ids");
   const root = span.parentSpanId === undefined || span.parentSpanId === "" || /^0{16}$/.test(span.parentSpanId);
@@ -242,35 +383,29 @@ function keepSpan(rules, span, service, options) {
   if (start === undefined || end === undefined || start < monday || end < start || end >= int64) return drop("has no valid times");
   const kind = enumValue(span.kind, kindNames);
   if (kind < 0 || kind > 5) return drop("has no valid kind");
+  if (rulesOf.kinds && !rulesOf.kinds.includes(kind)) return drop(`is not a ${kindNames[kind]} span`);
   const status = enumValue(span.status?.code, statusNames);
   if (status < 0 || status > 2) return drop("has no valid status");
+  const day = weekOf(start);
 
-  const attributes = keepAll(rules, rules.span, span.attributes, service, options, where);
+  const attributes = keepAll(rules, rules.span, span.attributes, service, { ...options, week: day }, where);
   if (attributes === undefined) return drop("gives an attribute twice");
-  const names = rules.span.filter((spec) => spec.name);
-  if (service === "pharo-mcp" && attributes.get("pharo.mcp.tool.origin")?.value === "other") {
-    for (const spec of names) {
-      if (!attributes.has(spec.key)) continue;
-      if (spec.nameOther === undefined) attributes.delete(spec.key);
-      else attributes.set(spec.key, { type: "string", value: spec.nameOther });
-    }
-  }
-  const { ownTools } = rules.services[service];
-  if (ownTools) {
-    const tool = attributes.get("gen_ai.tool.name");
-    const forwarded = attributes.get("plexus.call.forwarded")?.value === true || kind === clientKind || (tool !== undefined && !ownTools.has(tool.value));
-    if (forwarded) for (const spec of names) attributes.delete(spec.key);
-  }
+  for (const key of rulesOf.requires) if (!attributes.has(key)) return drop(`has no ${key}`);
+  keepNames(rules, attributes, service, kind);
   let name = span.name;
   if (name === toolCall || name.startsWith(`${toolCall} `)) {
-    const tool = attributes.get("gen_ai.tool.name");
+    const tool = attributes.get(toolKey);
     name = tool?.type === "string" ? `${toolCall} ${tool.value}` : toolCall;
   }
-  if (end > start) attributes.set("span.duration_ms", { type: "double", value: milliseconds(end - start) });
+  const session = attributes.get(sessionKey)?.value;
+  // A place in a session means nothing without the session.
+  if (session === undefined) attributes.delete(offsetKey);
+  else if (options.sessionOffset) attributes.set(offsetKey, { type: "int", value: options.sessionOffset(session, start) });
+  if (end > start) attributes.set("span.duration_ms", { type: "double", value: Number((end - start) / 1_000_000n) });
   else if (!attributes.has("span.duration_ms")) attributes.set("span.duration_ms", { type: "double", value: 0 });
-  const day = start - ((((start - monday) % week) + week) % week);
 
-  const id = (tag, value, length) => (options.hash ? options.hash(tag, value.toLowerCase(), length) : value.toLowerCase());
+  // Ids hash within their session and week: a caller's constant trace context links no two sessions.
+  const id = (tag, value, length) => (options.hash ? options.hash(tag, `${day}:${session ?? ""}:${value.toLowerCase()}`, length) : value.toLowerCase());
   return {
     traceId: id("trace", span.traceId, 32),
     spanId: id("span", span.spanId, 16),
@@ -286,17 +421,22 @@ function keepSpan(rules, span, service, options) {
 
 /**
  * A traces export request as the rules keep it: only PLexus's and MCP's
- * spans, each attribute in its shape, names only where the image may report
- * them, times to the week with each duration kept, ids hashed; or null when
+ * spans, each attribute in its shape, names only where they may be kept,
+ * times to the week with each duration kept, ids hashed; or null when
  * nothing is left, or the request is not one.
  *
  * @param {ReturnType<typeof compile>} rules
  * @param {any} request an OTLP JSON ExportTraceServiceRequest
- * @param {{ hash?: (tag: string, value: string, length?: number) => string, report?: (problem: string) => void }} [options]
- *   without `hash`, ids and session ids are kept as they are, as `npm run audit` reads an archive
+ * @param {{
+ *   hash?: (tag: string, value: string, length?: number) => string,
+ *   report?: (problem: string) => void,
+ *   sessionOffset?: (session: string, start: bigint) => bigint,
+ * }} [options]
+ *   without `hash`, ids and session ids are kept as they are, as `npm run audit` reads an archive;
+ *   with `sessionOffset`, each span with a session gets its offset in it, as the agent adds it
  */
 export function transformTraces(rules, request, options = {}) {
-  const settings = { hash: options.hash, report: options.report ?? (() => {}) };
+  const settings = { hash: options.hash, report: options.report ?? (() => {}), sessionOffset: options.sessionOffset };
   if (request === null || typeof request !== "object" || !Array.isArray(request.resourceSpans)) return null;
   const resourceSpans = [];
   for (const each of request.resourceSpans) {
@@ -335,21 +475,52 @@ export function transformTraces(rules, request, options = {}) {
   return resourceSpans.length === 0 ? null : { resourceSpans };
 }
 
+/** How many sessions the agent remembers the first span of, and how long after its last span. */
+export const sessionMemory = { sessions: 10_000, idle: 3_600_000 };
+
+/**
+ * Where each span comes in its session: milliseconds from the first span of
+ * that session this process saw, negative for one that started before it.
+ * A session is forgotten an hour after its last span, the oldest first past
+ * the cap.
+ *
+ * @param {() => number} [now]
+ */
+export function sessionOffsets(now = Date.now) {
+  const sessions = new Map();
+  return (session, start) => {
+    const at = now();
+    let entry = sessions.get(session);
+    if (entry === undefined || at - entry.seen > sessionMemory.idle) {
+      entry = { first: start, seen: at };
+      for (const [each, { seen }] of sessions) if (at - seen > sessionMemory.idle) sessions.delete(each);
+      if (sessions.size >= sessionMemory.sessions) sessions.delete(sessions.keys().next().value);
+    }
+    entry.seen = at;
+    sessions.delete(session);
+    sessions.set(session, entry);
+    return (start - entry.first) / 1_000_000n;
+  };
+}
+
 /**
  * The function the agent calls before it sends anything: traces as the rules
- * keep them, and nothing of the other signals, which the collector does not
- * take. Without a key, nothing is sent: ids are never sent unhashed.
+ * keep them, each span with its place in its session, and nothing of the
+ * other signals, which the collector does not take. Without a key, nothing is
+ * sent: ids are never sent unhashed.
  *
  * @param {any} allowlist
  * @param {string | undefined} key
+ * @param {{ offsets?: boolean }} [options] `offsets: false` leaves out the places, as the collector, which cannot know them
  */
-export function createTransform(allowlist, key) {
+export function createTransform(allowlist, key, { offsets = true } = {}) {
   const rules = compile(allowlist);
   const hash = typeof key === "string" && /^[0-9a-f]{32,128}$/.test(key) ? keyedHash(key) : undefined;
+  const sessionOffset = offsets ? sessionOffsets() : undefined;
   return (signal, request) => {
     if (signal !== "traces" || hash === undefined) return null;
     try {
-      return transformTraces(rules, request, { hash });
+      return transformTraces(rules, request, { hash, sessionOffset });
     } catch {
       return null;
     }

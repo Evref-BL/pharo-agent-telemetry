@@ -12,6 +12,7 @@
     "src",
     "docs",
     "collector/allowlist.json",
+    "collector/catalog.json",
     "README.md"
   ],
   "engines": {
@@ -19,6 +20,7 @@
   },
   "scripts": {
     "generate": "node scripts/generate.js",
+    "catalog": "node scripts/catalog.js",
     "test": "node scripts/generate.js --check && node --test --test-concurrency=1 test/*.test.js",
     "audit": "node scripts/audit-archive.js",
     "check-deployment": "node scripts/check-deployment.js",

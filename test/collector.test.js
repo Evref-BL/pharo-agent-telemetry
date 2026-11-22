@@ -13,7 +13,7 @@ import { audit } from "../src/audit.js";
 import { checkDeployment } from "../src/check.js";
 import { readAllowlist } from "../src/generate.js";
 import { freePort } from "../src/install.js";
-import { comparable, expectedSpans, hash, ruleFixtures, testKey } from "./support.js";
+import { comparable, expectedSpans, hashedTrace, ruleFixtures, testKey } from "./support.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const composeFile = path.join(root, "collector", "compose.yaml");
@@ -114,7 +114,7 @@ test("the collector keeps of each rule fixture exactly what the agent's filter k
   for (const fixture of fixtures) {
     assert.equal((await send(JSON.stringify(fixture.request), { authorization: `Bearer ${token}` })).status, 200, fixture.name);
   }
-  const traces = (fixture) => new Set(fixture.request.resourceSpans.flatMap((each) => each.scopeSpans.flatMap((scoped) => scoped.spans.map((span) => hash("trace", span.traceId.toLowerCase(), 32)))));
+  const traces = (fixture) => new Set(expectedSpans(fixture).map((span) => span.trace));
   const total = fixtures.reduce((sum, fixture) => sum + fixture.expected.length, 0);
   const ours = (requests) => comparable(requests).filter((span) => fixtures.some((fixture) => traces(fixture).has(span.trace)));
   await archived((requests) => ours(requests).length >= total);
@@ -133,18 +133,19 @@ test("the collector keeps of each rule fixture exactly what the agent's filter k
 
 test("nothing forbidden reaches the archive, and npm run audit finds nothing in it", { skip: !dockerRuns }, async () => {
   assert.equal((await send(forbidden, { authorization: `Bearer ${token}` })).status, 200);
-  const kept = hash("trace", "4bf92f3577b34da6a3ce929d0e0e4736", 32);
-  await archived((requests) => comparable(requests).some((span) => span.trace === kept));
+  const sent = JSON.parse(forbidden).resourceSpans.flatMap((each) => each.scopeSpans.flatMap((scoped) => scoped.spans));
+  const kept = new Set(sent.map((span) => hashedTrace(span.traceId, span.startTimeUnixNano, span.attributes?.find(({ key }) => key === "session.id")?.value.stringValue)));
+  await archived((requests) => comparable(requests).some((span) => kept.has(span.trace)));
   const raw = archiveLines().join("\n");
   for (const secret of ["adas-laptop", "/Users/ada", "ada@example.org", "Secret", "4242", "127.0.0.1", "10.0.0.7", "fe80", "4bf92f3577b34da6a3ce929d0e0e4736", "00f067aa0ba902b7", "4b1d3a1e", "1763630000"]) {
     assert.equal(raw.includes(secret), false, `${secret} reached the archive`);
   }
-  const ours = JSON.stringify(comparable(archiveLines().map((line) => JSON.parse(line))).filter((span) => span.trace === kept));
-  for (const secret of ["acme", "Acme", "AAAA", "class_get", "built by"]) assert.equal(ours.includes(secret), false, `${secret} reached the archive: ${ours}`);
+  const ours = JSON.stringify(comparable(archiveLines().map((line) => JSON.parse(line))).filter((span) => kept.has(span.trace)));
+  for (const secret of ["acme", "Acme", "AAAA", "built by"]) assert.equal(ours.includes(secret), false, `${secret} reached the archive: ${ours}`);
   assert.deepEqual(audit(archiveLines(), readAllowlist(root)).problems, []);
 });
 
-/** One component's span of a call, sent on its own as that component would. */
+/** One component's span of a call in a session, sent on its own as that component would. */
 const componentSpan = (service, traceId, spanId) => JSON.stringify({
   resourceSpans: [{
     resource: { attributes: [{ key: "service.name", value: { stringValue: service } }] },
@@ -155,6 +156,7 @@ const componentSpan = (service, traceId, spanId) => JSON.stringify({
       kind: 2,
       startTimeUnixNano: "1763630000000000000",
       endTimeUnixNano: "1763630000250000000",
+      attributes: [{ key: "session.id", value: { stringValue: "sampled" } }],
     }] }],
   }],
 });
@@ -175,7 +177,7 @@ test("sampling keeps or drops all of a call's spans together", { skip: !dockerRu
   }
   // The batch processor holds spans up to five seconds before the file has them.
   await new Promise((resolve) => setTimeout(resolve, 8_000));
-  const hashed = new Set(traces.map((traceId) => hash("trace", traceId, 32)));
+  const hashed = new Set(traces.map((traceId) => hashedTrace(traceId, "1763630000000000000", "sampled")));
   const sampled = comparable(await archived(() => true)).filter((span) => hashed.has(span.trace));
   const perTrace = Object.groupBy(sampled, (span) => span.trace);
   const kept = Object.keys(perTrace).length;

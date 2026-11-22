@@ -1,5 +1,5 @@
 {
-  "about": "Tool and argument names kept from pharo-mcp only for its own tools (origin mcp) and names no tool has (unknown); for another package's tool (other, an unknown origin, or none), the tool is _OTHER and the other names go.",
+  "about": "Tool and argument names kept from pharo-mcp only for its own tools (origin mcp) and names no tool has (unknown), and only when made of vocabulary words; for another package's tool (other, an unknown origin, or none), the tool is _OTHER and the other names go; a discovery call keeps only the tools a project publishes.",
   "request": {
     "resourceSpans": [
       {
@@ -194,6 +194,12 @@
                     "value": {
                       "intValue": "12"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "origin-session"
+                    }
                   }
                 ]
               },
@@ -239,6 +245,12 @@
                           }
                         ]
                       }
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "origin-session"
                     }
                   }
                 ]
@@ -364,6 +376,12 @@
                     "value": {
                       "intValue": "12"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "origin-session"
+                    }
                   }
                 ]
               },
@@ -481,6 +499,12 @@
                     "key": "pharo.mcp.input.bytes",
                     "value": {
                       "intValue": "12"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "origin-session"
                     }
                   }
                 ]
@@ -606,6 +630,12 @@
                     "value": {
                       "intValue": "12"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "origin-session"
+                    }
                   }
                 ]
               },
@@ -652,6 +682,12 @@
                         ]
                       }
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "origin-session"
+                    }
                   }
                 ]
               }
@@ -666,40 +702,8 @@
       "resource": {
         "service.name": "pharo-mcp",
         "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
-        "deployment.environment.name": "field"
-      },
-      "scope": "mcp-pharo",
-      "name": "tools/call _OTHER",
-      "kind": 2,
-      "trace": "0800abababababababababababababab",
-      "span": "cccccccccccc002d",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "_OTHER",
-        "pharo.mcp.error.schema.keywords": [
-          "required"
-        ],
-        "pharo.mcp.input.bytes": 12,
-        "pharo.mcp.tool.origin": "other",
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
         "os.type": "linux",
         "deployment.environment.name": "field"
       },
@@ -716,12 +720,6 @@
         "pharo.mcp.argument.names": [
           "name"
         ],
-        "pharo.mcp.argument.unknown_names": [
-          "acmePrivateArg"
-        ],
-        "pharo.mcp.argument.coerced": [
-          "name"
-        ],
         "pharo.mcp.argument.options": [
           "side=class"
         ],
@@ -729,14 +727,15 @@
           "/name"
         ],
         "pharo.mcp.tool.refs": [
-          "acme_secret_tool"
+          "_OTHER"
         ],
         "pharo.mcp.error.schema.keywords": [
           "required"
         ],
-        "pharo.mcp.input.bytes": 12,
+        "pharo.mcp.input.bytes": 8,
+        "session.id": "origin-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -744,10 +743,36 @@
       "resource": {
         "service.name": "pharo-mcp",
         "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call _OTHER",
+      "kind": 2,
+      "trace": "0800abababababababababababababab",
+      "span": "cccccccccccc002b",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "_OTHER",
+        "pharo.mcp.tool.origin": "unknown",
+        "pharo.mcp.argument.names": [
+          "name"
+        ],
+        "session.id": "origin-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
         "os.type": "linux",
         "deployment.environment.name": "field"
       },
@@ -764,9 +789,10 @@
         "pharo.mcp.error.schema.keywords": [
           "required"
         ],
-        "pharo.mcp.input.bytes": 12,
+        "pharo.mcp.input.bytes": 8,
+        "session.id": "origin-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -774,10 +800,8 @@
       "resource": {
         "service.name": "pharo-mcp",
         "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
         "os.type": "linux",
         "deployment.environment.name": "field"
       },
@@ -785,14 +809,19 @@
       "name": "tools/call _OTHER",
       "kind": 2,
       "trace": "0800abababababababababababababab",
-      "span": "cccccccccccc002f",
+      "span": "cccccccccccc002d",
       "start": "1763337600000000000",
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "_OTHER",
+        "pharo.mcp.error.schema.keywords": [
+          "required"
+        ],
+        "pharo.mcp.input.bytes": 8,
+        "session.id": "origin-session",
         "pharo.mcp.tool.origin": "other",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -800,10 +829,8 @@
       "resource": {
         "service.name": "pharo-mcp",
         "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
         "os.type": "linux",
         "deployment.environment.name": "field"
       },
@@ -820,9 +847,10 @@
         "pharo.mcp.error.schema.keywords": [
           "required"
         ],
-        "pharo.mcp.input.bytes": 12,
+        "pharo.mcp.input.bytes": 8,
+        "session.id": "origin-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -830,28 +858,24 @@
       "resource": {
         "service.name": "pharo-mcp",
         "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
         "os.type": "linux",
         "deployment.environment.name": "field"
       },
       "scope": "mcp-pharo",
-      "name": "tools/call acme_tool",
+      "name": "tools/call _OTHER",
       "kind": 2,
       "trace": "0800abababababababababababababab",
-      "span": "cccccccccccc002b",
+      "span": "cccccccccccc002f",
       "start": "1763337600000000000",
       "attributes": {
         "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "acme_tool",
-        "pharo.mcp.tool.origin": "unknown",
-        "pharo.mcp.argument.names": [
-          "name"
-        ],
+        "gen_ai.tool.name": "_OTHER",
+        "session.id": "origin-session",
+        "pharo.mcp.tool.origin": "other",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     }

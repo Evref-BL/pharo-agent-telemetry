@@ -1,21 +1,27 @@
-// What `npm run generate` writes from collector/allowlist.json: the filter
-// `join` installs on a participant's machine, the collector's configuration,
-// which applies the same rules again in OTTL, and the participants page.
+// What `npm run generate` writes from collector/allowlist.json and the
+// catalog beside it: the filter `join` installs on a participant's machine,
+// the collector's configuration, which applies the same rules again in OTTL,
+// and the participants page.
 import fs from "node:fs";
 import path from "node:path";
+import { catalogFile, withCatalog } from "./catalog.js";
 import { controller, dpo, host, publicEndpoint, publicToken } from "./collector.js";
-import { compile, masked, toolCall } from "./rules.js";
+import {
+  compile, forwardedKey, kinds, longestMilliseconds, masked, offsetKey, originKey, sessionKey, toolCall, toolKey, wordBoundaries,
+} from "./rules.js";
 import { keyFile } from "./install.js";
 import { agentSettings, settingsBlock } from "./settings.js";
 
-/** @typedef {any} Allowlist collector/allowlist.json */
+/** @typedef {any} Allowlist collector/allowlist.json, with the sets of collector/catalog.json */
 
 /**
  * @param {string} root the repository
  * @returns {Allowlist}
  */
 export function readAllowlist(root) {
-  return JSON.parse(fs.readFileSync(path.join(root, "collector", "allowlist.json"), "utf8"));
+  const allowlist = JSON.parse(fs.readFileSync(path.join(root, "collector", "allowlist.json"), "utf8"));
+  const catalog = JSON.parse(fs.readFileSync(path.join(root, catalogFile), "utf8"));
+  return withCatalog(allowlist, catalog);
 }
 
 /** A YAML double-quoted string, which takes JSON's escapes; an OTTL string literal too. */
@@ -27,17 +33,36 @@ const ottlList = (names) => `[${names.map(quoted).join(", ")}]`;
 /** The collector's key, from its environment: it hashes ids again, and never enters the archive. */
 const keyVariable = "${env:ID_HASH_KEY}";
 
+/** The Monday a span's start falls in, in nanoseconds, as text: what ids and session ids are hashed within. */
+const weekText = 'String(UnixNano(TruncateTime(start_time, Duration("168h"))))';
+
+/** Where a value's word form is put while the vocabulary check reads it; never kept. */
+const wordsKey = "pharo_agent_telemetry.words";
+
 /**
  * A list whose elements each have the element pattern, as the JSON text
  * OTTL's String() makes of it. Its length is checked apart: RE2 refuses a
  * counted repetition of a pattern that counts its own.
  */
 function listPattern(elementPattern) {
-  const element = `"(?:${elementPattern.replace(/^\^/, "").replace(/\$$/, "")})"`;
-  return `^\\[(?:${element}(?:,${element})*)?\\]$`;
+  return `^\\[(?:\\]|(?:"(?:${elementPattern.replace(/^\^/, "").replace(/\$$/, "")})"[,\\]])+)$`;
 }
 
+/** A list of strings and nothing else, as String() writes it. */
+const stringsPattern = listPattern('(?:[^"\\\\]|\\\\.)*');
+
 const ottlTypes = { string: "IsString", int: "IsInt", bool: "IsBool", double: "IsDouble", "string[]": "IsList" };
+
+/**
+ * The statements that put a value's word form, as src/rules.js reads it, in
+ * the words attribute: `what` is the value, `condition` when to.
+ */
+const wordForm = (what, condition) => [
+  `set(attributes[${quoted(wordsKey)}], ${what}) where ${condition}`,
+  // Go reads `$1_` as the group named `1_`: groups are written `${1}`, and `$$` keeps the collector from reading `${1}` as a variable.
+  ...wordBoundaries.map(([pattern, replacement]) => `replace_pattern(attributes[${quoted(wordsKey)}], ${quoted(pattern)}, ${quoted(replacement.replace(/\$([0-9])/g, (_, group) => `$\${${group}}`))})`),
+  `set(attributes[${quoted(wordsKey)}], ToLowerCase(attributes[${quoted(wordsKey)}])) where IsString(attributes[${quoted(wordsKey)}])`,
+];
 
 /**
  * The OTTL statements that apply one attribute's rules, in the order
@@ -49,6 +74,7 @@ const ottlTypes = { string: "IsString", int: "IsInt", bool: "IsBool", double: "I
  */
 function attributeStatements(rules, spec, service) {
   const at = `attributes[${quoted(spec.key)}]`;
+  const words = `attributes[${quoted(wordsKey)}]`;
   const drop = (condition) => `delete_key(attributes, ${quoted(spec.key)}) where ${condition}`;
   const isService = (names) => (names.length === 1 ? `${service} == ${quoted(names[0])}` : `IsMatch(${service}, ${quoted(`^(?:${names.join("|")})$`)})`);
   const statements = [];
@@ -68,9 +94,14 @@ function attributeStatements(rules, spec, service) {
   if (spec.type === "string[]") {
     for (const { pattern } of rules.blocked) statements.push(drop(`IsList(${at}) and IsMatch(String(${at}), ${quoted(pattern)})`));
   }
-  if (spec.type === "string" && spec.pattern) {
-    const mismatch = `IsString(${at}) and not IsMatch(${at}, ${quoted(spec.pattern)})`;
-    statements.push(spec.otherwise === undefined ? drop(mismatch) : `set(${at}, ${quoted(spec.otherwise)}) where ${mismatch}`);
+  const otherwise = (condition) => (spec.otherwise === undefined ? drop(condition) : `set(${at}, ${quoted(spec.otherwise)}) where ${condition}`);
+  if (spec.type === "string" && spec.pattern) statements.push(otherwise(`IsString(${at}) and not IsMatch(${at}, ${quoted(spec.pattern)})`));
+  if (spec.type === "string" && spec.words) {
+    statements.push(
+      ...wordForm(at, `IsString(${at})`),
+      otherwise(`IsString(${words}) and not IsMatch(${words}, ${quoted(spec.wordsPattern)})`),
+      `delete_key(attributes, ${quoted(wordsKey)})`,
+    );
   }
   if (spec.type === "int" && spec.min !== undefined) statements.push(drop(`IsInt(${at}) and ${at} < ${spec.min}`));
   if (spec.type === "int" && spec.buckets) {
@@ -82,21 +113,51 @@ function attributeStatements(rules, spec, service) {
     });
   }
   if (spec.type === "double" && spec.min !== undefined) statements.push(drop(`IsDouble(${at}) and ${at} < ${Number(spec.min).toFixed(1)}`));
+  if (spec.type === "double" && spec.whole) {
+    statements.push(drop(`IsDouble(${at}) and ${at} >= ${longestMilliseconds.toFixed(1)}`));
+    statements.push(`set(${at}, Double(Int(${at}))) where IsDouble(${at})`);
+  }
   if (spec.type === "string[]") {
     statements.push(drop(`IsList(${at}) and Len(${at}) > ${spec.max}`));
-    statements.push(drop(`IsList(${at}) and not IsMatch(String(${at}), ${quoted(listPattern(spec.pattern))})`));
+    statements.push(drop(`IsList(${at}) and not IsMatch(String(${at}), ${quoted(stringsPattern)})`));
+    if (spec.published) {
+      for (let index = 0; index < spec.max; index += 1) {
+        statements.push(`set(${at}[${index}], ${quoted(spec.otherwise)}) where IsList(${at}) and Len(${at}) > ${index} and not IsMatch(${at}[${index}], ${quoted(rules.publishedPattern)})`);
+      }
+    } else {
+      if (spec.pattern) statements.push(drop(`IsList(${at}) and not IsMatch(String(${at}), ${quoted(listPattern(spec.pattern))})`));
+      if (spec.words) {
+        statements.push(
+          ...wordForm(`String(${at})`, `IsList(${at})`),
+          drop(`IsString(${words}) and not IsMatch(${words}, ${quoted(spec.wordsPattern)})`),
+          `delete_key(attributes, ${quoted(wordsKey)})`,
+        );
+      }
+    }
   }
   if (spec.default !== undefined) statements.push(`set(${at}, ${quoted(spec.default)}) where ${at} == nil${spec.from ? ` and ${isService(spec.from)}` : ""}`);
-  if (spec.hash) statements.push(`set(${at}, Substring(SHA256(Concat([${quoted(keyVariable)}, ${quoted(spec.hash)}, ${at}], ":")), 0, 32)) where IsString(${at})`);
+  if (spec.hash) statements.push(`set(${at}, Substring(SHA256(Concat([${quoted(keyVariable)}, ${quoted(spec.hash)}, ${weekText}, ${at}], ":")), 0, 32)) where IsString(${at})`);
   return statements;
 }
 
-/** The conditions that drop a span whole: not one of ours, links, an attribute given twice, malformed. */
+/** What a span needs of the attributes a service requires: each a string the rules keep, so not empty. */
+function requiredCondition(rules, key) {
+  const spec = rules.span.find((each) => each.key === key);
+  if (spec?.type !== "string" || spec.pattern !== "^(?:[\\s\\S]+)$" || spec.from) throw new Error(`A required attribute must be a string of any text from every service: ${key} is not.`);
+  return `not IsString(attributes[${quoted(key)}]) or attributes[${quoted(key)}] == ""`;
+}
+
+/** The conditions that drop a span whole: not one of ours, not of a kind or without an attribute its service requires, links, an attribute given twice, malformed. */
 export function dropConditions(rules) {
   const ours = Object.entries(rules.services).map(([service, { scope, namePattern }]) =>
     `(resource.attributes["service.name"] == ${quoted(service)} and instrumentation_scope.name == ${quoted(scope)} and IsMatch(name, ${quoted(namePattern)}))`);
+  const required = Object.entries(rules.services).filter(([, { kinds: wanted, requires }]) => wanted || requires.length > 0).map(([service, { kinds: wanted, requires }]) => {
+    const conditions = [...(wanted ? [`not (${wanted.map((kind) => `kind == ${kind}`).join(" or ")})`] : []), ...requires.map((key) => requiredCondition(rules, key))];
+    return `resource.attributes["service.name"] == ${quoted(service)} and (${conditions.join(" or ")})`;
+  });
   return [
     `not (${ours.join(" or ")})`,
+    ...required,
     "Len(links) > 0",
     "Len(ParseJSON(String(attributes))) != Len(attributes)",
     'Len(ParseJSON(String(resource.attributes))) != Len(resource.attributes)',
@@ -108,6 +169,52 @@ export function dropConditions(rules) {
   ];
 }
 
+/** The statements that keep a tool's name and the names that go with it only where src/rules.js keeps them (keepNames). */
+function nameStatements(rules, spanService) {
+  const tool = `attributes[${quoted(toolKey)}]`;
+  const words = `attributes[${quoted(wordsKey)}]`;
+  const names = rules.span.filter((spec) => spec.name);
+  const published = `(IsString(${tool}) and IsMatch(${tool}, ${quoted(rules.publishedPattern)}))`;
+  const statements = [];
+  const mcp = Object.entries(rules.services).find(([, { tools }]) => !tools)?.[0];
+  if (mcp) {
+    const isMcp = `${spanService} == ${quoted(mcp)}`;
+    const isOther = `${isMcp} and attributes[${quoted(originKey)}] == "other"`;
+    statements.push(
+      ...wordForm(tool, `${isMcp} and IsString(${tool}) and not IsMatch(${tool}, ${quoted(rules.publishedPattern)})`),
+      `set(${tool}, "_OTHER") where IsString(${words}) and (attributes[${quoted(originKey)}] == "other" or not IsMatch(${words}, ${quoted(rules.words.name.scalar)}))`,
+      `delete_key(attributes, ${quoted(wordsKey)})`,
+      ...rules.span.filter((spec) => spec.own).map((spec) => `delete_key(attributes, ${quoted(spec.key)}) where ${isOther}`),
+      ...names.map((spec) => {
+        const at = `attributes[${quoted(spec.key)}]`;
+        return spec.nameOther === undefined
+          ? `delete_key(attributes, ${quoted(spec.key)}) where ${isOther} and not ${published}`
+          : `set(${at}, ${quoted(spec.nameOther)}) where ${isOther} and not ${published} and ${at} != nil`;
+      }),
+    );
+  }
+  for (const [service, { toolPattern }] of Object.entries(rules.services).filter(([, { tools }]) => tools)) {
+    const isService = `${spanService} == ${quoted(service)}`;
+    const forwarded = `${isService} and (attributes[${quoted(forwardedKey)}] == true or kind == ${kinds.client} or not (IsString(${tool}) and IsMatch(${tool}, ${quoted(toolPattern)})))`;
+    statements.push(
+      `set(${tool}, "_OTHER") where ${isService} and IsString(${tool}) and not IsMatch(${tool}, ${quoted(rules.publishedPattern)})`,
+      ...names.filter((spec) => !spec.tool).map((spec) => `delete_key(attributes, ${quoted(spec.key)}) where ${forwarded}`),
+    );
+  }
+  return statements;
+}
+
+/** The statements that hash an id within its session and week, as src/rules.js does. */
+function idStatements(field, tag, length, condition) {
+  const session = `attributes[${quoted(sessionKey)}]`;
+  const hashed = (sessionText) => `Substring(SHA256(Concat([${quoted(keyVariable)}, ${quoted(tag)}, String(start_time_unix_nano), ${sessionText}, ${field}], ":")), 0, ${length})`;
+  const where = (extra) => (condition ? `${condition} and ${extra}` : extra);
+  return [
+    `set(${field}, ${hashed(session)}) where ${where(`IsString(${session})`)}`,
+    `set(${field}, ${hashed('""')}) where ${where(`not IsString(${session})`)}`,
+  ];
+}
+
 /** The OTTL statements of each context, in the order src/rules.js applies the same rules. */
 export function ruleStatements(allowlist) {
   const rules = compile(allowlist);
@@ -116,6 +223,8 @@ export function ruleStatements(allowlist) {
   const resource = [
     `keep_keys(attributes, ${ottlList(rules.resource.map((spec) => spec.key))})`,
     ...rules.resource.flatMap((spec) => attributeStatements(rules, spec, resourceService)),
+    ...rules.resource.filter((spec) => spec.when).map((spec) =>
+      `delete_key(attributes, ${quoted(spec.key)}) where ${Object.entries(spec.when).map(([key, value]) => `attributes[${quoted(key)}] != ${quoted(value)}`).join(" or ")}`),
     'set(schema_url, "")',
     "set(dropped_attributes_count, 0)",
     // The day it arrived, for the archive's daily file alone: the import never keeps it.
@@ -127,32 +236,20 @@ export function ruleStatements(allowlist) {
     'set(schema_url, "")',
     "set(dropped_attributes_count, 0)",
   ];
-  const names = rules.span.filter((spec) => spec.name);
-  const origin = rules.span.find((spec) => spec.key === "pharo.mcp.tool.origin");
-  const isOther = `${spanService} == ${quoted(origin.from[0])} and attributes["pharo.mcp.tool.origin"] == "other"`;
-  const forwarded = Object.entries(rules.services).filter(([, { tools }]) => tools).map(([service, { toolPattern }]) =>
-    `${spanService} == ${quoted(service)} and (attributes["plexus.call.forwarded"] == true or kind == SPAN_KIND_CLIENT or (attributes["gen_ai.tool.name"] != nil and not IsMatch(attributes["gen_ai.tool.name"], ${quoted(toolPattern)})))`);
-  // The tool's name decides whether a span forwarded the call: dropped last.
-  const byToolLast = [...names].sort((a, b) => Number(a.key === "gen_ai.tool.name") - Number(b.key === "gen_ai.tool.name"));
   const span = [
     `keep_keys(attributes, ${ottlList(rules.span.map((spec) => spec.key))})`,
     ...rules.span.flatMap((spec) => attributeStatements(rules, spec, spanService)),
-    ...names.map((spec) => {
-      const at = `attributes[${quoted(spec.key)}]`;
-      return spec.nameOther === undefined
-        ? `delete_key(attributes, ${quoted(spec.key)}) where ${isOther}`
-        : `set(${at}, ${quoted(spec.nameOther)}) where ${isOther} and ${at} != nil`;
-    }),
-    ...forwarded.flatMap((condition) => byToolLast.map((spec) => `delete_key(attributes, ${quoted(spec.key)}) where ${condition}`)),
-    `set(name, Concat([${quoted(toolCall)}, attributes["gen_ai.tool.name"]], " ")) where IsMatch(name, ${quoted(`^${toolCall}(?: [\\s\\S]*)?$`)}) and IsString(attributes["gen_ai.tool.name"])`,
-    `set(name, ${quoted(toolCall)}) where IsMatch(name, ${quoted(`^${toolCall} `)}) and attributes["gen_ai.tool.name"] == nil`,
-    'set(attributes["span.duration_ms"], Double(Microseconds(end_time - start_time)) / 1000.0) where end_time_unix_nano > start_time_unix_nano',
+    ...nameStatements(rules, spanService),
+    `delete_key(attributes, ${quoted(offsetKey)}) where attributes[${quoted(sessionKey)}] == nil`,
+    `set(name, Concat([${quoted(toolCall)}, attributes[${quoted(toolKey)}]], " ")) where IsMatch(name, ${quoted(`^${toolCall}(?: [\\s\\S]*)?$`)}) and IsString(attributes[${quoted(toolKey)}])`,
+    `set(name, ${quoted(toolCall)}) where IsMatch(name, ${quoted(`^${toolCall} `)}) and attributes[${quoted(toolKey)}] == nil`,
+    'set(attributes["span.duration_ms"], Double(Milliseconds(end_time - start_time))) where end_time_unix_nano > start_time_unix_nano',
     'set(attributes["span.duration_ms"], 0.0) where attributes["span.duration_ms"] == nil',
     'set(start_time, TruncateTime(start_time, Duration("168h")))',
     "set(end_time, start_time)",
-    `set(trace_id.string, Substring(SHA256(Concat([${quoted(keyVariable)}, "trace", trace_id.string], ":")), 0, 32))`,
-    `set(span_id.string, Substring(SHA256(Concat([${quoted(keyVariable)}, "span", span_id.string], ":")), 0, 16))`,
-    `set(parent_span_id.string, Substring(SHA256(Concat([${quoted(keyVariable)}, "span", parent_span_id.string], ":")), 0, 16)) where not IsRootSpan()`,
+    ...idStatements("trace_id.string", "trace", 32),
+    ...idStatements("span_id.string", "span", 16),
+    ...idStatements("parent_span_id.string", "span", 16, "not IsRootSpan()"),
     'set(trace_state, "")',
     'set(status.message, "")',
     "set(flags, 0)",
@@ -282,6 +379,16 @@ service:
 `;
 }
 
+/** JSON indented by two, but a list of strings or numbers on one line. */
+function compactJson(value, indent = "") {
+  if (Array.isArray(value) && value.every((each) => typeof each !== "object" || each === null)) return JSON.stringify(value).replace(/","/g, '", "');
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  const inner = `${indent}  `;
+  const entries = Array.isArray(value) ? value.map((each) => compactJson(each, inner)) : Object.entries(value).map(([key, each]) => `${JSON.stringify(key)}: ${compactJson(each, inner)}`);
+  const [open, close] = Array.isArray(value) ? ["[", "]"] : ["{", "}"];
+  return entries.length === 0 ? `${open}${close}` : `${open}\n${entries.map((each) => `${inner}${each}`).join(",\n")}\n${indent}${close}`;
+}
+
 /**
  * The filter the agent runs: src/rules.js with the allowlist in it, and the
  * key read from beside it.
@@ -309,7 +416,7 @@ import { readFileSync } from "node:fs";
 
 export const version = ${quoted(version)};
 
-const allowlist = ${JSON.stringify(allowlist, null, 2)};
+const allowlist = ${compactJson(allowlist)};
 ${body}
 let key;
 try {
@@ -320,8 +427,8 @@ try {
 
 export default createTransform(allowlist, key);
 
-/** The same filter with another key, as \`preview\` runs it. */
-export const filter = (other) => createTransform(allowlist, other);
+/** The same filter with another key, as \`preview\` runs it; without the places in sessions with \`{ offsets: false }\`. */
+export const filter = (other, options) => createTransform(allowlist, other, options);
 `;
 }
 

@@ -8,13 +8,14 @@ import path from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
 import { filter } from "../src/telemetry-transform.mjs";
-import { compile, createTransform, transformTraces } from "../src/rules.js";
+import { compile, createTransform, offsetKey, transformTraces } from "../src/rules.js";
 import { readAllowlist } from "../src/generate.js";
 import { comparable, expectedSpans, ruleFixtures, testKey } from "./support.js";
 
 const root = new URL("..", import.meta.url).pathname;
 const allowlist = readAllowlist(root);
-const transform = filter(testKey);
+// The places in sessions are the agent's alone, which the collector cannot know: a test of their own checks them.
+const transform = filter(testKey, { offsets: false });
 
 for (const fixture of ruleFixtures()) {
   test(`the agent's filter: ${fixture.name}: ${fixture.about}`, () => {
@@ -54,7 +55,11 @@ test("the filter as the agent installs it reads its key from beside it, and send
     fs.copyFileSync(new URL("../src/telemetry-transform.mjs", import.meta.url), path.join(keyed, "telemetry-transform.mjs"));
     fs.writeFileSync(path.join(keyed, "telemetry-transform.key"), `${testKey}\n`);
     const { default: installed } = await import(pathToFileURL(path.join(keyed, "telemetry-transform.mjs")).href);
-    assert.deepEqual(comparable([installed("traces", fixture.request)]), expectedSpans(fixture));
+    const kept = comparable([installed("traces", fixture.request)]);
+    // As installed, it gives each span with a session its place there.
+    assert.ok(kept.every((span) => !("session.id" in span.attributes) || Number.isInteger(span.attributes[offsetKey])));
+    for (const span of kept) delete span.attributes[offsetKey];
+    assert.deepEqual(kept, expectedSpans(fixture));
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
@@ -74,14 +79,64 @@ test("the IPv6 pattern masks the usual ways of writing an address, and the tools
 test("an int is kept only as an int64, as the collector reads one, and a long value never makes a pattern backtrack", () => {
   const rules = compile(allowlist);
   const request = (value, tool = "class_get") => ({ resourceSpans: [{ resource: { attributes: [{ key: "service.name", value: { stringValue: "pharo-mcp" } }] }, scopeSpans: [{ scope: { name: "mcp-pharo" }, spans: [{
-    traceId: "1700abababababababababababababab", spanId: "cccccccccccc0001", name: "tools/call", startTimeUnixNano: "1763630000000000000", endTimeUnixNano: "1763630000000000000",
-    attributes: [{ key: "gen_ai.tool.name", value: { stringValue: tool } }, { key: "pharo.mcp.input.bytes", value: { intValue: value } }],
+    traceId: "1700abababababababababababababab", spanId: "cccccccccccc0001", name: "tools/call", kind: 2, startTimeUnixNano: "1763630000000000000", endTimeUnixNano: "1763630000000000000",
+    attributes: [{ key: "gen_ai.tool.name", value: { stringValue: tool } }, { key: "pharo.mcp.input.bytes", value: { intValue: value } }, { key: "session.id", value: { stringValue: "s" } }],
   }] }] }] });
   const bytes = (value) => transformTraces(rules, request(value), {}).resourceSpans[0].scopeSpans[0].spans[0].attributes.find(({ key }) => key === "pharo.mcp.input.bytes")?.value.intValue;
-  assert.equal(bytes("9223372036854775807"), "9223372036854775807");
+  assert.equal(bytes("9223372036854775807"), "16777216");
   assert.equal(bytes("9223372036854775808"), undefined);
   assert.equal(bytes(9007199254740993), undefined);
   const start = process.hrtime.bigint();
   transformTraces(rules, request("1", "a".repeat(1_000_000)), {});
   assert.ok(process.hrtime.bigint() - start < 2_000_000_000n, "a megabyte-long tool name took seconds");
+});
+
+/** One span of `service` in one request, as a tool sends it. */
+const oneSpan = (service, { session, start = "1763630000000000000", spanId = "cccccccccccc0001", kind = 2 } = {}) => ({ resourceSpans: [{
+  resource: { attributes: [{ key: "service.name", value: { stringValue: service } }] },
+  scopeSpans: [{ scope: { name: service === "plexus" ? "@evref-bl/plexus" : "mcp-pharo" }, spans: [{
+    traceId: "1800abababababababababababababab", spanId, name: "tools/call class_get", kind, startTimeUnixNano: start, endTimeUnixNano: start,
+    attributes: [{ key: "gen_ai.tool.name", value: { stringValue: "class_get" } }, ...(session ? [{ key: "session.id", value: { stringValue: session } }] : [])],
+  }] }],
+}] });
+const attribute = (request, key) => request?.resourceSpans[0].scopeSpans[0].spans[0].attributes.find((each) => each.key === key)?.value;
+
+test("the agent gives each span its place in its session, in milliseconds from the first it saw, and none without a session", () => {
+  const installed = createTransform(allowlist, testKey);
+  const offset = (request) => attribute(installed("traces", request), offsetKey)?.intValue;
+  assert.equal(offset(oneSpan("pharo-mcp", { session: "a", start: "1763630000000000000" })), "0");
+  assert.equal(offset(oneSpan("pharo-mcp", { session: "a", start: "1763630000250000000", spanId: "cccccccccccc0002" })), "250");
+  assert.equal(offset(oneSpan("pharo-mcp", { session: "a", start: "1763629999000000000", spanId: "cccccccccccc0003" })), "-1000");
+  assert.equal(offset(oneSpan("plexus", { session: "b", start: "1763630000250000000" })), "0");
+  assert.equal(offset(oneSpan("plexus", { start: "1763630000250000000" })), undefined);
+  // A place a tool made up is not the agent's: dropped without a session, replaced with one.
+  const sent = oneSpan("plexus");
+  sent.resourceSpans[0].scopeSpans[0].spans[0].attributes.push({ key: offsetKey, value: { intValue: "42" } });
+  assert.equal(offset(sent), undefined);
+});
+
+test("a session id and the ids of its spans hash within the session and the week: the same trace context links no two sessions", () => {
+  const installed = createTransform(allowlist, testKey, { offsets: false });
+  const ids = (request) => {
+    const span = installed("traces", request).resourceSpans[0].scopeSpans[0].spans[0];
+    return { trace: span.traceId, span: span.spanId, session: attribute({ resourceSpans: [{ scopeSpans: [{ spans: [span] }] }] }, "session.id")?.stringValue };
+  };
+  const first = ids(oneSpan("pharo-mcp", { session: "a" }));
+  assert.deepEqual(ids(oneSpan("pharo-mcp", { session: "a" })), first);
+  const otherSession = ids(oneSpan("pharo-mcp", { session: "b" }));
+  const nextWeek = ids(oneSpan("pharo-mcp", { session: "a", start: "1764234800000000000" }));
+  for (const other of [otherSession, nextWeek]) {
+    assert.notEqual(other.trace, first.trace);
+    assert.notEqual(other.span, first.span);
+    assert.notEqual(other.session, first.session);
+  }
+});
+
+test("MCP's spans are kept only when they serve a call in a session: another kind, or no session, is someone else's code", () => {
+  const installed = createTransform(allowlist, testKey);
+  assert.notEqual(installed("traces", oneSpan("pharo-mcp", { session: "a" })), null);
+  assert.equal(installed("traces", oneSpan("pharo-mcp")), null);
+  assert.equal(installed("traces", oneSpan("pharo-mcp", { session: "a", kind: 1 })), null);
+  assert.equal(installed("traces", oneSpan("pharo-mcp", { session: "" })), null);
+  assert.notEqual(installed("traces", oneSpan("plexus", { kind: 1 })), null);
 });

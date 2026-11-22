@@ -53,6 +53,12 @@
                     "value": {
                       "stringValue": "mcp"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "edges-session"
+                    }
                   }
                 ]
               },
@@ -75,6 +81,12 @@
                     "key": "pharo.mcp.tool.origin",
                     "value": {
                       "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "edges-session"
                     }
                   }
                 ]
@@ -104,6 +116,12 @@
                     "value": {
                       "intValue": "4294967296"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "edges-session"
+                    }
                   }
                 ]
               },
@@ -125,6 +143,12 @@
                     "key": "pharo.mcp.tool.origin",
                     "value": {
                       "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "edges-session"
                     }
                   }
                 ]
@@ -148,6 +172,12 @@
                     "value": {
                       "stringValue": "mcp"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "edges-session"
+                    }
                   }
                 ]
               },
@@ -169,6 +199,12 @@
                     "key": "pharo.mcp.tool.origin",
                     "value": {
                       "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "edges-session"
                     }
                   }
                 ]
@@ -192,6 +228,12 @@
                     "value": {
                       "stringValue": "mcp"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "edges-session"
+                    }
                   }
                 ]
               },
@@ -213,6 +255,12 @@
                     "key": "pharo.mcp.tool.origin",
                     "value": {
                       "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "edges-session"
                     }
                   }
                 ]
@@ -238,8 +286,9 @@
       "attributes": {
         "gen_ai.tool.name": "class_get",
         "pharo.mcp.tool.origin": "mcp",
+        "session.id": "edges-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -256,8 +305,9 @@
       "start": "1763337600000000000",
       "attributes": {
         "pharo.mcp.tool.origin": "mcp",
+        "session.id": "edges-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -275,9 +325,10 @@
       "attributes": {
         "gen_ai.tool.name": "class_get",
         "pharo.mcp.tool.origin": "mcp",
-        "pharo.mcp.output.bytes": 4294967296,
+        "pharo.mcp.output.bytes": 16777216,
+        "session.id": "edges-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -295,6 +346,7 @@
       "attributes": {
         "gen_ai.tool.name": "class_get",
         "pharo.mcp.tool.origin": "mcp",
+        "session.id": "edges-session",
         "span.duration_ms": {
           "double": 0
         }

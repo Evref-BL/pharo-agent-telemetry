@@ -59,15 +59,38 @@ export function comparable(requests) {
     }))))).sort((a, b) => a.span.localeCompare(b.span));
 }
 
-/** A fixture's expected spans, ids and session ids hashed with the test key, in the comparable form. */
+/** The Monday of the week a time in nanoseconds falls in, as the rules keep a start. */
+export function weekOf(nanos) {
+  const week = 604_800_000_000_000n;
+  const monday = 345_600_000_000_000n;
+  const start = BigInt(nanos);
+  return String(start - ((((start - monday) % week) + week) % week));
+}
+
+/** A trace id as both filters hash it, within its session (as sent) and the week of `start`. */
+export function hashedTrace(traceId, start, session) {
+  const week = weekOf(start);
+  return hash("trace", `${week}:${session === undefined ? "" : hash("session", `${week}:${session}`)}:${traceId.toLowerCase()}`, 32);
+}
+
+/**
+ * A fixture's expected spans in the comparable form, with the test key: the
+ * session id hashed within its week, and the ids within their session and
+ * week.
+ */
 export function expectedSpans(fixture) {
-  return fixture.expected.map((span) => ({
-    ...span,
-    trace: hash("trace", span.trace.toLowerCase(), 32),
-    span: hash("span", span.span.toLowerCase(), 16),
-    ...(span.parent ? { parent: hash("span", span.parent.toLowerCase(), 16) } : {}),
-    end: span.start,
-    status: span.status ?? 0,
-    attributes: Object.fromEntries(Object.entries(span.attributes).map(([key, value]) => [key, key === "session.id" ? hash("session", value, 32) : value])),
-  })).sort((a, b) => a.span.localeCompare(b.span));
+  return fixture.expected.map((span) => {
+    const raw = span.attributes["session.id"];
+    const session = raw === undefined ? undefined : hash("session", `${span.start}:${raw}`, 32);
+    const id = (tag, value, length) => hash(tag, `${span.start}:${session ?? ""}:${value.toLowerCase()}`, length);
+    return {
+      ...span,
+      trace: id("trace", span.trace, 32),
+      span: id("span", span.span, 16),
+      ...(span.parent ? { parent: id("span", span.parent, 16) } : {}),
+      end: span.start,
+      status: span.status ?? 0,
+      attributes: Object.fromEntries(Object.entries(span.attributes).map(([key, value]) => [key, key === "session.id" ? session : value])),
+    };
+  }).sort((a, b) => a.span.localeCompare(b.span));
 }

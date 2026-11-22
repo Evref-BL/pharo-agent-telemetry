@@ -390,7 +390,6 @@
         "process.runtime.name": "nodejs",
         "process.runtime.version": "26",
         "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
         "deployment.environment.name": "field"
       },
       "scope": "@evref-bl/plexus",
@@ -404,7 +403,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_templates",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     }

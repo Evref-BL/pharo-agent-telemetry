@@ -27,20 +27,20 @@ test("names everything a span carries that the rules would not keep as it is", (
     "a scope keeps attributes",
     "the scope's version is not a version",
     "span tools/call class_get: code.source is not in the allowlist",
-    "span tools/call class_get: plexus.client.name holds a home directory path",
+    "span tools/call class_get: plexus.client.name holds a value the rules would change",
     "span tools/call class_get: error.type holds a value the rules would change",
     "span tools/call class_get: plexus.client.version holds an IPv4 address",
-    "span tools/call image_list: plexus.client.name holds an IPv6 address",
-    "span tools/call class_get: gen_ai.tool.name would be dropped",
+    "span tools/call image_list: plexus.client.name holds a value the rules would change",
+    "span tools/call class_get: plexus.argument.names would be dropped",
     "span tools/call class_get: span.duration_ms is missing",
     "span tools/call class_get: events are kept",
     "span tools/call class_get: a trace state is kept",
     "span tools/call class_get: its times are not its week's",
-    "span tools/call class_get: the name is not what the rules make of it",
+    "span tools/call acme_secret_tool: the name is not what the rules make of it",
     "span open /Users/ada/project/secret.st: is not an operation of ours",
     "span tools/call image_list: plexus.argument.unknown_names holds an element without its shape",
     "span tools/call acme_secret_tool: gen_ai.tool.name holds a value the rules would change",
-    "span tools/call acme_secret_tool: pharo.mcp.argument.names would be dropped",
+    "span tools/call acme_secret_tool: pharo.mcp.argument.names holds a word the vocabulary does not have",
   ]) {
     assert.ok(problems.some((problem) => problem.includes(expected)), `${expected}\n${problems.join("\n")}`);
   }
@@ -54,9 +54,9 @@ test("says nothing of an archive that holds only what the rules keep, and counts
   const { spans, keys, problems } = audit([...archived, ""], allowlist);
   assert.deepEqual(problems, []);
   const plexusCalls = ruleFixtures().flatMap((fixture) => fixture.expected)
-    .filter((span) => span.resource["service.name"] === "plexus" && span.name === "tools/call").length;
+    .filter((span) => span.resource["service.name"] === "plexus" && span.name === "tools/call image_list").length;
   assert.ok(plexusCalls > 0);
-  assert.equal(spans.get("plexus tools/call"), plexusCalls);
+  assert.equal(spans.get("plexus tools/call image_list"), plexusCalls);
   assert.ok(keys.has("span.duration_ms"));
   assert.ok(!keys.has("fileexporter.path_segment"));
 });

@@ -1,5 +1,5 @@
 {
-  "about": "Counts kept as the lower bound of their bucket: 0, 1, 2, 6, 21, 101.",
+  "about": "Counts kept as the lower bound of their bucket: 0, 1, 2, 6, 21, 101; sizes as the power of two at or below them.",
   "request": {
     "resourceSpans": [
       {
@@ -116,6 +116,12 @@
                     "value": {
                       "intValue": "2"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "buckets-session"
+                    }
                   }
                 ]
               },
@@ -161,6 +167,12 @@
                     "key": "pharo.mcp.test.count",
                     "value": {
                       "intValue": "101"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "buckets-session"
                     }
                   }
                 ]
@@ -208,6 +220,12 @@
                     "value": {
                       "intValue": "20"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "buckets-session"
+                    }
                   }
                 ]
               },
@@ -254,6 +272,12 @@
                     "value": {
                       "intValue": "5000"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "buckets-session"
+                    }
                   }
                 ]
               },
@@ -293,6 +317,12 @@
                     "key": "pharo.mcp.result.count",
                     "value": {
                       "intValue": "50"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "buckets-session"
                     }
                   }
                 ]
@@ -334,6 +364,12 @@
                     "value": {
                       "intValue": "1000"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "buckets-session"
+                    }
                   }
                 ]
               },
@@ -373,6 +409,12 @@
                     "key": "pharo.mcp.result.count",
                     "value": {
                       "intValue": "-1"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "buckets-session"
                     }
                   }
                 ]
@@ -426,6 +468,12 @@
                     "value": {
                       "stringValue": "failed"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "buckets-session"
+                    }
                   }
                 ]
               }
@@ -440,120 +488,8 @@
       "resource": {
         "service.name": "pharo-mcp",
         "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
-        "deployment.environment.name": "field"
-      },
-      "scope": "mcp-pharo",
-      "name": "tools/call tests_run",
-      "kind": 2,
-      "trace": "1100abababababababababababababab",
-      "span": "cccccccccccc0044",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "tests_run",
-        "pharo.mcp.tool.origin": "mcp",
-        "pharo.mcp.result.count": 2,
-        "pharo.mcp.test.count": 6,
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
-        "deployment.environment.name": "field"
-      },
-      "scope": "mcp-pharo",
-      "name": "tools/call tests_run",
-      "kind": 2,
-      "trace": "1100abababababababababababababab",
-      "span": "cccccccccccc0048",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "tests_run",
-        "pharo.mcp.tool.origin": "mcp",
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
-        "deployment.environment.name": "field"
-      },
-      "scope": "mcp-pharo",
-      "name": "tools/call tests_run",
-      "kind": 2,
-      "trace": "1100abababababababababababababab",
-      "span": "cccccccccccc0049",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "tests_run",
-        "pharo.mcp.tool.origin": "mcp",
-        "pharo.mcp.result.more": true,
-        "pharo.mcp.test.outcome": "failed",
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
-        "os.type": "linux",
-        "deployment.environment.name": "field"
-      },
-      "scope": "mcp-pharo",
-      "name": "tools/call tests_run",
-      "kind": 2,
-      "trace": "1100abababababababababababababab",
-      "span": "cccccccccccc0043",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "tests_run",
-        "pharo.mcp.tool.origin": "mcp",
-        "pharo.mcp.result.count": 1,
-        "pharo.mcp.test.count": 101,
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "pharo-mcp",
-        "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
-        "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
         "os.type": "linux",
         "deployment.environment.name": "field"
       },
@@ -569,8 +505,9 @@
         "pharo.mcp.tool.origin": "mcp",
         "pharo.mcp.result.count": 0,
         "pharo.mcp.test.count": 2,
+        "session.id": "buckets-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -578,10 +515,8 @@
       "resource": {
         "service.name": "pharo-mcp",
         "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
         "os.type": "linux",
         "deployment.environment.name": "field"
       },
@@ -589,15 +524,17 @@
       "name": "tools/call tests_run",
       "kind": 2,
       "trace": "1100abababababababababababababab",
-      "span": "cccccccccccc0046",
+      "span": "cccccccccccc0043",
       "start": "1763337600000000000",
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "tests_run",
         "pharo.mcp.tool.origin": "mcp",
-        "pharo.mcp.result.count": 21,
+        "pharo.mcp.result.count": 1,
+        "pharo.mcp.test.count": 101,
+        "session.id": "buckets-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -605,10 +542,8 @@
       "resource": {
         "service.name": "pharo-mcp",
         "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
         "os.type": "linux",
         "deployment.environment.name": "field"
       },
@@ -616,15 +551,17 @@
       "name": "tools/call tests_run",
       "kind": 2,
       "trace": "1100abababababababababababababab",
-      "span": "cccccccccccc0047",
+      "span": "cccccccccccc0044",
       "start": "1763337600000000000",
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "tests_run",
         "pharo.mcp.tool.origin": "mcp",
-        "pharo.mcp.result.count": 101,
+        "pharo.mcp.result.count": 2,
+        "pharo.mcp.test.count": 6,
+        "session.id": "buckets-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -632,10 +569,8 @@
       "resource": {
         "service.name": "pharo-mcp",
         "service.version": "4.1.3",
-        "telemetry.sdk.version": "1.2.1",
         "process.runtime.name": "pharo",
-        "process.runtime.version": "14.0.0",
-        "process.runtime.description": "12.0.6-beta",
+        "process.runtime.version": "14.0",
         "os.type": "linux",
         "deployment.environment.name": "field"
       },
@@ -651,8 +586,113 @@
         "pharo.mcp.tool.origin": "mcp",
         "pharo.mcp.result.count": 6,
         "pharo.mcp.test.count": 101,
+        "session.id": "buckets-session",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call tests_run",
+      "kind": 2,
+      "trace": "1100abababababababababababababab",
+      "span": "cccccccccccc0046",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "tests_run",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.result.count": 21,
+        "session.id": "buckets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call tests_run",
+      "kind": 2,
+      "trace": "1100abababababababababababababab",
+      "span": "cccccccccccc0047",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "tests_run",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.result.count": 101,
+        "session.id": "buckets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call tests_run",
+      "kind": 2,
+      "trace": "1100abababababababababababababab",
+      "span": "cccccccccccc0048",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "tests_run",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "buckets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call tests_run",
+      "kind": 2,
+      "trace": "1100abababababababababababababab",
+      "span": "cccccccccccc0049",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "tests_run",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.result.more": true,
+        "pharo.mcp.test.outcome": "failed",
+        "session.id": "buckets-session",
+        "span.duration_ms": {
+          "double": 250
         }
       }
     }

@@ -13,7 +13,9 @@ This repository is the experiment that uses them:
 - `docs/participants.md`: what is sent.
 
 One file, [collector/allowlist.json](collector/allowlist.json), says what is
-kept. `npm run generate` makes three things of it: the agent's filter
+kept, with the sets of [collector/catalog.json](collector/catalog.json): the
+tools MCP, PLexus and pharo-image-fs publish and the words of their own names.
+`npm run generate` makes three things of them: the agent's filter
 (`src/telemetry-transform.mjs`), the collector's (`collector/otelcol.yaml`)
 and the page, so they cannot disagree.
 
@@ -133,3 +135,17 @@ Docker, which also gets a span carrying everything the allowlist forbids. A
 tool that starts sending an attribute needs it here too, or both drop it: run
 a session with `preview`, or against a local collector and `npm run audit`
 its archive, to see what arrives.
+
+A name an agent chooses is kept only when it is a published tool's or made
+of the vocabulary's words: those of `collector/catalog.json` and of the
+allowlist's own `guessed words`. The catalog is read from the projects'
+source; for each release of MCP, PLexus or pharo-image-fs, run, from
+checkouts of the releases in use,
+
+```sh
+npm run catalog -- --mcp <MCP> --plexus <PLexus> --pharo-image-fs <pharo-image-fs>
+npm run generate
+```
+
+Until then, a tool or word the release adds is dropped, or kept as `_OTHER`.
+`releases` in the catalog names the commits it was read from.

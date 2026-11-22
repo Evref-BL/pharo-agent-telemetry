@@ -1,5 +1,5 @@
 {
-  "about": "Times to the week they fall in, the end set to the start, and each span's duration kept as span.duration_ms.",
+  "about": "Times to the week they fall in, the end set to the start, and each span's duration kept as span.duration_ms, in whole milliseconds.",
   "request": {
     "resourceSpans": [
       {
@@ -277,7 +277,6 @@
         "process.runtime.name": "nodejs",
         "process.runtime.version": "26",
         "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
         "deployment.environment.name": "field"
       },
       "scope": "@evref-bl/plexus",
@@ -291,7 +290,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_list",
         "span.duration_ms": {
-          "double": 250.5
+          "double": 250
         }
       }
     },
@@ -302,32 +301,6 @@
         "process.runtime.name": "nodejs",
         "process.runtime.version": "26",
         "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
-        "deployment.environment.name": "field"
-      },
-      "scope": "@evref-bl/plexus",
-      "scopeVersion": "0.19.0",
-      "name": "tools/call image_templates",
-      "kind": 2,
-      "trace": "0400abababababababababababababab",
-      "span": "cccccccccccc001c",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "image_templates",
-        "span.duration_ms": {
-          "double": 250.5
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "plexus",
-        "service.version": "0.19.0",
-        "process.runtime.name": "nodejs",
-        "process.runtime.version": "26",
-        "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
         "deployment.environment.name": "field"
       },
       "scope": "@evref-bl/plexus",
@@ -352,7 +325,54 @@
         "process.runtime.name": "nodejs",
         "process.runtime.version": "26",
         "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_stop",
+      "kind": 2,
+      "trace": "0400abababababababababababababab",
+      "span": "cccccccccccc0019",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_stop",
+        "span.duration_ms": {
+          "double": 12
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_delete",
+      "kind": 2,
+      "trace": "0400abababababababababababababab",
+      "span": "cccccccccccc001a",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_delete",
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
         "deployment.environment.name": "field"
       },
       "scope": "@evref-bl/plexus",
@@ -377,21 +397,20 @@
         "process.runtime.name": "nodejs",
         "process.runtime.version": "26",
         "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
         "deployment.environment.name": "field"
       },
       "scope": "@evref-bl/plexus",
       "scopeVersion": "0.19.0",
-      "name": "tools/call image_stop",
+      "name": "tools/call image_templates",
       "kind": 2,
       "trace": "0400abababababababababababababab",
-      "span": "cccccccccccc0019",
+      "span": "cccccccccccc001c",
       "start": "1763337600000000000",
       "attributes": {
         "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "image_stop",
+        "gen_ai.tool.name": "image_templates",
         "span.duration_ms": {
-          "double": 12.5
+          "double": 250
         }
       }
     },
@@ -402,7 +421,6 @@
         "process.runtime.name": "nodejs",
         "process.runtime.version": "26",
         "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
         "deployment.environment.name": "field"
       },
       "scope": "@evref-bl/plexus",
@@ -413,31 +431,6 @@
       "span": "cccccccccccc001d",
       "start": "1763337600000000000",
       "attributes": {
-        "span.duration_ms": {
-          "double": 0
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "plexus",
-        "service.version": "0.19.0",
-        "process.runtime.name": "nodejs",
-        "process.runtime.version": "26",
-        "os.type": "darwin",
-        "telemetry.sdk.version": "3.1.1",
-        "deployment.environment.name": "field"
-      },
-      "scope": "@evref-bl/plexus",
-      "scopeVersion": "0.19.0",
-      "name": "tools/call image_delete",
-      "kind": 2,
-      "trace": "0400abababababababababababababab",
-      "span": "cccccccccccc001a",
-      "start": "1763337600000000000",
-      "attributes": {
-        "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "image_delete",
         "span.duration_ms": {
           "double": 0
         }

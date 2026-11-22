@@ -11,6 +11,7 @@ import test from "node:test";
 import zlib from "node:zlib";
 import { backoff, bodyCap, createForwarder, queueCap, startAgent } from "../src/agent.js";
 import { freePort, installAgent } from "../src/install.js";
+import { offsetKey } from "../src/rules.js";
 import { filter } from "../src/telemetry-transform.mjs";
 import { comparable, expectedSpans, ruleFixtures, testKey } from "./support.js";
 
@@ -18,7 +19,7 @@ const [fixture] = ruleFixtures().filter(({ name }) => name === "kept-and-dropped
 const body = JSON.stringify(fixture.request);
 
 /** An agent with the real filter, whose kept requests are collected. */
-async function withAgent(run, transform = filter(testKey)) {
+async function withAgent(run, transform = filter(testKey, { offsets: false })) {
   const kept = [];
   const stop = new AbortController();
   const { port, closed } = await startAgent({ port: 0, transform, keep: (request, signal) => kept.push({ request, signal }), signal: stop.signal });
@@ -76,7 +77,7 @@ test("answers before it filters, so a tool never waits on it", async () => {
     assert.equal(kept.length, 1);
   }, async (signal, request) => {
     await held;
-    return filter(testKey)(signal, request);
+    return filter(testKey, { offsets: false })(signal, request);
   });
 });
 
@@ -213,7 +214,13 @@ test("run from the files join copies, the agent sends what it keeps to the colle
     assert.equal(await exited, 0);
     assert.equal(received.length, 1);
     assert.equal(received[0].headers.authorization, "Bearer t0ken");
-    assert.deepEqual(comparable([JSON.parse(received[0].body)]), expectedSpans(fixture));
+    const sent = comparable([JSON.parse(received[0].body)]);
+    // The agent adds each span's place in its session, which the fixture leaves out.
+    for (const span of sent.filter(({ attributes }) => attributes["session.id"] !== undefined)) {
+      assert.ok(Number.isInteger(span.attributes[offsetKey]));
+      delete span.attributes[offsetKey];
+    }
+    assert.deepEqual(sent, expectedSpans(fixture));
     assert.equal(received[0].body.includes("4bf92f3577b34da6a3ce929d0e0e4736"), false);
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });

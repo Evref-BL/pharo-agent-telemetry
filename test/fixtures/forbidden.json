@@ -73,6 +73,7 @@
         "startTimeUnixNano": "1763630000050000000",
         "endTimeUnixNano": "1763630000060000000",
         "attributes": [
+          { "key": "session.id", "value": { "stringValue": "4b1d3a1e-0000-4000-8000-000000000000" } },
           { "key": "gen_ai.tool.name", "value": { "stringValue": "acme_secret_tool" } },
           { "key": "pharo.mcp.tool.origin", "value": { "stringValue": "other" } },
           { "key": "pharo.mcp.argument.names", "value": { "arrayValue": { "values": [ { "stringValue": "acmePrivateArg" } ] } } },

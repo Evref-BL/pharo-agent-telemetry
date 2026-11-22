@@ -43,7 +43,7 @@
     "deployment.environment.name": { "about": "field for participants, eval for our own evaluation runs, preview while previewing, check for npm run check-deployment.", "type": "string", "values": ["field", "eval", "preview", "check"] }
   },
   "span": {
-    "session.id": { "about": "Groups the calls of one working session. The tools make it at random for each session; it is replaced by its keyed hash before it leaves your machine.", "type": "string", "pattern": "text", "hash": "session" },
+    "session.id": { "about": "Groups the calls of one working session. PLexus makes it at random, or MCP when the call came without one, and either starts another after 30 minutes without a call; it is replaced by its keyed hash before it leaves your machine.", "type": "string", "pattern": "text", "hash": "session" },
     "mcp.method.name": { "about": "The MCP method.", "type": "string", "values": ["tools/call", "tools/list"] },
     "mcp.protocol.version": { "about": "The MCP protocol version, a date.", "type": "string", "pattern": "date" },
     "gen_ai.tool.name": { "about": "The tool's name, including a name the agent asked for that no tool has.", "type": "string", "pattern": "identifier", "otherwise": "_OTHER", "name": true, "nameOther": "_OTHER" },

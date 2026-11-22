@@ -478,9 +478,9 @@ ${rows(allowlist.span)}
 ## Is it anonymous?
 
 The archive is. A session's calls share a hashed \`session.id\`, so the
-order of calls within one session can be studied, but a session cannot be
-linked to another session, to a machine or to a person, and nothing in a span
-says who sent it.
+calls of one session can be studied together, and in order where PLexus
+numbered them, but a session cannot be linked to another session, to a
+machine or to a person, and nothing in a span says who sent it.
 
 One thing about you does reach the server, as it reaches any server you
 connect to: your IP address, so that the connection can be made. The proxy in

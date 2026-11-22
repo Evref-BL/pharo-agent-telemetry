@@ -72,7 +72,7 @@ What happened:
 
 | Attribute | From | What it is | Kept as |
 | --- | --- | --- | --- |
-| `session.id` | plexus, pharo-mcp | Groups the calls of one working session. The tools make it at random for each session; it is replaced by its keyed hash before it leaves your machine. | its keyed hash |
+| `session.id` | plexus, pharo-mcp | Groups the calls of one working session. PLexus makes it at random, or MCP when the call came without one, and either starts another after 30 minutes without a call; it is replaced by its keyed hash before it leaves your machine. | its keyed hash |
 | `mcp.method.name` | plexus, pharo-mcp | The MCP method. | one of `tools/call`, `tools/list` |
 | `mcp.protocol.version` | plexus, pharo-mcp | The MCP protocol version, a date. | a date |
 | `gen_ai.tool.name` | plexus, pharo-mcp | The tool's name, including a name the agent asked for that no tool has. | an identifier, else `_OTHER` |
@@ -119,9 +119,9 @@ What happened:
 ## Is it anonymous?
 
 The archive is. A session's calls share a hashed `session.id`, so the
-order of calls within one session can be studied, but a session cannot be
-linked to another session, to a machine or to a person, and nothing in a span
-says who sent it.
+calls of one session can be studied together, and in order where PLexus
+numbered them, but a session cannot be linked to another session, to a
+machine or to a person, and nothing in a span says who sent it.
 
 One thing about you does reach the server, as it reaches any server you
 connect to: your IP address, so that the connection can be made. The proxy in

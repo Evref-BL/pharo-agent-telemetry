@@ -269,7 +269,7 @@ const allowlist = {
   },
   "span": {
     "session.id": {
-      "about": "Groups the calls of one working session. The tools make it at random for each session; it is replaced by its keyed hash before it leaves your machine.",
+      "about": "Groups the calls of one working session. PLexus makes it at random, or MCP when the call came without one, and either starts another after 30 minutes without a call; it is replaced by its keyed hash before it leaves your machine.",
       "type": "string",
       "pattern": "text",
       "hash": "session"

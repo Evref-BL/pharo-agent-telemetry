@@ -448,13 +448,18 @@ test("a catalog is read whole only under its cap, from its URL alone: an unreach
   assert.deepEqual(await fetchCatalog("file:///etc/passwd"), { failure: "unreachable" });
 }));
 
-test("a catalog whose signature holds replaces the one in use only when the filter takes it and it is newer", () => {
-  const newer = catalogPayload(allowlist, "2099-01-01T00:00:00.000Z");
-  assert.deepEqual(acceptCatalog(newer, builtIn, catalogRefusal), { accepted: newer });
-  assert.match(acceptCatalog(catalogPayload(allowlist, builtIn.published), builtIn, catalogRefusal).refused, /not newer than the one in use/);
-  assert.match(acceptCatalog(catalogPayload(allowlist, "2020-01-01T00:00:00.000Z"), builtIn, catalogRefusal).refused, /not newer than the one in use/);
-  assert.match(acceptCatalog({ ...newer, schema: 2 }, builtIn, catalogRefusal).refused, /of form 2/);
-  assert.match(acceptCatalog({ ...newer, sets: { "agent hosts": ["ada@example.org"] } }, builtIn, catalogRefusal).refused, /another shape/);
+test("a catalog whose signature holds replaces the one in use only when the filter reads it, it is newer, and it is dated no later than tomorrow", () => {
+  const now = Date.now();
+  const newer = catalogPayload(allowlist, new Date(now - 60_000).toISOString());
+  assert.deepEqual(acceptCatalog(newer, builtIn, catalogRefusal, now), { accepted: newer });
+  // A clock a few hours behind still takes it.
+  const ahead = catalogPayload(allowlist, new Date(now + 20 * 3_600_000).toISOString());
+  assert.deepEqual(acceptCatalog(ahead, builtIn, catalogRefusal, now), { accepted: ahead });
+  assert.match(acceptCatalog(catalogPayload(allowlist, "2099-01-01T00:00:00.000Z"), builtIn, catalogRefusal, now).refused, /dated 2099-01-01T00:00:00.000Z, later than tomorrow/);
+  assert.match(acceptCatalog(catalogPayload(allowlist, builtIn.published), builtIn, catalogRefusal, now).refused, /not newer than the one in use/);
+  assert.match(acceptCatalog(catalogPayload(allowlist, "2020-01-01T00:00:00.000Z"), builtIn, catalogRefusal, now).refused, /not newer than the one in use/);
+  assert.match(acceptCatalog({ ...newer, schema: 2 }, builtIn, catalogRefusal, now).refused, /of form 2/);
+  for (const published of ["+275760-09-13T00:00:00.000Z", "2027", "Nov 23 2026"]) assert.match(acceptCatalog({ ...newer, published }, builtIn, catalogRefusal, now).refused, /its date is not a UTC date/, published);
 });
 
 test("the agent asks for a newer catalog, takes one the project signed without a restart, keeps it for its next start, and refuses any other", () => withCollector(async ({ endpoint, received }) => withServer(async ({ url, served }) => {
@@ -470,64 +475,96 @@ test("the agent asks for a newer catalog, takes one the project signed without a
   }] }] }] });
   const names = () => received.map(({ body: text }) => JSON.parse(text).resourceSpans[0].scopeSpans[0].spans[0].name);
   const state = () => JSON.parse(fs.readFileSync(path.join(directory, "state.json"), "utf8"));
-  const run = async (options) => {
+  const kept = () => JSON.parse(fs.readFileSync(path.join(directory, signedCatalogFile), "utf8"));
+  /** @type {{ port: number, running: Promise<void> }[]} */
+  const agents = [];
+  const run = async (options, publicKey = publicKeyOf(key)) => {
     const port = await freePort();
-    installAgent(directory, { port, endpoint, token: "t0ken", catalog: { url, publicKey: publicKeyOf(key) } });
+    installAgent(directory, { port, endpoint, token: "t0ken", catalog: { url, publicKey } });
     fs.writeFileSync(path.join(directory, "telemetry-transform.key"), `${testKey}\n`);
     const running = runAgent(directory, options);
+    agents.push({ port, running });
     for (let attempt = 0; attempt < 100 && (await whoListens(port, testKey, 200)) !== "agent"; attempt += 1) await new Promise((resolve) => setTimeout(resolve, 20));
     return { port, running };
+  };
+  const stop = async ({ port, running }) => {
+    assert.equal(await stopAgent(port, testKey), true);
+    await running;
   };
   const send = async (port, span, count) => {
     assert.equal((await post(`http://127.0.0.1:${port}/v1/traces`, call(span))).status, 200);
     await eventually(() => received.length === count);
+  };
+  const until = async (done) => {
+    for (let attempt = 0; attempt < 50 && !done(); attempt += 1) await new Promise((resolve) => setTimeout(resolve, 100));
   };
   try {
     const first = await run({ catalogEvery: 300 });
     await eventually(() => served.requests >= 1);
     await send(first.port, "00f067aa0ba902b1", 1);
     assert.deepEqual(names(), ["tools/call _OTHER"]);
-    // Signed by another key, older, or of another form: refused, and the filter is as it was.
-    const sets = { ...allowlist.sets, "MCP tools": [...allowlist.sets["MCP tools"], "zyxwv_qtool"] };
-    const payload = { ...catalogPayload(allowlist, "2099-01-01T00:00:00.000Z"), sets };
+    const grown = catalogPayload(allowlist, new Date(Date.now() - 60_000).toISOString());
+    const payload = { ...grown, sets: { ...grown.sets, "MCP tools": [...grown.sets["MCP tools"], "zyxwv_qtool", "Not-A-Tool"], "agent hosts": ["evil-host"] } };
+    // Signed by another key, older, of another form, or dated ahead: refused, and the filter is as it was.
     for (const [text, outcome] of [
       [signCatalog(payload, throwawayKey()), "refused: its signature does not hold"],
       [signCatalog({ ...payload, published: "2020-01-01T00:00:00.000Z" }, key), `refused: it is not newer than the one in use, of ${builtIn.published}`],
       [signCatalog({ ...payload, schema: 2 }, key), "refused: it is of form 2, and this agent reads form 1"],
+      [signCatalog({ ...payload, published: "2099-01-01T00:00:00.000Z" }, key), "refused: it is dated 2099-01-01T00:00:00.000Z, later than tomorrow"],
     ]) {
       serve(text);
       const asked = served.requests;
       await eventually(() => served.requests > asked + 1);
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      assert.equal(JSON.parse(fs.readFileSync(path.join(directory, signedCatalogFile), "utf8")).signed, undefined);
-      for (let attempt = 0; attempt < 30 && state().catalog?.outcome !== outcome; attempt += 1) await new Promise((resolve) => setTimeout(resolve, 100));
+      await until(() => state().catalog?.outcome === outcome);
       assert.equal(state().catalog.outcome, outcome);
+      assert.equal(kept().signed, undefined);
     }
     await send(first.port, "00f067aa0ba902b2", 2);
     assert.deepEqual(names(), ["tools/call _OTHER", "tools/call _OTHER"]);
     const signed = signCatalog(payload, key);
     serve(signed);
-    for (let attempt = 0; attempt < 50 && !fs.readFileSync(path.join(directory, signedCatalogFile), "utf8").includes("zyxwv_qtool"); attempt += 1) await new Promise((resolve) => setTimeout(resolve, 20));
+    await until(() => kept().signed === signed);
     await send(first.port, "00f067aa0ba902b3", 3);
     assert.deepEqual(names().at(-1), "tools/call zyxwv_qtool");
-    const kept = JSON.parse(fs.readFileSync(path.join(directory, signedCatalogFile), "utf8"));
-    assert.equal(kept.signed, signed);
     assert.equal(fs.statSync(path.join(directory, signedCatalogFile)).mode & 0o777, 0o600);
-    assert.equal(await stopAgent(first.port, testKey), true);
-    await first.running;
-    assert.deepEqual(state().catalog, { published: payload.published, releases: payload.releases, from: url, checked: state().catalog.checked, outcome: state().catalog.outcome });
-    assert.ok(["accepted", "unchanged"].includes(state().catalog.outcome), state().catalog.outcome);
+    await stop(first);
+    // It says what the catalog adds beyond the package's: the member of its shape, to a set that grows, and nothing else.
+    const { checked, outcome } = state().catalog;
+    assert.deepEqual(state().catalog, { published: payload.published, releases: payload.releases, from: url, added: { "MCP tools": ["zyxwv_qtool"] }, checked, outcome });
+    assert.ok(["accepted", "unchanged"].includes(outcome), outcome);
 
     // Started again within the day, it asks for nothing, and filters with the catalog it kept from the first span on.
-    const asked = served.requests;
+    let asked = served.requests;
     served.answer = (request, response) => response.writeHead(500).end();
     const second = await run({});
     await send(second.port, "00f067aa0ba902b4", 4);
     assert.deepEqual(names().at(-1), "tools/call zyxwv_qtool");
     assert.equal(served.requests, asked);
-    assert.equal(await stopAgent(second.port, testKey), true);
-    await second.running;
+    await stop(second);
+
+    // A catalog dated ahead that an earlier agent kept is dropped at the next start.
+    fs.writeFileSync(path.join(directory, signedCatalogFile), JSON.stringify({ checked: new Date().toISOString(), signed: signCatalog({ ...payload, published: "2099-01-01T00:00:00.000Z" }, key) }));
+    const third = await run({});
+    await send(third.port, "00f067aa0ba902b5", 5);
+    assert.deepEqual(names().at(-1), "tools/call _OTHER");
+    await stop(third);
+
+    // With a public key anyone can sign for, it asks for no catalog and takes none it kept.
+    fs.writeFileSync(path.join(directory, signedCatalogFile), JSON.stringify({ signed }));
+    asked = served.requests;
+    const weak = await run({ catalogEvery: 300 }, Buffer.alloc(32).toString("base64url"));
+    await send(weak.port, "00f067aa0ba902b6", 6);
+    assert.deepEqual(names().at(-1), "tools/call _OTHER");
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    assert.equal(served.requests, asked);
+    await stop(weak);
+    assert.equal(state().catalog.outcome, "none asked for: the public key is one anyone can sign for");
   } finally {
+    // An agent a failed assertion left running is stopped, so the test ends.
+    for (const { port, running } of agents) {
+      await stopAgent(port, testKey);
+      await Promise.race([running, new Promise((resolve) => setTimeout(resolve, 2_000))]);
+    }
     fs.rmSync(directory, { recursive: true, force: true });
   }
 })));

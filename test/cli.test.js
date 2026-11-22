@@ -262,7 +262,7 @@ test("the page names who answers for the data, its officer and where it is once 
 
 test("join refuses the project's collector while anything about it is missing", () => {
   assert.deepEqual(missingForJoin({}), ["endpoint", "token", "controller", "dpo", "host", "catalogUrl", "catalogPublicKey"]);
-  const ready = { endpoint: "https://c.test", token: "t", controller: { name: "n", contact: "c" }, dpo: "d", host: { provider: "p", region: "r", importer: "i", archive: "a" }, catalogUrl: "https://c.test/pharo-agent-telemetry/catalog.json", catalogPublicKey: "k" };
+  const ready = { endpoint: "https://c.test", token: "t", controller: { name: "n", contact: "c" }, dpo: "d", host: { provider: "p", region: "r", importer: "i", archive: "a" }, catalogUrl: "https://c.test/pharo-agent-telemetry/catalog.json", catalogPublicKey: "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo" };
   assert.deepEqual(missingForJoin(ready), []);
   // The catalog comes from the collector's own host, and no other.
   assert.deepEqual(missingForJoin({ ...ready, catalogUrl: "https://elsewhere.test/pharo-agent-telemetry/catalog.json" }), ["catalogUrl"]);
@@ -562,7 +562,8 @@ test("status shows the catalog of names the agent filters with: its date, the re
   const config = JSON.parse(fs.readFileSync(path.join(agent, "agent.json"), "utf8"));
   fs.writeFileSync(path.join(agent, "agent.json"), JSON.stringify({ ...config, catalog: { url: "https://c.test/pharo-agent-telemetry/catalog.json", publicKey: "k" } }));
   const checked = new Date(Date.now() - 3 * 3_600_000).toISOString();
-  fs.writeFileSync(path.join(agent, "state.json"), JSON.stringify({ started: checked, received: {}, forwarded: {}, catalog: { published: "2030-01-01T00:00:00.000Z", releases: { MCP: "v9.0.0" }, from: "https://c.test/pharo-agent-telemetry/catalog.json", checked, outcome: "accepted" } }));
+  fs.writeFileSync(path.join(agent, "state.json"), JSON.stringify({ started: checked, received: {}, forwarded: {}, catalog: { published: "2030-01-01T00:00:00.000Z", releases: { MCP: "v9.0.0" }, from: "https://c.test/pharo-agent-telemetry/catalog.json", added: { "MCP tools": ["new_tool"], "project words": ["zzqx", "ok2"] }, checked, outcome: "accepted" } }));
   const status = cli("status").stdout;
   assert.match(status, /^Catalog of the names kept: from https:\/\/c\.test\/pharo-agent-telemetry\/catalog\.json, of 2030-01-01T00:00:00\.000Z, read from MCP v9\.0\.0; asked for a newer one 3 h ago: accepted\.$/m);
+  assert.match(status, /^It adds to the package's lists: MCP tools: new_tool; project words: zzqx, ok2\.$/m);
 }));

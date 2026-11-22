@@ -277,7 +277,9 @@ async function catalogLine(directory, state, config) {
   const asked = catalog.checked
     ? `; asked for a newer one ${ago(catalog.checked)}${catalog.outcome ? `: ${catalog.outcome}` : ""}`
     : config?.catalog ? "; no newer one asked for yet" : "; it asks for none, sending to another collector than the project's";
-  return `Catalog of the names kept: ${from}, of ${catalog.published}, read from ${releases}${asked}.`;
+  const added = Object.entries(catalog.added ?? {}).filter(([, members]) => Array.isArray(members) && members.length > 0);
+  const adds = added.length > 0 ? `\nIt adds to the package's lists: ${added.map(([name, members]) => `${name}: ${members.join(", ")}`).join("; ")}.` : "";
+  return `Catalog of the names kept: ${from}, of ${catalog.published}, read from ${releases}${asked}.${adds}`;
 }
 
 /** What status says of an agent directory: its version, its port, who answers there, and how it has sent. */

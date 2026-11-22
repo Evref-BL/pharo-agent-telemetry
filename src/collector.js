@@ -58,6 +58,8 @@ export const catalogUrl = undefined;
  */
 export const catalogPublicKey = undefined;
 
+import { weakPublicKey } from "./agent.js";
+
 /** Whether a URL is on the same host as the collector's endpoint, over HTTPS as it is. */
 function onHostOf(url, endpoint) {
   try {
@@ -69,7 +71,11 @@ function onHostOf(url, endpoint) {
   }
 }
 
-/** What `join` lacks before it may send to the project's collector, by name; a catalog URL on another host than the collector's is lacking too. */
+/**
+ * What `join` lacks before it may send to the project's collector, by name:
+ * a catalog URL on another host than the collector's is lacking too, and so
+ * is a public key anyone could sign for.
+ */
 export function missingForJoin(collector = { endpoint: publicEndpoint, token: publicToken, controller, dpo, host, catalogUrl, catalogPublicKey }) {
   return Object.entries({
     endpoint: collector.endpoint,
@@ -78,7 +84,7 @@ export function missingForJoin(collector = { endpoint: publicEndpoint, token: pu
     dpo: collector.dpo,
     host: collector.host,
     catalogUrl: collector.catalogUrl !== undefined && collector.endpoint !== undefined && !onHostOf(collector.catalogUrl, collector.endpoint) ? undefined : collector.catalogUrl,
-    catalogPublicKey: collector.catalogPublicKey,
+    catalogPublicKey: collector.catalogPublicKey !== undefined && weakPublicKey(collector.catalogPublicKey) ? undefined : collector.catalogPublicKey,
   })
     .filter(([, value]) => value === undefined)
     .map(([name]) => name);

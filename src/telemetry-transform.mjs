@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
 export const version = "0.1.0";
 
 const allowlist = {
-  "$comment": "What is kept, and in what shape. `npm run generate` writes, from this file and collector/catalog.json (the tools and words `npm run catalog` reads in the projects' source), the filter `join` installs on a participant's machine (src/telemetry-transform.mjs), the collector's configuration (collector/otelcol.yaml), which applies the same rules again, and docs/participants.md; a test fails when any is out of date. A span is kept only from the services listed, with their scope, one of their span names, and the kinds and attributes a service `requires`. Every attribute not listed is dropped; a listed one is kept only from the services in `from` (both when absent), with the type given, and only when its value has the shape given (and, with `words`, is made of `vocabulary` words in that form: a name, or a JSON pointer of names), else it is dropped, or replaced by `otherwise`; a list with an element of another shape is dropped, but for `published`, whose elements not in a `published` set become `otherwise`. `extract` keeps the first group of a pattern, per service; `when` keeps a resource attribute only beside another's value; `beside` keeps an attribute only beside another that holds a value of its set, not its `otherwise`. `name` marks a name of the tool called: dropped (or replaced by `nameOther`) on a pharo-mcp span whose origin is other for a tool no project publishes, and on a plexus span unless it is for one of PLexus's own tools it did not forward. `own` marks what MCP says only of its own answer: dropped on a pharo-mcp span whose origin is other, for a tool no project publishes. `tool` marks the tool's name: kept when a project publishes it; else, on a pharo-mcp span whose origin is mcp or unknown, when it is made of vocabulary words; else `otherwise`.",
+  "$comment": "What is kept, and in what shape. `npm run generate` writes, from this file and collector/catalog.json (the tools and words `npm run catalog` reads in the projects' source), the filter `join` installs on a participant's machine (src/telemetry-transform.mjs), the collector's configuration (collector/otelcol.yaml), which applies the same rules again, and docs/participants.md; a test fails when any is out of date. A span is kept only from the services listed, with their scope, one of their span names, and the kinds and attributes a service `requires`. Every attribute not listed is dropped; a listed one is kept only from the services in `from` (both when absent), with the type given, and only when its value has the shape given (and, with `words`, is made of `vocabulary` words in that form: a name, or a JSON pointer of names), else it is dropped, or replaced by `otherwise`; a list with an element of another shape is dropped, but for `published`, whose elements not in a `published` set become `otherwise`. `extract` keeps the first group of a pattern, per service; `when` keeps a resource attribute only beside another's value; `beside` keeps an attribute only beside another that holds a value of its set, not its `otherwise`. `name` marks a name of the tool called: dropped (or replaced by `nameOther`) on a pharo-mcp span whose origin is other for a tool no project publishes, and on a plexus span unless it is for one of PLexus's own tools it did not forward. `own` marks what MCP says only of its own answer: dropped on a pharo-mcp span whose origin is other, for a tool no project publishes. `tool` marks the tool's name: kept when a project publishes it; else, on a pharo-mcp span whose origin is mcp or unknown, when it is made of vocabulary words; else `otherwise`. `grows` names the sets that grow with the projects' releases, by the shape of their members (a tool's name, a word, a code, a class): the only sets a signed catalog the agents fetch may add to.",
   "services": {
     "plexus": {
       "scope": "@evref-bl/plexus",
@@ -28,6 +28,16 @@ const allowlist = {
   },
   "published": ["MCP tools", "PLexus tools", "pharo-image-fs tools"],
   "vocabulary": ["project words", "guessed words"],
+  "grows": {
+    "MCP tools": "tool",
+    "PLexus tools": "tool",
+    "pharo-image-fs tools": "tool",
+    "project words": "word",
+    "guessed words": "word",
+    "PLexus error codes": "code",
+    "exception classes": "class",
+    "MCP exception classes": "class"
+  },
   "patterns": {
     "identifier": "^[A-Za-z_][A-Za-z0-9_-]{0,63}$",
     "version": "^[0-9]{1,4}(?:\\.[0-9]{1,4}){0,2}(?:-(?:alpha|beta|rc)(?:\\.[0-9]{1,4})?)?$",
@@ -465,6 +475,10 @@ function compile(allowlist) {
     if (!(name in sets)) throw new Error(`No set named ${name}.`);
     return sets[name];
   });
+  for (const [name, kind] of Object.entries(allowlist.grows ?? {})) {
+    if (!(name in sets)) throw new Error(`No set named ${name}.`);
+    if (!Object.hasOwn(growthShapes, kind)) throw new Error(`No kind of set named ${kind}.`);
+  }
   const words = wordPatterns(members(allowlist.vocabulary).flatMap((each) => nameWords(each)).filter((word) => word.length > 0));
   const publishedNames = new Set(members(allowlist.published));
   const publishedPattern = `^(?:${[...publishedNames].sort().map(escaped).join("|")})$`;
@@ -863,44 +877,90 @@ function sessionOffsets(now = Date.now, sessions = new Map()) {
 /** The form of catalog these rules read: a catalog of another form is refused, never guessed at. */
 const catalogSchema = 1;
 
-/** The most members a set of a catalog may have. */
-const catalogMembers = 20_000;
+/** The most members a catalog adds to a set. */
+const catalogAdditionCap = 2_000;
 
-/** The shape of a member of a set in a catalog, and of a word of the vocabulary. */
-const memberShape = /^[A-Za-z0-9@_][A-Za-z0-9 ._@/+-]{0,63}$/;
-const wordShape = /^[a-z0-9]{1,32}$/;
+/** The shape of a member a catalog adds, by the kind of set it grows: a tool's name, a word, a code, a class. */
+const growthShapes = {
+  tool: /^[a-z][a-z0-9_]{0,63}$/,
+  word: /^[a-z0-9]{1,24}$/,
+  code: /^[a-z][a-z0-9]{0,23}(?:-[a-z0-9]{1,24}){0,5}$/,
+  class: /^[A-Z][A-Za-z0-9]{0,63}$/,
+};
+
+/** A catalog's date: UTC, to the second or the millisecond, of a day that exists. */
+const catalogDateShape = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{3})?Z$/;
+
+/** The time a catalog's date names, in milliseconds, or undefined when it is not a date of that shape. */
+function catalogTime(date) {
+  if (typeof date !== "string" || !catalogDateShape.test(date)) return undefined;
+  const time = Date.parse(date);
+  return Number.isNaN(time) || new Date(time).toISOString().slice(0, 19) !== date.slice(0, 19) ? undefined : time;
+}
 
 /**
- * Why a catalog cannot give these rules their sets, or undefined when it
- * can: it must be of this form and dated, and each set it gives that the
- * allowlist has must be a list of names of a set's shape (a word's for the
- * vocabulary), none a value the allowlist blocks. A set the allowlist does
- * not have gates nothing, and is left out. A catalog changes which names a
- * rule keeps, never which attributes are kept or in what shape: the rules
- * stay this code.
+ * Why these rules cannot read a catalog at all, or undefined when they can:
+ * it must be of their form, dated, and give its sets as an object. What its
+ * sets hold is sorted member by member (catalogAdditions).
  *
- * @param {any} allowlist
  * @param {any} catalog `{ schema, published, releases, sets }`
  */
-function catalogProblem(allowlist, catalog) {
+function catalogProblem(catalog) {
   if (catalog === null || typeof catalog !== "object" || Array.isArray(catalog)) return "it is not an object";
   if (catalog.schema !== catalogSchema) return `it is of form ${JSON.stringify(catalog.schema)}, and this agent reads form ${catalogSchema}`;
-  if (typeof catalog.published !== "string" || Number.isNaN(Date.parse(catalog.published))) return "it has no date";
+  if (catalogTime(catalog.published) === undefined) return "its date is not a UTC date of the form 2026-11-23T10:00:00Z";
   if (catalog.sets === null || typeof catalog.sets !== "object" || Array.isArray(catalog.sets)) return "it has no sets";
-  const vocabulary = [].concat(allowlist.vocabulary ?? []);
-  const blocked = Object.values(allowlist.blockedValues ?? {}).map(regExp);
-  for (const [name, values] of Object.entries(catalog.sets)) {
-    if (!Object.hasOwn(allowlist.sets ?? {}, name)) continue;
-    if (!Array.isArray(values) || values.length > catalogMembers) return `its ${name} is not a list of names`;
-    const shape = vocabulary.includes(name) ? wordShape : memberShape;
-    if (values.some((value) => typeof value !== "string" || !shape.test(value) || blocked.some((pattern) => pattern.test(value)))) return `its ${name} holds a member of another shape`;
-  }
   return undefined;
 }
 
-/** The allowlist with a catalog's sets in place of its own, those it has. */
+/** Whether a member may be added to a set of `kind`: of its shape, and no value the allowlist blocks. */
+function addable(allowlist, kind, member) {
+  return typeof member === "string" && growthShapes[kind].test(member) && !Object.values(allowlist.blockedValues ?? {}).some((pattern) => regExp(pattern).test(member));
+}
+
+/**
+ * What a catalog adds to the sets that grow with the projects' releases (the
+ * allowlist's `grows`: their tools, words, codes and exception classes):
+ * the members of the set's shape the allowlist does not have yet, at most
+ * catalogAdditionCap a set. Any other member is left out on its own, and so
+ * is every other set: a catalog never removes a member, nor adds to the
+ * agent hosts or any other set, nor changes which attributes are kept or in
+ * what shape. The rules stay this code.
+ *
+ * @param {any} allowlist
+ * @param {any} catalog
+ * @returns {Record<string, string[]>}
+ */
+function catalogAdditions(allowlist, catalog) {
+  /** @type {Record<string, string[]>} */
+  const added = {};
+  for (const [name, kind] of Object.entries(allowlist.grows ?? {})) {
+    const given = catalog?.sets?.[name];
+    if (!Array.isArray(given)) continue;
+    const have = new Set(allowlist.sets?.[name] ?? []);
+    const members = new Set();
+    for (const member of given) {
+      if (members.size >= catalogAdditionCap) break;
+      if (!have.has(member) && addable(allowlist, kind, member)) members.add(member);
+    }
+    if (members.size > 0) added[name] = [...members];
+  }
+  return added;
+}
+
+/** The members of a catalog's sets that agents would leave out: of a set that does not grow, or not of its set's shape. */
+function catalogLeftOut(allowlist, catalog) {
+  return Object.entries(catalog?.sets ?? {}).flatMap(([name, members]) => {
+    const kind = allowlist.grows?.[name];
+    if (kind === undefined) return [`${name} (a set no catalog adds to)`];
+    return (Array.isArray(members) ? members : [members]).filter((member) => !addable(allowlist, kind, member)).map((member) => `${name}: ${JSON.stringify(member)}`);
+  });
+}
+
+/** The allowlist with what a catalog adds to its sets. */
 function withCatalogSets(allowlist, catalog) {
-  const sets = Object.fromEntries(Object.entries(catalog.sets).filter(([name]) => Object.hasOwn(allowlist.sets ?? {}, name)));
+  const added = catalogAdditions(allowlist, catalog);
+  const sets = Object.fromEntries(Object.entries(added).map(([name, members]) => [name, [...allowlist.sets[name], ...members]]));
   return { ...allowlist, catalogPublished: catalog.published, releases: catalog.releases, sets: { ...allowlist.sets, ...sets } };
 }
 
@@ -912,10 +972,10 @@ function withCatalogSets(allowlist, catalog) {
  *
  * @param {any} allowlist
  * @param {string | undefined} key
- * @param {{ offsets?: boolean, sessions?: Map<string, { first: bigint, seen: number }>, catalog?: any }} [options] `offsets: false` leaves out the places, as the collector, which cannot know them; `sessions`, the first span of each session the agent saw, which it keeps across its restarts; `catalog`, a newer catalog the agent accepted (catalogProblem finds nothing in it), whose sets replace the allowlist's
+ * @param {{ offsets?: boolean, sessions?: Map<string, { first: bigint, seen: number }>, catalog?: any }} [options] `offsets: false` leaves out the places, as the collector, which cannot know them; `sessions`, the first span of each session the agent saw, which it keeps across its restarts; `catalog`, a newer catalog the agent accepted (catalogProblem finds nothing in it), whose additions the sets take
  */
 function createTransform(allowlist, key, { offsets = true, sessions, catalog } = {}) {
-  if (catalog !== undefined && catalogProblem(allowlist, catalog)) throw new Error(`The catalog is refused: ${catalogProblem(allowlist, catalog)}.`);
+  if (catalog !== undefined && catalogProblem(catalog)) throw new Error(`The catalog is refused: ${catalogProblem(catalog)}.`);
   const rules = compile(catalog === undefined ? allowlist : withCatalogSets(allowlist, catalog));
   const hash = typeof key === "string" && /^[0-9a-f]{32,128}$/.test(key) ? keyedHash(key) : undefined;
   const sessionOffset = offsets ? sessionOffsets(Date.now, sessions) : undefined;
@@ -944,5 +1004,8 @@ export const filter = (other, options) => createTransform(allowlist, other, opti
 /** The catalog this filter was generated with: its form, its date, and the releases it was read from. */
 export const catalog = { schema: catalogSchema, published: allowlist.catalogPublished, releases: allowlist.releases };
 
-/** Why a catalog cannot give this filter its sets, or undefined when it can. */
-export const catalogRefusal = (other) => catalogProblem(allowlist, other);
+/** Why this filter cannot read a catalog at all, or undefined when it can. */
+export const catalogRefusal = (other) => catalogProblem(other);
+
+/** What a catalog adds to this filter's sets, set by set. */
+export const catalogAdded = (other) => catalogAdditions(allowlist, other);

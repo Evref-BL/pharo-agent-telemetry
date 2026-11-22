@@ -446,10 +446,37 @@ export function fetchCatalog(url, { cap = catalogCap, timeout = catalogTimeout }
   });
 }
 
+/** The Ed25519 points of small order, encoded: a key among them, or a signature made of one and a zero, proves nothing. */
+const smallOrder = [
+  "0100000000000000000000000000000000000000000000000000000000000000", "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+  "0000000000000000000000000000000000000000000000000000000000000000", "0000000000000000000000000000000000000000000000000000000000000080",
+  "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05", "26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85",
+  "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a", "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa",
+];
+
+/**
+ * Whether an Ed25519 public key lets anyone sign: not a key of 32 bytes in
+ * base64url, or a point of small order, for which a signature made of a
+ * small-order point and a zero holds for any text.
+ *
+ * @param {unknown} publicKey the key's `x`, base64url
+ */
+export function weakPublicKey(publicKey) {
+  if (typeof publicKey !== "string") return true;
+  const raw = Buffer.from(publicKey, "base64url");
+  if (raw.length !== 32 || raw.toString("base64url") !== publicKey || smallOrder.includes(raw.toString("hex"))) return true;
+  try {
+    const key = createPublicKey({ key: { kty: "OKP", crv: "Ed25519", x: publicKey }, format: "jwk" });
+    return smallOrder.some((point) => verify(null, Buffer.from("pharo-agent-telemetry"), key, Buffer.concat([Buffer.from(point, "hex"), Buffer.alloc(32)])));
+  } catch {
+    return true;
+  }
+}
+
 /**
  * A signed catalog's payload, when its Ed25519 signature holds by the
  * project's public key; or why it is refused. The signature is of the
- * payload's text, as it came.
+ * payload's text, as it came. A key anyone could sign for proves nothing.
  *
  * @param {string} text `{ "payload": "<the catalog, as JSON text>", "signature": "<base64>" }`
  * @param {string} publicKey the key's `x`, base64url, as a JWK gives it
@@ -463,6 +490,7 @@ export function verifyCatalog(text, publicKey) {
     return { refused: "it is not JSON" };
   }
   if (typeof envelope?.payload !== "string" || typeof envelope?.signature !== "string") return { refused: "it is not a signed catalog" };
+  if (weakPublicKey(publicKey)) return { refused: "the public key is one anyone can sign for" };
   let holds = false;
   try {
     const key = createPublicKey({ key: { kty: "OKP", crv: "Ed25519", x: publicKey }, format: "jwk" });
@@ -478,20 +506,27 @@ export function verifyCatalog(text, publicKey) {
   }
 }
 
+/** How far ahead of this machine's clock a catalog may be dated: a day, for clocks that differ. */
+const catalogAhead = 24 * 3_600_000;
+
 /**
  * Whether a catalog whose signature holds replaces the one in use: the
- * filter must take it (its form and its sets, `refusal`), and it must be
- * newer.
+ * filter must read it (`refusal`: its form and its date), and it must be
+ * newer, yet dated no later than tomorrow on this machine's clock, so that
+ * no wrongly dated catalog keeps every later one out.
  *
  * @param {any} payload
  * @param {{ published: string }} inUse
  * @param {(payload: any) => string | undefined} refusal the filter's catalogRefusal
+ * @param {number} [now]
  * @returns {{ accepted: any } | { refused: string }}
  */
-export function acceptCatalog(payload, inUse, refusal) {
+export function acceptCatalog(payload, inUse, refusal, now = Date.now()) {
   const problem = refusal(payload);
   if (problem) return { refused: problem };
-  if (!(Date.parse(payload.published) > Date.parse(inUse.published))) return { refused: `it is not newer than the one in use, of ${inUse.published}` };
+  const time = Date.parse(payload.published);
+  if (time > now + catalogAhead) return { refused: `it is dated ${payload.published}, later than tomorrow` };
+  if (!(time > Date.parse(inUse.published))) return { refused: `it is not newer than the one in use, of ${inUse.published}` };
   return { accepted: payload };
 }
 
@@ -549,12 +584,12 @@ export function readSignedCatalog(directory) {
  * @param {{ catalog?: { url: string, publicKey: string } }} config agent.json
  * @param {{ catalog?: { published: string }, catalogRefusal?: (payload: any) => string | undefined }} transform the filter's module
  */
-export function keptCatalog(directory, config, transform) {
+export function keptCatalog(directory, config, transform, now = Date.now()) {
   const { signed } = readSignedCatalog(directory);
   if (signed === undefined || typeof config?.catalog?.publicKey !== "string" || transform.catalog === undefined || transform.catalogRefusal === undefined) return undefined;
   const verified = verifyCatalog(signed, config.catalog.publicKey);
   if ("refused" in verified) return undefined;
-  const decided = acceptCatalog(verified.payload, transform.catalog, transform.catalogRefusal);
+  const decided = acceptCatalog(verified.payload, transform.catalog, transform.catalogRefusal, now);
   return "accepted" in decided ? decided.accepted : undefined;
 }
 
@@ -570,7 +605,7 @@ export function keptCatalog(directory, config, transform) {
  */
 export async function runAgent(directory, { catalogEvery: every = catalogEvery, now = Date.now } = {}) {
   const { port, endpoint, token, catalog: source } = JSON.parse(fs.readFileSync(path.join(directory, "agent.json"), "utf8"));
-  const { filter, catalog: builtIn, catalogRefusal } = await import(pathToFileURL(path.join(directory, "telemetry-transform.mjs")).href);
+  const { filter, catalog: builtIn, catalogRefusal, catalogAdded } = await import(pathToFileURL(path.join(directory, "telemetry-transform.mjs")).href);
   let secret;
   try {
     secret = fs.readFileSync(path.join(directory, "telemetry-transform.key"), "utf8").trim() || undefined;
@@ -578,19 +613,21 @@ export async function runAgent(directory, { catalogEvery: every = catalogEvery, 
     secret = undefined;
   }
   const sessions = readSessions(path.join(directory, sessionsFile));
-  const updates = typeof source?.url === "string" && typeof source?.publicKey === "string" && builtIn !== undefined;
+  // A key anyone could sign for takes no catalog: the filter's own stays.
+  const weak = source !== undefined && weakPublicKey(source.publicKey);
+  const updates = typeof source?.url === "string" && !weak && builtIn !== undefined;
   // The catalog in use: the filter's own, until one the project signed and that is newer replaces it.
   let inUse = { published: builtIn?.published, releases: builtIn?.releases, from: "package" };
   let { signed, checked } = updates ? readSignedCatalog(directory) : {};
-  let outcome;
+  let outcome = weak ? "none asked for: the public key is one anyone can sign for" : undefined;
   let transform = filter(secret, { sessions });
   const take = (text) => {
     const verified = verifyCatalog(text, source.publicKey);
     if ("refused" in verified) return verified.refused;
-    const decided = acceptCatalog(verified.payload, inUse, catalogRefusal);
+    const decided = acceptCatalog(verified.payload, inUse, catalogRefusal, now());
     if ("refused" in decided) return decided.refused;
     transform = filter(secret, { sessions, catalog: decided.accepted });
-    inUse = { published: decided.accepted.published, releases: decided.accepted.releases, from: source.url };
+    inUse = { published: decided.accepted.published, releases: decided.accepted.releases, from: source.url, added: catalogAdded?.(decided.accepted) ?? {} };
     signed = text;
     return undefined;
   };

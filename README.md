@@ -222,13 +222,20 @@ The agents already installed need no new package for it: deployed and
 signed again (`npm run sign-catalog`), the catalog reaches them within a day.
 An agent sending to the project's collector asks `catalogUrl` for it at most
 once a day, and takes it only when its Ed25519 signature holds by
-`catalogPublicKey`, its form (`schema`) is the one its filter reads, its
-sets have a set's shape, and it is newer than the one in use (`published`,
-the signing time); it then filters with its sets from the next request on,
-keeps it in `catalog.json` beside its settings for its next start, and
-`status` shows its date and releases. A catalog gives the members of sets the
-rules already use, every set of the allowlist and the catalog; the rules
-stay code, so a catalog can change which names are kept, never which
-attributes or in what shape. A change to the rules, or to a set's form, needs
-a new package: raise `catalogSchema` in `src/rules.js` when the form changes,
-so that older agents refuse the catalogs they cannot read.
+`catalogPublicKey` (never a key of small order, which anyone can sign for),
+its form (`schema`) is the one its filter reads, and its date (`published`,
+the signing time, `YYYY-MM-DDTHH:MM:SS(.mmm)Z`) is later than the one in use
+and no later than tomorrow on the machine's clock; it then filters with it
+from the next request on, keeps it in `catalog.json` beside its settings for
+its next start, and `status` shows its date, its releases and what it added.
+A catalog only adds, and only to the sets the allowlist's `grows` names (the
+tools, the words, PLexus's error codes, the exception classes), each member
+of its set's strict shape and at most `catalogAdditionCap` a set; any other
+member is left out on its own. The agent hosts and the other sets come from
+the package alone, and the rules stay code, so a catalog never changes which
+attributes are kept or in what shape. `sign-catalog` refuses a catalog the
+agents would trim, and a date in the future. A change to the rules, or to a
+set's form, needs a new package: raise `catalogSchema` in `src/rules.js` when
+the form changes, so that older agents refuse the catalogs they cannot read.
+A compromised key is replaced only by a package naming a new one, which
+participants get by joining again.

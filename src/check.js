@@ -4,6 +4,7 @@
 // no service of ours, so the collector takes it and keeps nothing of it: the
 // archive never holds a check.
 import { fetchCatalog, verifyCatalog } from "./agent.js";
+import { catalogLeftOut, catalogProblem } from "./rules.js";
 
 /** A span of no tool, as the check sends it. */
 export function checkRequest(now = Date.now()) {
@@ -29,17 +30,19 @@ export function checkRequest(now = Date.now()) {
 /**
  * Each expectation of a deployed collector, and whether it held.
  *
- * With `publicKey`, the catalog the agents ask for must be served and signed
- * by its private key; with `sets` too, it must hold those sets, the ones the
- * collector's configuration was generated from.
+ * With `publicKey`, the catalog the agents ask for at `url` must be served,
+ * signed by its private key, readable by the agents and dated no later than
+ * now; with `allowlist` too, it must hold the sets that grow as the
+ * collector's configuration was generated with, and nothing the agents
+ * would leave out.
  *
  * @param {string} endpoint the collector's public URL
  * @param {string} token
  * @param {typeof fetch} [fetcher]
- * @param {{ publicKey?: string, sets?: Record<string, string[]> }} [catalog]
+ * @param {{ publicKey?: string, url?: string, sets?: Record<string, string[]>, allowlist?: any, now?: number }} [catalog]
  * @returns {Promise<Array<{ expectation: string, held: boolean, saw: string }>>}
  */
-export async function checkDeployment(endpoint, token, fetcher = fetch, { publicKey, sets } = {}) {
+export async function checkDeployment(endpoint, token, fetcher = fetch, { publicKey, url, sets, allowlist, now = Date.now() } = {}) {
   const base = endpoint.replace(/\/+$/, "");
   const post = (path, headers) => fetcher(`${base}${path}`, {
     method: "POST",
@@ -64,12 +67,17 @@ export async function checkDeployment(endpoint, token, fetcher = fetch, { public
   await expect("the root serves nothing", fetcher(`${base}/`), "404");
   await expect("a span with the token is taken", post("/v1/traces", { authorization: `Bearer ${token}` }), "200");
   if (publicKey !== undefined) {
-    const fetched = await fetchCatalog(`${base}/pharo-agent-telemetry/catalog.json`);
+    const fetched = await fetchCatalog(url ?? `${base}/pharo-agent-telemetry/catalog.json`);
     const verified = "text" in fetched ? verifyCatalog(fetched.text, publicKey) : { refused: fetched.failure };
     results.push({ expectation: "the catalog is served, signed by the project's key", held: "payload" in verified, saw: "payload" in verified ? `the catalog of ${verified.payload?.published}` : verified.refused });
-    if (sets !== undefined && "payload" in verified) {
-      const same = JSON.stringify(verified.payload?.sets) === JSON.stringify(sets);
-      results.push({ expectation: "the catalog holds the sets the collector's configuration was generated from", held: same, saw: same ? "the same sets" : "other sets" });
+    if ("payload" in verified) {
+      const problem = catalogProblem(verified.payload) ?? (Date.parse(verified.payload.published) > now + 300_000 ? `it is dated ${verified.payload.published}, in the future` : undefined);
+      results.push({ expectation: "the agents can read the catalog, and it is dated no later than now", held: problem === undefined, saw: problem ?? `form ${verified.payload.schema}, of ${verified.payload.published}` });
+      if (sets !== undefined && allowlist !== undefined) {
+        const same = JSON.stringify(verified.payload.sets) === JSON.stringify(sets);
+        const leftOut = catalogLeftOut(allowlist, verified.payload);
+        results.push({ expectation: "the catalog holds the sets the collector's configuration was generated with, and nothing the agents leave out", held: same && leftOut.length === 0, saw: !same ? "other sets" : leftOut.length > 0 ? `the agents leave out ${leftOut.slice(0, 3).join(", ")}` : "the same sets" });
+      }
     }
   }
   return results;

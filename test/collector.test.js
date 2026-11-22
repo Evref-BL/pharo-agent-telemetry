@@ -112,9 +112,12 @@ test("a request without the token is refused and archives nothing", { skip: !doc
 });
 
 test("npm run check-deployment finds everything a participant relies on", { skip: !dockerRuns }, async () => {
-  const results = await checkDeployment(endpoint, token, fetch, { publicKey: publicKeyOf(catalogKey), sets: allowlist.sets });
+  const results = await checkDeployment(endpoint, token, fetch, { publicKey: publicKeyOf(catalogKey), allowlist, sets: catalogPayload(allowlist, "").sets });
   assert.deepEqual(results.filter((result) => !result.held), []);
-  assert.equal(results.length, 7);
+  assert.equal(results.length, 8);
+  // Where the agents ask for it, should catalogUrl name another path.
+  const elsewhere = await checkDeployment(endpoint, token, fetch, { publicKey: publicKeyOf(catalogKey), url: `${endpoint}/pharo-agent-telemetry/other.json` });
+  assert.deepEqual(elsewhere.filter((result) => !result.held).map((result) => result.saw), ["HTTP 404"]);
   // Signed by another key, the catalog is said not to be the project's.
   const other = await checkDeployment(endpoint, token, fetch, { publicKey: publicKeyOf(/** @type {string} */ (generateKeyPairSync("ed25519").privateKey.export({ type: "pkcs8", format: "pem" }))) });
   assert.deepEqual(other.filter((result) => !result.held).map((result) => result.saw), ["its signature does not hold"]);
@@ -127,7 +130,7 @@ test("only /v1/traces is served, and the signed catalog the agents ask for", { s
   assert.ok("text" in fetched, JSON.stringify(fetched));
   const verified = verifyCatalog(fetched.text, publicKeyOf(catalogKey));
   assert.ok("payload" in verified, JSON.stringify(verified));
-  assert.deepEqual(verified.payload.sets, allowlist.sets);
+  assert.deepEqual(verified.payload.sets, catalogPayload(allowlist, "").sets);
   assert.equal((await send("{}", {}, `${endpoint}/pharo-agent-telemetry/catalog.json`)).status, 404);
   assert.equal((await fetch(`${endpoint}/pharo-agent-telemetry/other.json`)).status, 404);
 });

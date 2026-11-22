@@ -21,11 +21,15 @@ The collector applies the same rules again to whatever arrives, and drops
 what they do not keep. Both are made from one list, and so is this page.
 
 The agent updates its lists of our tools' names and words, and nothing else,
-from the project's server: the closed sets and the vocabulary this page
-lists below. At most once a day it asks the collector's server for a newer
-catalog of them, and takes it only when the project's key signed it. A
-catalog changes which names are kept, never which attributes are kept or in
-what shape.
+from the project's server: at most once a day it asks the collector's server
+for a newer catalog, and takes it only when the project's key signed it. A
+catalog can only add, and only to the lists that grow with our releases
+(MCP tools, PLexus tools, pharo-image-fs tools, project words, guessed words, PLexus error codes, exception classes, MCP exception classes): it never removes a name, adds an agent host or any other value,
+or changes which attributes are kept or in what shape. The project's key can
+thus add names and words to those lists, which would let names made of such
+words through; `status` shows what the catalog in use added. Were that key
+compromised, it would be replaced only by joining again with a package that
+names a new one.
 
 ## What is kept
 

@@ -5,10 +5,11 @@
 //
 //   npm run sign-catalog -- --key <private key file>
 //
-// It signs every set of collector/allowlist.json and collector/catalog.json,
-// which `npm run generate` makes the collector's configuration of too: sign
-// and deploy from the same commit. The private key is the administrators'
-// and never enters this repository;
+// It signs the sets that grow with the projects' releases (the allowlist's
+// `grows`), with collector/catalog.json's members, as `npm run generate`
+// makes the collector's configuration: sign and deploy from the same commit.
+// It refuses a catalog the agents would trim, and a date in the future. The
+// private key is the administrators' and never enters this repository;
 //
 //   npm run sign-catalog -- --new-key <file outside this repository>
 //
@@ -22,6 +23,7 @@ import { fileURLToPath } from "node:url";
 import { catalogPayload, publicKeyOf, signCatalog } from "../src/catalog.js";
 import { catalogPublicKey } from "../src/collector.js";
 import { readAllowlist } from "../src/generate.js";
+import { catalogLeftOut, catalogTime } from "../src/rules.js";
 
 const root = fs.realpathSync(fileURLToPath(new URL("..", import.meta.url)));
 const { values } = parseArgs({
@@ -62,8 +64,15 @@ if (values["new-key"]) {
   if (inRepository(values.key)) fail(`${values.key} is in this repository: keep the private key outside it.`);
   const pem = fs.readFileSync(values.key, "utf8");
   const published = values.published ?? new Date().toISOString();
-  if (Number.isNaN(Date.parse(published))) fail(`--published ${published} is not a date.`);
-  const signed = signCatalog(catalogPayload(readAllowlist(root), published), pem);
+  const time = catalogTime(published);
+  if (time === undefined) fail(`--published ${published} is not a UTC date of the form 2026-11-23T10:00:00Z.`);
+  if (time > Date.now()) fail(`--published ${published} is in the future: an agent takes no catalog older than the one it has, so a catalog dated ahead keeps every later one out until then.`);
+  const allowlist = readAllowlist(root);
+  const payload = catalogPayload(allowlist, published);
+  // The agents' own check: a member they would leave out is fixed here, not signed.
+  const leftOut = catalogLeftOut(allowlist, payload);
+  if (leftOut.length > 0) fail(`Not signed: the agents would leave out ${leftOut.join(", ")}.`);
+  const signed = signCatalog(payload, pem);
   fs.mkdirSync(path.dirname(path.resolve(values.out)), { recursive: true });
   fs.writeFileSync(values.out, signed, { mode: 0o644 });
   const key = publicKeyOf(pem);

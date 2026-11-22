@@ -152,17 +152,16 @@ export function withCatalog(allowlist, catalog) {
 }
 
 /**
- * The catalog the agents may take in place of the one their filter was
- * generated with, as it is signed and served: the form of catalog the rules
- * read, a date, the releases it was read from, and every set of the
- * allowlist with the catalog's sets among them, which the collector's
- * configuration is generated from too.
+ * The catalog the agents may add to their filter's sets from, as it is
+ * signed and served: the form of catalog the rules read, a date, the
+ * releases it was read from, and the sets that grow with them (the
+ * allowlist's `grows`), as the collector's configuration is generated with.
  *
  * @param {any} allowlist the allowlist with the catalog's sets (readAllowlist)
  * @param {string} published when it was signed, as an ISO date
  */
 export function catalogPayload(allowlist, published) {
-  return { schema: catalogSchema, published, releases: allowlist.releases, sets: allowlist.sets };
+  return { schema: catalogSchema, published, releases: allowlist.releases, sets: Object.fromEntries(Object.keys(allowlist.grows).map((name) => [name, allowlist.sets[name]])) };
 }
 
 /**

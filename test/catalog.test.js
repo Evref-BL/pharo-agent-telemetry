@@ -7,13 +7,16 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { verifyCatalog } from "../src/agent.js";
+import { verifyCatalog, weakPublicKey } from "../src/agent.js";
 import { catalogPayload, exceptionClasses, publicKeyOf, signCatalog, smalltalkLiterals, smalltalkToolNames, withCatalog, wordsOf } from "../src/catalog.js";
 import { readAllowlist } from "../src/generate.js";
-import { catalogProblem, withCatalogSets } from "../src/rules.js";
-import { catalog as builtIn, catalogRefusal } from "../src/telemetry-transform.mjs";
+import { catalogAdditionCap, catalogAdditions, catalogLeftOut, withCatalogSets } from "../src/rules.js";
+import { catalog as builtIn, catalogAdded, catalogRefusal } from "../src/telemetry-transform.mjs";
+
+import { missingForJoin } from "../src/collector.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
+const readyCollector = { endpoint: "https://c.test", token: "t", controller: { name: "n", contact: "c" }, dpo: "d", host: { provider: "p", region: "r", importer: "i", archive: "a" }, catalogUrl: "https://c.test/pharo-agent-telemetry/catalog.json" };
 const throwawayKey = () => /** @type {string} */ (generateKeyPairSync("ed25519").privateKey.export({ type: "pkcs8", format: "pem" }));
 
 test("a name's words are split on _, - and camelCase, in lower case, one-letter words kept", () => {
@@ -60,29 +63,54 @@ test("the catalog's sets join the allowlist's, and a set in both is refused", ()
   assert.throws(() => withCatalog(allowlist, { releases: {}, sets: { "agent hosts": [] } }), /both in the allowlist and in the catalog/);
 });
 
-test("the catalog the project signs is every set of the allowlist and the catalog, which the filter takes; one changes names, and nothing else", () => {
+test("the catalog the project signs is the sets that grow with releases, which the filter reads; only a date of one strict form is one", () => {
   const allowlist = readAllowlist(root);
   const payload = catalogPayload(allowlist, "2030-01-01T00:00:00.000Z");
   assert.equal(payload.schema, 1);
   assert.deepEqual(payload.releases, builtIn.releases);
-  assert.deepEqual(Object.keys(payload.sets).sort(), Object.keys(allowlist.sets).sort());
+  assert.deepEqual(Object.keys(payload.sets).sort(), Object.keys(allowlist.grows).sort());
+  for (const name of Object.keys(allowlist.grows)) assert.deepEqual(payload.sets[name], allowlist.sets[name], name);
   assert.equal(catalogRefusal(payload), undefined);
+  assert.deepEqual(catalogLeftOut(allowlist, payload), []);
   assert.equal(builtIn.published, JSON.parse(fs.readFileSync(path.join(root, "collector", "catalog.json"), "utf8")).published);
   assert.match(catalogRefusal({ ...payload, schema: 2 }), /of form 2, and this agent reads form 1/);
-  assert.match(catalogRefusal({ ...payload, published: "soon" }), /has no date/);
-  assert.match(catalogRefusal({ ...payload, sets: { "agent hosts": "claude-code" } }), /agent hosts is not a list/);
-  // A member of a set is a name: never a path, an address, a word of another shape.
-  for (const [set, member] of [["agent hosts", "/Users/ada/tool"], ["agent hosts", "ada@example.org"], ["MCP tools", "10.0.0.1"], ["project words", "Secret"], ["project words", "two words"], ["MCP tools", "x".repeat(65)]]) {
-    assert.match(catalogRefusal({ ...payload, sets: { [set]: [member] } }), new RegExp(`its ${set} holds a member of another shape`), member);
+  assert.match(catalogRefusal({ ...payload, sets: [] }), /has no sets/);
+  for (const published of ["+275760-09-13T00:00:00.000Z", "2027", "Nov 23 2026", "2026-02-30T00:00:00Z", "2026-11-23T10:00:00+01:00", "2026-11-23 10:00:00Z", "2026-11-23T10:00:00.1Z", undefined]) {
+    assert.match(String(catalogRefusal({ ...payload, published })), /its date is not a UTC date/, String(published));
   }
-  // A set the rules do not have gates nothing: left out, so a catalog can only change the members of the sets the rules already use.
-  const widened = { ...payload, sets: { "MCP tools": ["class_get"], "secrets": ["anything"] } };
-  assert.equal(catalogProblem(allowlist, widened), undefined);
-  const applied = withCatalogSets(allowlist, widened);
+  for (const published of ["2026-11-23T10:00:00Z", "2026-11-23T10:00:00.123Z"]) assert.equal(catalogRefusal({ ...payload, published }), undefined, published);
+});
+
+test("a catalog only adds, and only to the sets that grow, members of their strict shape, each left out on its own, at most 2,000 a set", () => {
+  const allowlist = readAllowlist(root);
+  const catalog = {
+    schema: 1,
+    published: "2030-01-01T00:00:00Z",
+    sets: {
+      "MCP tools": ["class_get", "new_tool", "Bad-Tool", "/Users/ada", 7],
+      "project words": ["zzqx", "Secret", "x".repeat(25), "ok2", "two words"],
+      "exception classes": ["AcmeError", "not_a_class", "Error"],
+      "PLexus error codes": ["new-code", "NewCode", "a--b"],
+      "agent hosts": ["evil-host"],
+      "OS types": ["plan9"],
+      "call failures": ["sneaky"],
+      "secrets": ["anything"],
+    },
+  };
+  assert.deepEqual(catalogAdditions(allowlist, catalog), { "MCP tools": ["new_tool"], "project words": ["zzqx", "ok2"], "exception classes": ["AcmeError"], "PLexus error codes": ["new-code"] });
+  assert.deepEqual(catalogAdded(catalog), catalogAdditions(allowlist, catalog));
+  const applied = withCatalogSets(allowlist, catalog);
+  // Nothing removed: the package's members stay, the added ones follow.
+  assert.deepEqual(applied.sets["MCP tools"], [...allowlist.sets["MCP tools"], "new_tool"]);
+  for (const name of ["agent hosts", "OS types", "call failures", "schema keywords", "guessed words"]) assert.deepEqual(applied.sets[name], allowlist.sets[name], name);
   assert.equal("secrets" in applied.sets, false);
-  assert.deepEqual(applied.sets["MCP tools"], ["class_get"]);
-  assert.deepEqual(Object.keys(applied).sort(), Object.keys(allowlist).sort());
-  for (const key of ["services", "resource", "span", "patterns", "blockedValues", "vocabulary", "published"]) assert.deepEqual(applied[key], allowlist[key], key);
+  for (const key of ["services", "resource", "span", "patterns", "blockedValues", "vocabulary", "published", "grows"]) assert.deepEqual(applied[key], allowlist[key], key);
+  const leftOut = catalogLeftOut(allowlist, catalog);
+  for (const each of ['MCP tools: "Bad-Tool"', 'MCP tools: "/Users/ada"', 'project words: "Secret"', 'PLexus error codes: "NewCode"', "agent hosts (a set no catalog adds to)", "secrets (a set no catalog adds to)"]) assert.ok(leftOut.includes(each), each);
+  // A catalog adds at most catalogAdditionCap members to a set.
+  const many = Array.from({ length: catalogAdditionCap + 500 }, (_, index) => `zq${index.toString(36)}`);
+  assert.equal(catalogAdditions(allowlist, { ...catalog, sets: { "project words": many } })["project words"].length, catalogAdditionCap);
+  assert.equal(catalogAdditionCap, 2_000);
 });
 
 test("a signed catalog holds only by the key that signed it, and only as signed", () => {
@@ -96,7 +124,22 @@ test("a signed catalog holds only by the key that signed it, and only as signed"
   assert.deepEqual(verifyCatalog(tampered, publicKeyOf(key)), { refused: "its signature does not hold" });
   assert.deepEqual(verifyCatalog("not json", publicKeyOf(key)), { refused: "it is not JSON" });
   assert.deepEqual(verifyCatalog(JSON.stringify(payload), publicKeyOf(key)), { refused: "it is not a signed catalog" });
-  assert.deepEqual(verifyCatalog(signed, "not a key"), { refused: "its signature does not hold" });
+  assert.deepEqual(verifyCatalog(signed, "not a key"), { refused: "the public key is one anyone can sign for" });
+});
+
+test("a public key anyone can sign for is no key: a small-order point, the identity, or not 32 bytes", () => {
+  const forged = (point) => JSON.stringify({ payload: JSON.stringify(catalogPayload(readAllowlist(root), "2030-01-01T00:00:00Z")), signature: Buffer.concat([Buffer.from(point, "hex"), Buffer.alloc(32)]).toString("base64") });
+  const weak = ["0100000000000000000000000000000000000000000000000000000000000000", "0000000000000000000000000000000000000000000000000000000000000000", "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f", "c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a"];
+  for (const hex of weak) {
+    const key = Buffer.from(hex, "hex").toString("base64url");
+    assert.equal(weakPublicKey(key), true, hex);
+    assert.deepEqual(verifyCatalog(forged("0100000000000000000000000000000000000000000000000000000000000000"), key), { refused: "the public key is one anyone can sign for" });
+    assert.deepEqual(missingForJoin({ ...readyCollector, catalogPublicKey: key }), ["catalogPublicKey"]);
+  }
+  for (const key of ["", "short", Buffer.alloc(31).toString("base64url"), `${publicKeyOf(throwawayKey())}=`]) assert.equal(weakPublicKey(key), true, key);
+  const good = publicKeyOf(throwawayKey());
+  assert.equal(weakPublicKey(good), false);
+  assert.deepEqual(missingForJoin({ ...readyCollector, catalogPublicKey: good }), []);
 });
 
 test("npm run sign-catalog makes a key outside the repository only, never replaces one, and signs the catalog with it", () => {
@@ -115,11 +158,15 @@ test("npm run sign-catalog makes a key outside the repository only, never replac
     assert.match(run("--new-key", inside).stderr, /is in this repository: keep the private key outside it/);
     assert.equal(fs.existsSync(inside), false);
     const out = path.join(directory, "published", "catalog.json");
-    const signed = run("--key", key, "--out", out, "--published", "2030-01-01T00:00:00.000Z");
+    // A date ahead of now, or of another form, is never signed.
+    assert.match(run("--key", key, "--out", out, "--published", "2099-01-01T00:00:00.000Z").stderr, /is in the future/);
+    assert.match(run("--key", key, "--out", out, "--published", "Nov 23 2026").stderr, /is not a UTC date/);
+    assert.equal(fs.existsSync(out), false);
+    const signed = run("--key", key, "--out", out, "--published", "2026-11-01T00:00:00.000Z");
     assert.equal(signed.status, 0, signed.stderr);
     const verified = verifyCatalog(fs.readFileSync(out, "utf8"), publicKey);
     assert.ok("payload" in verified, JSON.stringify(verified));
-    assert.deepEqual(verified.payload, catalogPayload(readAllowlist(root), "2030-01-01T00:00:00.000Z"));
+    assert.deepEqual(verified.payload, catalogPayload(readAllowlist(root), "2026-11-01T00:00:00.000Z"));
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }

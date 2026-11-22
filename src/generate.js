@@ -441,6 +441,9 @@ function listed(allowlist, spec) {
   return [].concat(spec.values).flatMap((value) => allowlist.sets[value] ?? [value]);
 }
 
+/** How much of a version an `extract` pattern keeps. */
+const precision = (pattern) => (/\(\[0-9\]\{1,4\}\\\.\[0-9\]\{1,4\}\)/.test(pattern) ? "major and minor" : "major");
+
 /** What the rules keep of an attribute, in words. */
 export function keptAs(allowlist, spec) {
   const names = {
@@ -452,29 +455,45 @@ export function keptAs(allowlist, spec) {
     "JSON pointer": "a JSON pointer",
     option: "an option",
     code: "a numeric code",
+    variant: "a build's name",
   };
   const otherwise = spec.otherwise === undefined ? "" : `, else ${code(spec.otherwise)}`;
+  const words = spec.words === "pointer" ? ", each name in it made of the vocabulary's words" : spec.words ? ", made of the vocabulary's words" : "";
   const shape = () => {
     if (spec.values !== undefined) {
       const values = listed(allowlist, spec);
-      const set = typeof spec.values === "string" ? spec.values : undefined;
-      const one = set && values.length > 8 ? `one of the ${set}` : `one of ${values.map(code).join(", ")}`;
+      const sets = [].concat(spec.values);
+      const named = sets.every((each) => each in allowlist.sets) && values.length > 8;
+      const one = named ? `one of the ${sets.length === 1 ? sets[0] : `${sets.slice(0, -1).join(", ")} or ${sets.at(-1)}`}` : `one of ${values.map(code).join(", ")}`;
       return spec.pattern ? `${one}, or ${names[spec.pattern]}` : one;
     }
     return names[spec.pattern] ?? "text";
   };
-  switch (spec.type) {
-    case "bool": return "true or false";
-    case "double": return "a number";
-    case "int":
-      if (spec.buckets) return `the lower bound of its bucket: ${spec.buckets.join(", ")}`;
-      return `a whole number from ${spec.min ?? 0}`;
-    case "string[]": return `a list of at most ${spec.max}, each ${shape()}`;
-    default:
-      if (spec.hash) return "its keyed hash";
-      if (spec.extract) return `${shape()}${spec.key === "plexus.client.version" ? ", major and minor" : ""}`;
-      return `${shape()}${otherwise}`;
-  }
+  const conditions = [
+    ...(spec.own ? [", only for MCP's own tools"] : []),
+    ...(spec.when ? [`, only beside ${Object.entries(spec.when).map(([key, value]) => `${code(key)} ${code(value)}`).join(" and ")}`] : []),
+  ].join("");
+  const kept = (() => {
+    switch (spec.type) {
+      case "bool": return "true or false";
+      case "double": return spec.whole ? `a whole number from ${spec.min ?? 0}` : "a number";
+      case "int":
+        if (spec.buckets) return `the lower bound of its bucket: ${spec.buckets.join(", ")}`;
+        return spec.min === undefined ? "a whole number" : `a whole number from ${spec.min}`;
+      case "string[]":
+        if (spec.published) return `a list of at most ${spec.max}, each a tool a project publishes${otherwise}`;
+        return `a list of at most ${spec.max}, each ${shape()}${words}`;
+      default:
+        if (spec.hash) return "its keyed hash, within its week";
+        if (spec.tool) return `a tool a project publishes, else ${shape()} made of the vocabulary's words${otherwise}`;
+        if (spec.extract) {
+          const cut = typeof spec.extract === "string" ? precision(spec.extract) : Object.entries(spec.extract).map(([service, pattern]) => `${precision(pattern)} from ${service}`).join(", ");
+          return `${shape()}, ${cut}`;
+        }
+        return `${shape()}${words}${otherwise}`;
+    }
+  })();
+  return `${kept}${conditions}`;
 }
 
 /** What the page says where a fact is not settled yet. */
@@ -496,10 +515,21 @@ export function participantsPage(allowlist, collector = { endpoint: publicEndpoi
   const rows = (attributes) => Object.entries(attributes)
     .map(([name, spec]) => `| ${code(name)} | ${from(spec)} | ${spec.about} | ${keptAs(allowlist, spec)} |`).join("\n");
   const services = Object.entries(allowlist.services);
-  const spanNames = services.flatMap(([, { spans }]) => spans).filter((name, index, all) => all.indexOf(name) === index)
-    .map((name) => code(name === toolCall ? `${toolCall} <tool>` : name)).join(", ");
-  const nameKeys = Object.entries(allowlist.span).filter(([, spec]) => spec.name).map(([name]) => code(name)).join(", ");
+  const serviceLines = services.map(([service, { scope, spans, kinds: wanted, requires = [] }]) => {
+    const operations = spans.map((name) => code(name === toolCall ? `${toolCall} <tool>` : name)).join(", ");
+    const kept = [
+      wanted ? `of kind ${wanted.join(" or ")} only` : "of every kind",
+      ...(requires.length > 0 ? [`and only with ${requires.map(code).join(" and ")}`] : []),
+    ].join(" ");
+    return `- from ${code(service)}, with its scope ${code(scope)}: ${operations}, ${kept}.`;
+  }).join("\n");
+  const checkedKeys = Object.entries(allowlist.span).filter(([, spec]) => spec.words || spec.published || spec.tool).map(([name]) => code(name)).join(", ");
   const example = settingsBlock("joined", agentSettings({ port: 4319 })).trimEnd().replace("4319", "<its port>");
+  const setLines = Object.entries(allowlist.sets)
+    .filter(([name]) => !allowlist.vocabulary.includes(name))
+    .map(([name, values]) => `- ${name}: ${values.map(code).join(", ")}.`).join("\n");
+  const vocabularySize = new Set(allowlist.vocabulary.flatMap((name) => allowlist.sets[name])).size;
+  const releases = Object.entries(allowlist.releases ?? {}).map(([project, release]) => `${project} ${release}`).join(", ");
   const who = collector.controller
     ? `${collector.controller.name} decides why and how this data is processed, the GDPR's controller. Write to ${collector.controller.contact} with any question, or to withdraw.`
     : unsettled("The controller and how to reach them");
@@ -509,7 +539,7 @@ export function participantsPage(allowlist, collector = { endpoint: publicEndpoi
 - Once a day, a scheduled job in ${collector.host.importer} copies what the collector received, loads it into ${collector.host.archive}, and deletes it from the machine and from the job's own workspace.
 - ${collector.host.archive} keeps it, as "How long" says.`
     : unsettled("Where the collector runs, the GitLab that copies its archive, and where the archive is kept");
-  return `<!-- Generated from collector/allowlist.json and src/collector.js by \`npm run generate\`. Do not edit. -->
+  return `<!-- Generated from collector/allowlist.json, collector/catalog.json and src/collector.js by \`npm run generate\`. Do not edit. -->
 # What the Pharo tools send when you join
 
 The Pharo agent tools (the pharo-agent plugin, PLexus and Pharo MCP) can
@@ -524,21 +554,22 @@ Only through the agent \`join\` installs: a small program that runs as a
 service of your user account, listens on a port of your own machine
 (127.0.0.1), takes what the tools send it, keeps only what this page lists,
 and sends that to the collector. The tools' settings point them at the agent
-and hold no token: the agent alone knows the collector. It works the same
-whether MCP runs alone, under PLexus or under the pharo-agent plugin: PLexus,
-the images it starts and an image you start yourself all send to the agent.
+and hold no token: the agent alone knows the collector. PLexus, the images it
+starts, and an image you start yourself once it is set up as "With MCP alone"
+says, all send to the agent.
 
 The collector applies the same rules again to whatever arrives, and drops
 what they do not keep. Both are made from one list, and so is this page.
 
 ## What is kept
 
-Only PLexus's and MCP's spans: a span is kept when the tool that sent it is
-${services.map(([service]) => code(service)).join(" or ")}, its instrumentation scope is that tool's own
-(${services.map(([, { scope }]) => code(scope)).join(", ")}), and it is one of the operations they record:
-${spanNames}. Any other span is dropped whole, such as one your own
-OpenTelemetry code makes in an image, and so is a span that has links.
-Metrics and logs are not kept at all.
+Only PLexus's and MCP's spans of the operations they record:
+
+${serviceLines}
+
+Any other span is dropped whole, such as one your own OpenTelemetry code
+makes in an image, and so is a span that has links. Metrics and logs are not
+kept at all.
 
 Of each span, only this is kept:
 
@@ -548,12 +579,17 @@ Of each span, only this is kept:
   never a status message;
 - its instrumentation scope's name, and its version when it has a version's
   shape;
-- its trace, span and parent ids, each replaced by a keyed hash: by the agent,
-  with a key \`join\` makes and that never leaves your machine, then again at
-  the collector, with a key of its own that never enters the archive. A
-  call's spans still group, but nothing joins them to anything else;
+- its trace, span and parent ids, each replaced by a keyed hash, within its
+  session and week: by the agent, with a key \`join\` makes and that never
+  leaves your machine, then again at the collector, with a key of its own
+  that never enters the archive. A call's spans still group, but nothing
+  joins them to anything else, nor one session's to another's, even when the
+  agent host gives every session the same trace;
 - its start time, to the week (the Monday it falls in, at midnight UTC), its
-  end time set to the same, and how long it took, as \`span.duration_ms\`;
+  end time set to the same, how long it took, in whole milliseconds, as
+  \`span.duration_ms\`, and, for a span with a session, when it started in
+  milliseconds after the first span of that session the agent saw, as
+  \`pharo_agent_telemetry.session.offset_ms\`;
 - the attributes below, from the tools named, each only in the shape given: a
   value of any other shape is dropped, or replaced as the table says.
 
@@ -561,12 +597,27 @@ Never its events, links, trace state or status message, nor its scope's
 attributes. Any value that contains ${Object.keys(allowlist.blockedValues).join(", ")} is
 masked, whole, and the mask has no attribute's shape.
 
-Tool and argument names (${nameKeys}) are kept only for MCP's own tools and for
-names no tool has (\`pharo.mcp.tool.origin\` \`mcp\` or \`unknown\`). For a
-tool another package added to an image (\`other\`, or no origin), the tool's
-name becomes \`_OTHER\` and the other names are dropped. PLexus names only its
-own tools: on a call PLexus passes on to an image, its span keeps neither the
-tool's name nor its arguments', which the image's span reports as above.
+### Names
+
+A name an agent or another package chooses (${checkedKeys}) is kept only
+when it is the name of a tool a project publishes, or when every word of it
+(split at \`_\`, \`-\` and capitals) is in the vocabulary: the
+${vocabularySize} words of the names in the code of MCP, PLexus and
+pharo-image-fs (their tools, arguments, errors and the rest), read from
+their source (${releases}), and of a list of words agents guess. Any
+other name is dropped, or becomes \`_OTHER\`, so a name with a word of your
+own in it, such as one of your classes, is never sent; a name made only of
+common words of the vocabulary, such as \`class_name\`, is. Both lists are in
+[collector/catalog.json](../collector/catalog.json) and
+[collector/allowlist.json](../collector/allowlist.json).
+
+The names of a tool another package added to an image (\`pharo.mcp.tool.origin\`
+\`other\`, or no origin) are not kept: its tool's name becomes \`_OTHER\` and
+the other names are dropped, unless a project publishes that tool. PLexus
+names only its own tools: on a call PLexus passes on to an image, its span
+keeps the tool's name only when a project publishes it, and never the
+arguments' names, which the image's span reports as above. An error code is
+kept only for MCP's own tools.
 
 Where it ran:
 
@@ -580,29 +631,42 @@ What happened:
 | --- | --- | --- | --- |
 ${rows(allowlist.span)}
 
+The closed sets the table names, the tools each project publishes among them:
+
+${setLines}
+
 ## What is never sent
 
 - Argument values, results, source code, prompts, file contents.
 - Exception messages and stacks.
 - Paths, image names, project names, the names of your classes, methods or
-  packages, the names of tools other packages add or of their arguments. One
-  exception: a name an agent makes up for a tool or an argument that does not
-  exist is kept as the agent wrote it, when it has an identifier's shape, so
-  should an agent call a tool by one of your class names, that name is sent.
+  packages, the names of tools other packages add or of their arguments, and
+  any name with a word the vocabulary does not have.
 - Host names, user names, email addresses, IP addresses.
 - Any identifier of you or your machine. There are no participant ids.
-- Precise times: only the week, and how long each span took.
+- Precise times: only the week, how long each span took, and its place in
+  its session.
 
 ## Is it anonymous?
 
-The archive is. A session's calls share a hashed \`session.id\`, so the
-calls of one session can be studied together, and in order where PLexus
-numbered them, but nothing in a span says who sent it, and no id links a
-session to another session, to a machine or to a person. What a span says of
-where it ran (the versions of the tools, of Node, Pharo and its VM, of the
-agent host, and the OS family) is shared by everyone with the same setup; a
-setup nobody else has would set that person's sessions apart from the
-others', without saying whose they are.
+The archive is. A session's spans share a \`session.id\`: PLexus makes one at
+random for the calls of an agent host, and MCP makes one when a call comes
+without one (MCP's part ships in its next release; until then a call to MCP
+alone carries no session, and is not kept). The agent hashes it within its
+week, and the collector again, so the calls of one session can be studied
+together, and in order, but no id links a session to another session, to a
+machine or to a person.
+
+Nothing in a span says who sent it. What could still set a participant
+apart is a rare setup: what a span says of where it ran (the versions of
+PLexus and MCP, Node's major version, Pharo's major and minor, the agent host
+and its major and minor version, and the OS family) is shared by everyone
+with the same setup, but a combination nobody else has would set that
+person's sessions apart from the others'. Someone who already knew that a
+person runs that combination could tell which sessions are theirs, and learn
+from them only how that person used the tools. The agent host's and
+Pharo's versions are kept to major and minor, and Node's to major, so that
+such combinations are rarer.
 
 One thing about you does reach the server, as it reaches any server you
 connect to: your IP address, so that the connection can be made. The proxy in
@@ -630,12 +694,14 @@ what the tools do for you.
 
 ## How long
 
-The collector writes what arrives into one file a day, and never deletes a
-file the daily import has not loaded; the import deletes each file once
-Elasticsearch holds its spans. Should the import stop, the collector refuses
-new spans once its archive takes half its disk's free space, rather than
-delete any. Elasticsearch keeps the spans in one index a month, and deletes
-each index twelve months after it was made. Reports derived from them hold
+The collector writes what arrives into one file a day, named after the day
+it arrived, a day the file's spans also carry; the import keeps neither. The
+collector never deletes a file the daily import has not loaded, and the
+import deletes each file once Elasticsearch holds its spans. Should the
+import stop, the collector refuses new spans once its archive takes half its
+disk's free space, rather than delete any. Elasticsearch keeps the spans in
+one index a month, under the import's lifecycle policy, which deletes each
+index twelve months after it was made. Reports derived from them hold
 counts, never spans, and are kept.
 
 ## Your rights
@@ -658,25 +724,40 @@ npx @evref-bl/pharo-agent-telemetry status
 npx @evref-bl/pharo-agent-telemetry leave
 \`\`\`
 
-\`join\` copies the agent into \`~/.config/pharo-agent-telemetry/\`
-(\`%APPDATA%\\pharo-agent-telemetry\\\` on Windows), with its key, and runs it
-as a service that starts when you log in and again if it fails: a LaunchAgent
-on macOS, a systemd user unit on Linux, a scheduled task on Windows. Then it
-writes a block of settings, between two marked lines, in PLexus's settings
-file, \`~/.config/plexus/otel.env\`, and in MCP's, \`~/.config/pharo-mcp/otel.env\`
-(under \`%APPDATA%\` on Windows):
+\`join\` copies the agent into \`pharo-agent-telemetry/\` under
+\`~/.config\` (\`$XDG_CONFIG_HOME\` when set, \`%APPDATA%\` on Windows), with its
+key, and runs it as a service that starts when you log in and again if it
+fails: a LaunchAgent on macOS, a systemd user unit on Linux, a scheduled task
+at logon on Windows, which runs it with no window and starts it again 30
+seconds after it fails. Its port is below the range your system hands out to
+other programs, so that none takes it while the agent is down. Then it writes a block of settings, between two marked lines,
+in PLexus's settings file, \`plexus/otel.env\`, and in MCP's,
+\`pharo-mcp/otel.env\`, under \`~/.config\` (\`%APPDATA%\` on Windows), and under
+\`$XDG_CONFIG_HOME\` too when it is set:
 
 \`\`\`text
 ${example}
 \`\`\`
 
-PLexus reads its file when its environment configures no OpenTelemetry of its
-own, and passes it on to the images it starts; an image reads MCP's at every
-start. Tools already running start sending once they restart, and images made
-before joining send nothing until they are made again.
+A settings file you already had is kept beside it, as
+\`otel.env.before-join\`, and \`leave\` puts it back; \`join\` refuses to replace
+OpenTelemetry settings of your own unless you add \`--force\`. Your own
+OpenTelemetry code in an image then sends to the agent too, which drops its
+spans.
 
-\`preview\` runs the agent in the foreground with sending off, points the
-tools at it until you stop it, and prints what it would send.
+PLexus reads its file at start, and passes it on to the images it starts; an
+image reads MCP's at every start. From PLexus's and MCP's next releases, a
+tool's file replaces any OpenTelemetry settings (\`OTEL_*\`) it inherits from
+the agent host; before, an agent host that passes such settings sends the
+tools' spans where they say instead. Restart your agent host after joining:
+images made before that restart send nothing until they are made again.
+
+\`status\` says whether the agent answers on its port, and what it received
+and sent. \`preview\` runs an agent in the foreground with sending off and
+prints what it would send: not joined, it points the tools at itself until
+you stop it, and they read that when they start, so restart your agent host
+and images; joined, it takes the agent's place on its port while it runs, so
+the tools already running show in it, and starts the agent again after.
 
 \`leave\` stops and removes the agent, its files and its key, and both blocks,
 wherever the settings may be. Sending stops at once: PLexus and the images
@@ -688,20 +769,20 @@ tools never slow down or fail a call because of it.
 
 ### With MCP alone
 
-Using Pharo MCP in your own image, without PLexus? Join as above, then load
-MCP's \`Telemetry\` group with the others you use, and switch your server to
-it once:
+Using Pharo MCP in your own image, without PLexus? It records calls from
+MCP's next release, which makes a session of its own. Join as above, then,
+in the image:
 
-\`\`\`smalltalk
-Metacello new
-   baseline: 'MCP';
-   repository: 'github://Evref-BL/MCP:v4.x.x/src';
-   onConflictUseIncoming;
-   load: #( 'default' 'Telemetry' ).
-(MCP startOnPort: 4000) useOpenTelemetryObservability
-\`\`\`
+1. Load MCP's \`Telemetry\` group from the repository you loaded MCP from:
+   the same \`baseline: 'MCP'; repository: ...\` as when you loaded it, with
+   \`load: #( 'Telemetry' )\`.
+2. Evaluate \`MCP useOpenTelemetryObservabilityByDefault\`, which switches
+   every MCP server of the image, and save the image. Unsaved, the setting is
+   lost at the next start.
 
 The image reads MCP's settings file at every start, so it sends to the agent
-from its next start on.
+from then on. Several projects that use the same image's server share one
+session. An image in a container cannot reach the agent: the container's
+127.0.0.1 is not your machine's.
 `;
 }

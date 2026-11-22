@@ -9,7 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import zlib from "node:zlib";
-import { backoff, bodyCap, createForwarder, queueCap, startAgent } from "../src/agent.js";
+import { backoff, bodyCap, createForwarder, healthPath, proof, queueCap, sendCap, startAgent, stopAgent, stopPath, whoListens } from "../src/agent.js";
 import { freePort, installAgent } from "../src/install.js";
 import { offsetKey } from "../src/rules.js";
 import { filter } from "../src/telemetry-transform.mjs";
@@ -113,15 +113,17 @@ test("refuses what the tools never send: another path or method, a browser page,
   assert.equal(kept.length, 1);
 }));
 
-test("sends in order, and after a failure stops for a while, longer each time up to an hour", async () => {
+test("sends in order, retries a failure once on a fresh connection, then stops for a while, longer each time up to an hour", async () => {
   let clock = 0;
-  const outcomes = [true, false, true, false, false];
+  // A send that fails is tried again on a fresh connection before it counts as failed.
+  const outcomes = [true, false, false, true, false, false, false, false];
   const sent = [];
-  const forwarder = createForwarder({ endpoint: "https://c.test", now: () => clock, send: async (each) => { sent.push(each); return outcomes.shift() ?? true; } });
+  const forwarder = createForwarder({ endpoint: "https://c.test", now: () => clock, send: async (each, { fresh }) => { sent.push(fresh ? `${each} again` : each); return outcomes.shift() ?? true; } });
   assert.equal(forwarder.enqueue("a"), true);
+  await forwarder.idle();
   assert.equal(forwarder.enqueue("b"), true);
   await forwarder.idle();
-  assert.deepEqual(sent, ["a", "b"]);
+  assert.deepEqual(sent, ["a", "b", "b again"]);
   assert.equal(forwarder.closedUntil, backoff.first);
   assert.equal(forwarder.enqueue("dropped"), false);
   clock = backoff.first;
@@ -135,8 +137,9 @@ test("sends in order, and after a failure stops for a while, longer each time up
   forwarder.enqueue("e");
   await forwarder.idle();
   assert.equal(forwarder.closedUntil, clock + 2 * backoff.first);
-  assert.deepEqual(sent, ["a", "b", "c", "d", "e"]);
-  assert.deepEqual({ ...forwarder.counts }, { sent: 2, failed: 3, dropped: 1 });
+  assert.deepEqual(sent, ["a", "b", "b again", "c", "d", "d again", "e", "e again"]);
+  assert.deepEqual({ ...forwarder.counts }, { sent: 2, failed: 3, dropped: 1, refused: 0 });
+  assert.equal(forwarder.last.outcome, "failed");
 
   const failing = createForwarder({ endpoint: "https://c.test", now: () => clock, send: async () => false });
   for (let failure = 0; failure < 12; failure += 1) {
@@ -145,6 +148,39 @@ test("sends in order, and after a failure stops for a while, longer each time up
     await failing.idle();
   }
   assert.equal(failing.closedUntil - clock, backoff.last);
+});
+
+test("a request the collector refuses is not retried and stops nothing; one that fails then passes on a fresh connection is sent", async () => {
+  const outcomes = ["refused", false, true];
+  const sent = [];
+  const forwarder = createForwarder({ endpoint: "https://c.test", send: async (each, { fresh }) => { sent.push([each, fresh]); return outcomes.shift() ?? true; } });
+  forwarder.enqueue("refused");
+  await forwarder.idle();
+  forwarder.enqueue("reset");
+  await forwarder.idle();
+  assert.deepEqual(sent, [["refused", false], ["reset", false], ["reset", true]]);
+  assert.deepEqual({ ...forwarder.counts }, { sent: 1, failed: 0, dropped: 0, refused: 1 });
+  assert.equal(forwarder.closedUntil, 0);
+});
+
+test("the requests waiting are sent merged in one, under the collector's limit", async () => {
+  let release;
+  const held = new Promise((resolve) => { release = resolve; });
+  const sent = [];
+  const forwarder = createForwarder({ endpoint: "https://c.test", send: async (each) => { sent.push(each); await held; return true; } });
+  const request = (name) => JSON.stringify({ resourceSpans: [{ resource: { attributes: [] }, scopeSpans: [{ scope: { name }, spans: [] }] }] });
+  forwarder.enqueue(request("first"));
+  for (const name of ["a", "b", "c"]) forwarder.enqueue(request(name));
+  // Too large to merge with what waits, under the limit on its own.
+  const large = JSON.stringify({ resourceSpans: [{ resource: { attributes: [{ key: "k", value: { stringValue: "x".repeat(sendCap - 200) } }] }, scopeSpans: [] }] });
+  forwarder.enqueue(large);
+  release();
+  await forwarder.idle();
+  assert.equal(sent.length, 3);
+  assert.equal(sent[0], request("first"));
+  assert.deepEqual(JSON.parse(sent[1]).resourceSpans.map((each) => each.scopeSpans[0].scope.name), ["a", "b", "c"]);
+  assert.equal(sent[2], large);
+  assert.equal(forwarder.counts.sent, 5);
 });
 
 test("past its bound the queue drops what comes, by count and by size", async () => {
@@ -191,7 +227,8 @@ test("sends to the collector's /v1/traces with the token, and follows no redirec
   const forwarder = createForwarder({ endpoint, token: "t0ken" });
   forwarder.enqueue("{}");
   await forwarder.idle();
-  assert.deepEqual(received.map(({ url }) => url), ["/v1/traces"]);
+  // Tried again on a fresh connection, never at the redirect's location.
+  assert.deepEqual(received.map(({ url }) => url), ["/v1/traces", "/v1/traces"]);
   assert.equal(forwarder.counts.failed, 1);
 }, (request, response) => response.writeHead(307, { location: "/elsewhere" }).end())));
 
@@ -210,8 +247,16 @@ test("run from the files join copies, the agent sends what it keeps to the colle
     }
     assert.equal(status, 200);
     await eventually(() => received.length === 1);
-    child.kill("SIGTERM");
+    assert.equal(await whoListens(port, testKey), "agent");
+    // Asked to stop by whoever proves its key, it ends as on a signal.
+    assert.equal(await stopAgent(port, testKey), true);
     assert.equal(await exited, 0);
+    const state = JSON.parse(fs.readFileSync(path.join(directory, "state.json"), "utf8"));
+    assert.deepEqual(Object.keys(state.received).sort(), ["pharo-mcp", "plexus"]);
+    assert.equal(state.received.plexus.requests, 1);
+    assert.equal(state.forwarded.sent, 1);
+    assert.equal(state.forwarded.last.outcome, "sent");
+    assert.equal(fs.statSync(path.join(directory, "state.json")).mode & 0o777, 0o600);
     assert.equal(received.length, 1);
     assert.equal(received[0].headers.authorization, "Bearer t0ken");
     const sent = comparable([JSON.parse(received[0].body)]);
@@ -226,3 +271,47 @@ test("run from the files join copies, the agent sends what it keeps to the colle
     fs.rmSync(directory, { recursive: true, force: true });
   }
 }));
+
+test("the agent proves it holds its key without giving it away, and stops only for whoever proves it too", async () => {
+  const stopped = new AbortController();
+  let clock = 1_000_000;
+  const { port, closed } = await startAgent({ port: 0, transform: () => null, keep: () => {}, signal: stopped.signal, secret: testKey, stop: () => stopped.abort(), now: () => clock });
+  try {
+    assert.equal(await whoListens(port, testKey), "agent");
+    assert.equal(await whoListens(port, "ff".repeat(32)), "other");
+    const challenge = "ab".repeat(16);
+    const answer = await (await fetch(`http://127.0.0.1:${port}${healthPath}?challenge=${challenge}`)).json();
+    assert.deepEqual(answer, { agent: "pharo-agent-telemetry", proof: proof(testKey, "health", challenge) });
+    assert.equal(JSON.stringify(answer).includes(testKey), false);
+    assert.equal((await fetch(`http://127.0.0.1:${port}${healthPath}?challenge=short`)).status, 400);
+    assert.equal((await fetch(`http://127.0.0.1:${port}${healthPath}?challenge=${challenge}`, { headers: { origin: "https://evil.example" } })).status, 403);
+    const stop = (at, secret = testKey) => fetch(`http://127.0.0.1:${port}${stopPath}?at=${at}&proof=${proof(secret, "stop", String(at))}`, { method: "POST" }).then((response) => response.status);
+    assert.equal(await stop(clock, "ff".repeat(32)), 403);
+    assert.equal(await stop(clock - 60_000), 403);
+    assert.equal(stopped.signal.aborted, false);
+    assert.equal(await stop(clock), 200);
+    await closed;
+    assert.equal(stopped.signal.aborted, true);
+  } finally {
+    stopped.abort();
+    await closed;
+  }
+  assert.equal(await whoListens(port, testKey), "none");
+});
+
+test("a stop request is never taken twice, and without a key the agent answers neither", async () => {
+  const stopped = new AbortController();
+  let stops = 0;
+  const clock = 1_000_000;
+  const { port, closed } = await startAgent({ port: 0, transform: () => null, keep: () => {}, signal: stopped.signal, secret: testKey, stop: () => { stops += 1; }, now: () => clock });
+  const stop = (at) => fetch(`http://127.0.0.1:${port}${stopPath}?at=${at}&proof=${proof(testKey, "stop", String(at))}`, { method: "POST" }).then((response) => response.status);
+  assert.equal(await stop(clock), 200);
+  assert.equal(await stop(clock), 403);
+  stopped.abort();
+  await closed;
+  assert.equal(stops, 1);
+  await withAgent(async ({ port: other }) => {
+    assert.equal(await whoListens(other, testKey), "other");
+    assert.equal((await fetch(`http://127.0.0.1:${other}${stopPath}?at=1&proof=x`, { method: "POST" })).status, 404);
+  });
+});

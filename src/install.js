@@ -14,6 +14,8 @@ export const packaged = {
 };
 export const configFile = "agent.json";
 export const keyFile = "telemetry-transform.key";
+/** What the agent says it received and sent, as src/agent.js writes it. */
+export const stateFile = "state.json";
 
 const validKey = (text) => /^[0-9a-f]{32,128}$/.test((text ?? "").trim());
 
@@ -32,16 +34,34 @@ function write(file, text, mode) {
   fs.renameSync(temporary, file);
 }
 
-/** A loopback port nothing listens on now. */
-export async function freePort() {
+/**
+ * The ports the agent takes one of: below every system's ephemeral range
+ * (Linux's starts at 32768, macOS's and Windows' at 49152), from which the
+ * system hands any program a port while the agent is down, and above those
+ * development servers favour.
+ */
+export const agentPorts = { first: 20000, last: 32767 };
+
+/** The loopback port a listener got when it asked for `port`, or undefined when something listens there. */
+async function bound(port) {
   const server = net.createServer();
-  await new Promise((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => resolve(undefined));
+  const listening = await new Promise((resolve) => {
+    server.once("error", () => resolve(false));
+    server.listen(port, "127.0.0.1", () => resolve(true));
   });
-  const { port } = /** @type {net.AddressInfo} */ (server.address());
+  if (!listening) return undefined;
+  const { port: got } = /** @type {net.AddressInfo} */ (server.address());
   await new Promise((resolve) => server.close(() => resolve(undefined)));
-  return port;
+  return got;
+}
+
+/** A loopback port among the agent's that nothing listens on now. */
+export async function freePort(random = Math.random) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const port = await bound(agentPorts.first + Math.floor(random() * (agentPorts.last - agentPorts.first + 1)));
+    if (port !== undefined) return port;
+  }
+  throw new Error(`No port between ${agentPorts.first} and ${agentPorts.last} is free.`);
 }
 
 /** The agent's settings, when it has some. @returns {{ port: number, endpoint: string, token?: string } | undefined} */
@@ -83,7 +103,7 @@ export function installAgent(directory, config) {
  * @returns {string[]} the files removed
  */
 export function removeAgent(directory) {
-  const removed = [...Object.keys(packaged), configFile, keyFile].map((name) => path.join(directory, name)).filter((file) => {
+  const removed = [...Object.keys(packaged), configFile, keyFile, stateFile].map((name) => path.join(directory, name)).filter((file) => {
     if (!fs.existsSync(file)) return false;
     fs.rmSync(file, { force: true });
     return true;
@@ -101,10 +121,20 @@ export function filterVersion(text) {
   return /^export const version = "([^"]+)";$/m.exec(text ?? "")?.[1];
 }
 
+/** What the agent last said it received and sent, when it said anything. */
+export function readAgentState(directory) {
+  try {
+    const state = JSON.parse(fs.readFileSync(path.join(directory, stateFile), "utf8"));
+    return state && typeof state === "object" ? state : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Whether the agent's files are there, this package's, and complete.
  *
- * @returns {{ present: boolean, version?: string, current: boolean, key: boolean, config?: ReturnType<typeof readAgentConfig> }}
+ * @returns {{ present: boolean, version?: string, current: boolean, key: boolean, config?: ReturnType<typeof readAgentConfig>, state?: any }}
  */
 export function agentStatus(directory) {
   const texts = Object.fromEntries(Object.keys(packaged).map((name) => [name, readOrUndefined(path.join(directory, name))]));
@@ -114,5 +144,6 @@ export function agentStatus(directory) {
     current: Object.entries(packaged).every(([name, source]) => texts[name] === fs.readFileSync(source, "utf8")),
     key: readKey(directory) !== undefined,
     config: readAgentConfig(directory),
+    state: readAgentState(directory),
   };
 }

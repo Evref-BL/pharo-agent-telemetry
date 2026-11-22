@@ -5,7 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { agentStatus, filterVersion, installAgent, keyFile, readAgentConfig, readKey, removeAgent } from "../src/install.js";
+import { agentPorts, agentStatus, filterVersion, freePort, installAgent, keyFile, readAgentConfig, readKey, removeAgent } from "../src/install.js";
 import { agentSettings, readSettings, removeSettings, settingsBlock, writeSettings } from "../src/settings.js";
 
 function withDirectory(run) {
@@ -49,7 +49,7 @@ test("the agent's directory holds its code, its settings and its key, only its o
 
   assert.equal(removeAgent(directory).length, 4);
   assert.equal(fs.existsSync(directory), false);
-  assert.deepEqual(agentStatus(directory), { present: false, version: undefined, current: false, key: false, config: undefined });
+  assert.deepEqual(agentStatus(directory), { present: false, version: undefined, current: false, key: false, config: undefined, state: undefined });
 }));
 
 test("the agent's directory stays when something not of ours is in it", () => withDirectory((parent) => {
@@ -97,3 +97,13 @@ test("a settings file says who wrote it, and leave takes out only our block", ()
   assert.match(fs.readFileSync(file, "utf8"), /^OTEL_RESOURCE_ATTRIBUTES=deployment\.environment\.name=preview$/m);
   assert.deepEqual(fs.readdirSync(path.dirname(file)), ["otel.env"]);
 }));
+
+test("the agent's port is below every system's ephemeral range, and free", async () => {
+  // Ports from 32768 are Linux's ephemeral ones, from 49152 macOS's and Windows'.
+  assert.ok(agentPorts.last < 32768);
+  const taken = [];
+  const port = await freePort(() => (taken.push(1), 0.5));
+  assert.equal(taken.length, 1);
+  // Under the tests' own port mapping a listener may get another port than it asked for: the one it got is returned.
+  assert.ok(Number.isInteger(port) && port > 0);
+});

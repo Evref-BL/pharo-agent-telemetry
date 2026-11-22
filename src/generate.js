@@ -547,6 +547,7 @@ export function participantsPage(allowlist, collector = { endpoint: publicEndpoi
     .filter(([name]) => !allowlist.vocabulary.includes(name))
     .map(([name, values]) => `- ${name}: ${values.map(code).join(", ")}.`).join("\n");
   const vocabularySize = new Set(allowlist.vocabulary.flatMap((name) => allowlist.sets[name])).size;
+  const mcpScope = allowlist.services["pharo-mcp"].scope;
   const releases = Object.entries(allowlist.releases ?? {}).map(([project, release]) => `${project} ${release}`).join(", ");
   const who = collector.controller
     ? `${collector.controller.name} decides why and how this data is processed, the GDPR's controller. Write to ${collector.controller.contact} with any question, or to withdraw.`
@@ -594,7 +595,10 @@ ${serviceLines}
 
 Any other span is dropped whole, such as one your own OpenTelemetry code
 makes in an image, and so is a span that has links. Metrics and logs are not
-kept at all.
+kept at all. A span your own code makes of kind server, with the tracer
+\`${mcpScope}\`, named \`${toolCall}\` and a name, and with a \`session.id\`, cannot be
+told from MCP's: it is kept as \`${toolCall} _OTHER\`, or with its tool's name
+when that name passes as "Names" says, with nothing but what this page lists.
 
 Of each span, only this is kept:
 
@@ -630,9 +634,10 @@ when it is the name of a tool a project publishes, or when every word of it
 ${vocabularySize} words of the names in the code of MCP, PLexus and
 pharo-image-fs (their tools, arguments, errors and the rest), read from
 their source (${releases}), and of a list of words agents guess. Any
-other name is dropped, or becomes \`_OTHER\`, so a name with a word of your
-own in it, such as one of your classes, is never sent; a name made only of
-common words of the vocabulary, such as \`class_name\`, is. Both lists are in
+other name is dropped, or becomes \`_OTHER\`. A name is kept only when it is
+made of words our tools use, so a name of your own made only of such words
+can pass, such as a class \`ClassName\` or an argument \`class_name\`; a name
+with any other word in it cannot. Both lists are in
 [collector/catalog.json](../collector/catalog.json) and
 [collector/allowlist.json](../collector/allowlist.json).
 
@@ -664,9 +669,10 @@ ${setLines}
 
 - Argument values, results, source code, prompts, file contents.
 - Exception messages and stacks.
-- Paths, image names, project names, the names of your classes, methods or
-  packages, the names of tools other packages add or of their arguments, and
-  any name with a word the vocabulary does not have.
+- Paths and image names.
+- Any name with a word the vocabulary does not have, as most names of your
+  projects, classes, methods and packages have; a name made only of its
+  words can pass, as "Names" says.
 - Host names, user names, email addresses, IP addresses.
 - Any identifier of you or your machine. There are no participant ids.
 - Precise times: only the week, how long each span took, and its place in
@@ -725,9 +731,9 @@ collector never deletes a file the daily import has not loaded, and the
 import deletes each file once Elasticsearch holds its spans. Should the
 import stop, the collector refuses new spans once its archive takes half its
 disk's free space, rather than delete any. Elasticsearch keeps the spans in
-one index a month, under the import's lifecycle policy, which deletes each
-index twelve months after it was made. Reports derived from them hold
-counts, never spans, and are kept.
+one index a month, under the lifecycle policy as the import repository ships
+it, which deletes each index twelve months after it was made. Reports
+derived from them hold counts, never spans, and are kept.
 
 ## Your rights
 
@@ -768,7 +774,12 @@ A settings file you already had is kept beside it, as
 \`otel.env.before-join\`, and \`leave\` puts it back; \`join\` refuses to replace
 OpenTelemetry settings of your own unless you add \`--force\`. Your own
 OpenTelemetry code in an image then sends to the agent too, which drops its
-spans.
+spans but those "What is kept" says it cannot tell from MCP's.
+
+Where your system will not run a service of your account (over SSH on macOS,
+or on Linux without a systemd user session), \`join --no-service\` installs
+none: the agent then sends only while
+\`npx @evref-bl/pharo-agent-telemetry agent\` runs.
 
 PLexus reads its file at start, and passes it on to the images it starts; an
 image reads MCP's at every start. From PLexus's and MCP's next releases, a

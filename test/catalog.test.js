@@ -8,7 +8,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { verifyCatalog, weakPublicKey } from "../src/agent.js";
-import { catalogPayload, exceptionClasses, publicKeyOf, signCatalog, smalltalkLiterals, smalltalkToolNames, withCatalog, wordsOf } from "../src/catalog.js";
+import { catalogPayload, ciPharoVersions, exceptionNames, pharoTemplate, publicKeyOf, signCatalog, smalltalkLiterals, smalltalkToolNames, withCatalog, wordsOf } from "../src/catalog.js";
 import { readAllowlist } from "../src/generate.js";
 import { catalogAdditionCap, catalogAdditions, catalogLeftOut, withCatalogSets } from "../src/rules.js";
 import { catalog as builtIn, catalogAdded, catalogRefusal } from "../src/telemetry-transform.mjs";
@@ -27,21 +27,29 @@ test("a name's words are split on _, - and camelCase, in lower case, one-letter 
   assert.deepEqual(wordsOf("2fa_code"), ["code"]);
 });
 
-test("the exception classes a project can name: those it refers to, its tests' strings included, and those it defines below one", () => {
-  const code = `"A comment naming CommentOnlyError"
-Class {
-	#name : 'MCPInvalidToolInput',
-	#superclass : 'JRPCInvalidParameters',
-	#category : 'MCP'
-}
-Class {
-	#name : 'MCPTool',
-	#superclass : 'Object',
-	#category : 'MCP'
-}
-MCPTool >> run [ ^ [ self compile ] on: OCUndeclaredVariableNotice do: [ :e | $" ] ]`;
-  const test = "MCPToolTest >> testCompile [ self assert: (self typeOf: 'x') equals: 'OCSyntaxErrorNotice' ]";
-  assert.deepEqual(exceptionClasses([code], [test]), ["MCPInvalidToolInput", "OCSyntaxErrorNotice", "OCUndeclaredVariableNotice"]);
+test("the Pharo versions a CI runs are the smalltalkCI images its workflow names", () => {
+  assert.deepEqual(ciPharoVersions("matrix:\n  smalltalk: [ Pharo64-12, Pharo64-10, Pharo64-15 ]\n# Pharo64-12 again, and Squeak64-6.0\n"), [10, 12, 15]);
+  assert.deepEqual(ciPharoVersions("smalltalk: [ Squeak64-6.0 ]"), []);
+});
+
+test("an image of a Pharo version is made from its 64-bit template, the stable one and a distribution's first, or from none", () => {
+  const templates = [
+    { name: "Pharo 10.0 - 64bit", category: "Pharo Courses" },
+    { name: "Pharo 14.0 - 64bit (next stable)", category: "Official distributions" },
+    { name: "Pharo 14.0 - 64bit (stable)", category: "Official distributions" },
+    { name: "Pharo 10.0 - 64bit", category: "Deprecated distributions" },
+    { name: "Pharo 10.0 - 32bit", category: "Deprecated distributions" },
+    { name: "Moose Suite 13 (stable)", category: "Official distributions" },
+    { name: "Pharo 140.0 - 64bit", category: "Official distributions" },
+  ];
+  assert.deepEqual(pharoTemplate(14, templates), { name: "Pharo 14.0 - 64bit (stable)", category: "Official distributions" });
+  assert.deepEqual(pharoTemplate(10, templates), { name: "Pharo 10.0 - 64bit", category: "Deprecated distributions" });
+  assert.equal(pharoTemplate(13, templates), undefined);
+  assert.equal(pharoTemplate(1, templates), undefined);
+});
+
+test("the exception names an image wrote are its lines but those that start with #, which say what named them", () => {
+  assert.deepEqual(exceptionNames("# MCP 4.3.0 in Pharo-14.0.0+build.1 (64 Bit)\nAbort\r\nZeroDivide\n\n"), { from: ["MCP 4.3.0 in Pharo-14.0.0+build.1 (64 Bit)"], names: ["Abort", "ZeroDivide"] });
 });
 
 test("the strings and unary symbols of Tonel code are read, comments and characters left out", () => {
@@ -72,6 +80,8 @@ test("the catalog the project signs is the sets that grow with releases, which t
   for (const name of Object.keys(allowlist.grows)) assert.deepEqual(payload.sets[name], allowlist.sets[name], name);
   assert.equal(catalogRefusal(payload), undefined);
   assert.deepEqual(catalogLeftOut(allowlist, payload), []);
+  // Each set, whole, is no more than a catalog adds: an agent of any earlier package takes all of it.
+  for (const name of Object.keys(allowlist.grows)) assert.ok(payload.sets[name].length <= catalogAdditionCap, name);
   assert.equal(builtIn.published, JSON.parse(fs.readFileSync(path.join(root, "collector", "catalog.json"), "utf8")).published);
   assert.match(catalogRefusal({ ...payload, schema: 2 }), /of form 2, and this agent reads form 1/);
   assert.match(catalogRefusal({ ...payload, sets: [] }), /has no sets/);
@@ -89,7 +99,7 @@ test("a catalog only adds, and only to the sets that grow, members of their stri
     sets: {
       "MCP tools": ["class_get", "new_tool", "Bad-Tool", "/Users/ada", 7],
       "project words": ["zzqx", "Secret", "x".repeat(25), "ok2", "two words"],
-      "exception classes": ["AcmeError", "not_a_class", "Error"],
+      "Node exception classes": ["AcmeError", "not_a_class", "Error"],
       "PLexus error codes": ["new-code", "NewCode", "a--b"],
       "agent hosts": ["evil-host"],
       "OS types": ["plan9"],
@@ -97,7 +107,7 @@ test("a catalog only adds, and only to the sets that grow, members of their stri
       "secrets": ["anything"],
     },
   };
-  assert.deepEqual(catalogAdditions(allowlist, catalog), { "MCP tools": ["new_tool"], "project words": ["zzqx", "ok2"], "exception classes": ["AcmeError"], "PLexus error codes": ["new-code"] });
+  assert.deepEqual(catalogAdditions(allowlist, catalog), { "MCP tools": ["new_tool"], "project words": ["zzqx", "ok2"], "Node exception classes": ["AcmeError"], "PLexus error codes": ["new-code"] });
   assert.deepEqual(catalogAdded(catalog), catalogAdditions(allowlist, catalog));
   const applied = withCatalogSets(allowlist, catalog);
   // Nothing removed: the package's members stay, the added ones follow.

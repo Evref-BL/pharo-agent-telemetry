@@ -1,5 +1,5 @@
 {
-  "about": "Values from closed sets and patterns: error types, exception classes, PLexus's error codes, test outcomes, methods, dispatch paths, error kinds, protocol versions and tool names; and each attribute only from the tool that sends it.",
+  "about": "Values from closed sets and patterns: error types, exception classes (of any package of Pharo's, Iceberg's, Zinc's and Metacello's among them, and its compile notices), PLexus's error codes, test outcomes, methods, dispatch paths, error kinds, protocol versions and tool names; and each attribute only from the tool that sends it.",
   "request": {
     "resourceSpans": [
       {
@@ -724,6 +724,528 @@
                     }
                   }
                 ]
+              },
+              {
+                "traceId": "1000abababababababababababababab",
+                "spanId": "cccccccccccc0c10",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "IceCloneError"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2025-06-18"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1000abababababababababababababab",
+                "spanId": "cccccccccccc0c11",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "IceAuthenticationError"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2025-06-18"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1000abababababababababababababab",
+                "spanId": "cccccccccccc0c12",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "ZnHttpUnsuccessful"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2025-06-18"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1000abababababababababababababab",
+                "spanId": "cccccccccccc0c13",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "MetacelloConflictingProjectError"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2025-06-18"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1000abababababababababababababab",
+                "spanId": "cccccccccccc0c14",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "ConnectionTimedOut"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2025-06-18"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1000abababababababababababababab",
+                "spanId": "cccccccccccc0c15",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "NameLookupFailure"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2025-06-18"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1000abababababababababababababab",
+                "spanId": "cccccccccccc0c16",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "Halt"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2025-06-18"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1000abababababababababababababab",
+                "spanId": "cccccccccccc0c17",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "VariableNotDeclared"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2025-06-18"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1000abababababababababababababab",
+                "spanId": "cccccccccccc0c18",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "RBSyntaxErrorNotice"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.dispatch_path",
+                    "value": {
+                      "stringValue": "direct"
+                    }
+                  },
+                  {
+                    "key": "mcp.protocol.version",
+                    "value": {
+                      "stringValue": "2025-06-18"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
+                  }
+                ]
               }
             ]
           }
@@ -1043,6 +1565,258 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "_OTHER",
         "pharo.mcp.tool.origin": "mcp",
+        "session.id": "closed-sets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0c10",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.exception.type": "IceCloneError",
+        "pharo.mcp.dispatch_path": "direct",
+        "mcp.protocol.version": "2025-06-18",
+        "session.id": "closed-sets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0c11",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.exception.type": "IceAuthenticationError",
+        "pharo.mcp.dispatch_path": "direct",
+        "mcp.protocol.version": "2025-06-18",
+        "session.id": "closed-sets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0c12",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.exception.type": "ZnHttpUnsuccessful",
+        "pharo.mcp.dispatch_path": "direct",
+        "mcp.protocol.version": "2025-06-18",
+        "session.id": "closed-sets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0c13",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.exception.type": "MetacelloConflictingProjectError",
+        "pharo.mcp.dispatch_path": "direct",
+        "mcp.protocol.version": "2025-06-18",
+        "session.id": "closed-sets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0c14",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.exception.type": "ConnectionTimedOut",
+        "pharo.mcp.dispatch_path": "direct",
+        "mcp.protocol.version": "2025-06-18",
+        "session.id": "closed-sets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0c15",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.exception.type": "NameLookupFailure",
+        "pharo.mcp.dispatch_path": "direct",
+        "mcp.protocol.version": "2025-06-18",
+        "session.id": "closed-sets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0c16",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.exception.type": "Halt",
+        "pharo.mcp.dispatch_path": "direct",
+        "mcp.protocol.version": "2025-06-18",
+        "session.id": "closed-sets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0c17",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.exception.type": "VariableNotDeclared",
+        "pharo.mcp.dispatch_path": "direct",
+        "mcp.protocol.version": "2025-06-18",
+        "session.id": "closed-sets-session",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1000abababababababababababababab",
+      "span": "cccccccccccc0c18",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.exception.type": "RBSyntaxErrorNotice",
+        "pharo.mcp.dispatch_path": "direct",
+        "mcp.protocol.version": "2025-06-18",
         "session.id": "closed-sets-session",
         "span.duration_ms": {
           "double": 250

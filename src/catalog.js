@@ -1,6 +1,8 @@
-// What scripts/catalog.js reads in the projects' source, and how the
-// allowlist takes in what it wrote: collector/catalog.json, the tools MCP,
-// PLexus and pharo-image-fs publish and the words of their own names.
+// What scripts/catalog.js reads in the projects' source and in the files
+// scripts/exception-names.js writes, and how the allowlist takes in what it
+// wrote: collector/catalog.json, the tools MCP, PLexus and pharo-image-fs
+// publish, the words of their own names, and the classes MCP names
+// exceptions by.
 import { createPrivateKey, createPublicKey, sign } from "node:crypto";
 import { catalogSchema, nameWords } from "./rules.js";
 
@@ -70,62 +72,47 @@ export function smalltalkLiterals(text) {
 }
 
 /**
- * The classes a Tonel file defines, with their superclass, and the class
- * names its code refers to, in code, strings or symbols, comments left out.
+ * The Pharo versions a project's CI runs: the smalltalkCI images its
+ * workflow names (`Pharo64-14`).
  *
- * @param {string} text
- * @returns {{ defined: Array<{ name: string, superclass: string }>, referred: string[] }}
+ * @param {string} text the workflow
+ * @returns {number[]}
  */
-export function smalltalkClasses(text) {
-  const defined = [...text.matchAll(/^(?:Class|Error|Exception)\s*\{[^}]*?#name\s*:\s*#?'?([A-Za-z][A-Za-z0-9_]*)'?[^}]*?#superclass\s*:\s*#?'?([A-Za-z][A-Za-z0-9_]*)'?/gm)]
-    .map((match) => ({ name: match[1], superclass: match[2] }));
-  // Comments left out, strings and symbols kept: a test names the class it expects as a string.
-  let code = "";
-  for (let index = 0; index < text.length; index += 1) {
-    const character = text[index];
-    if (character === "$") {
-      index += 1;
-      code += " ";
-    } else if (character === '"') {
-      const end = text.indexOf('"', index + 1);
-      index = end === -1 ? text.length : end;
-      code += " ";
-    } else if (character === "'") {
-      let end = index + 1;
-      while (end < text.length && !(text[end] === "'" && text[end + 1] !== "'")) end += text[end] === "'" ? 2 : 1;
-      code += ` ${text.slice(index + 1, end)} `;
-      index = end;
-    } else {
-      code += character;
-    }
-  }
-  return { defined, referred: [...new Set(code.match(/\b[A-Z][A-Za-z0-9_]*\b/g) ?? [])] };
+export function ciPharoVersions(text) {
+  return [...new Set([...text.matchAll(/\bPharo64-([0-9]{1,3})\b/g)].map((match) => Number(match[1])))].sort((a, b) => a - b);
 }
 
-/** A class name that reads as an exception's, as Pharo names them. */
-export const exceptionName = /^[A-Z][A-Za-z0-9]*(?:Error|Exception|Notice|Warning|Notification|Failure|Abort|TimedOut|Timeout)$/;
+/**
+ * The template PLexus makes an image of a Pharo version from: a 64-bit
+ * Pharo of that version, its stable one first, then one of a distribution's
+ * category; undefined when PLexus has none.
+ *
+ * @param {number} version
+ * @param {Array<{ name: string, category?: string }>} templates as `plexus image templates` lists them
+ */
+export function pharoTemplate(version, templates) {
+  const shape = new RegExp(`^Pharo ${version}\\.0 - 64bit(?: \\(([^)]*)\\))?$`);
+  const rank = (template) => {
+    const suffix = shape.exec(template.name)?.[1];
+    return (suffix === "stable" ? 0 : suffix === undefined ? 2 : 4) + (/distributions$/i.test(template.category ?? "") ? 0 : 1);
+  };
+  return templates.filter((template) => shape.test(template.name)).sort((a, b) => rank(a) - rank(b))[0];
+}
 
 /**
- * The exception classes a project can name: those its code and its tests
- * refer to that read as exceptions (the compile notices its tests expect
- * among them), and those its code defines that descend from one, the
- * JSON-RPC errors it builds on included.
+ * What scripts/exception-names.st wrote in an image: what named the classes
+ * (`MCP 4.3.0 in Pharo-14.0.0+...`), from the lines that start with #, and
+ * the names, one a line.
  *
- * @param {string[]} texts the project's Tonel files, tests left out
- * @param {string[]} [tests] its tests' Tonel files, read only for the classes they refer to
+ * @param {string} text
+ * @returns {{ from: string[], names: string[] }}
  */
-export function exceptionClasses(texts, tests = []) {
-  const found = texts.map(smalltalkClasses);
-  const superclasses = new Map(found.flatMap(({ defined }) => defined.map(({ name, superclass }) => [name, superclass])));
-  const isException = (name, seen = new Set()) => {
-    if (exceptionName.test(name) || ["Error", "Exception", "Notification", "Warning", "Halt"].includes(name) || /^JRPC[A-Za-z]*(?:Error|Invalid)/.test(name)) return true;
-    const superclass = superclasses.get(name);
-    if (superclass === undefined || seen.has(name)) return false;
-    seen.add(name);
-    return isException(superclass, seen);
+export function exceptionNames(text) {
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length > 0);
+  return {
+    from: lines.filter((line) => line.startsWith("#")).map((line) => line.replace(/^#\s*/, "")),
+    names: lines.filter((line) => !line.startsWith("#")),
   };
-  const referred = [...found, ...tests.map(smalltalkClasses)].flatMap((each) => each.referred).filter((name) => exceptionName.test(name));
-  return [...new Set([...referred, ...[...superclasses.keys()].filter((name) => isException(name))])].sort();
 }
 
 /**

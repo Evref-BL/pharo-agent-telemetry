@@ -559,7 +559,7 @@ export function catalogProblem(catalog) {
 }
 
 /** Whether a member may be added to a set of `kind`: of its shape, and no value the allowlist blocks. */
-function addable(allowlist, kind, member) {
+export function addable(allowlist, kind, member) {
   return typeof member === "string" && growthShapes[kind].test(member) && !Object.values(allowlist.blockedValues ?? {}).some((pattern) => regExp(pattern).test(member));
 }
 

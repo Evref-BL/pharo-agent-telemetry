@@ -16,7 +16,8 @@ This repository is the experiment that uses them:
 
 One file, [collector/allowlist.json](collector/allowlist.json), says what is
 kept, with the sets of [collector/catalog.json](collector/catalog.json): the
-tools MCP, PLexus and pharo-image-fs publish and the words of their own names.
+tools MCP, PLexus and pharo-image-fs publish, the words of their own names,
+and the classes MCP names an exception by.
 `npm run generate` makes three things of them: the agent's filter
 (`src/telemetry-transform.mjs`), the collector's (`collector/otelcol.yaml`)
 and the page, so they cannot disagree.
@@ -210,18 +211,30 @@ its archive, to see what arrives.
 
 A name an agent chooses is kept only when it is a published tool's or made
 of the vocabulary's words: those of `collector/catalog.json` and of the
-allowlist's own `guessed words`. The catalog is read from the projects'
-source; for each release of MCP, PLexus or pharo-image-fs, run, from
-checkouts of the releases in use,
+allowlist's own `guessed words`. An exception's class is kept only when it
+is one MCP can name: MCP names it by its nearest class in Pharo's own
+packages or MCP's, which only an image of each Pharo version knows. The
+catalog is read from the projects' source, and from such images; for each
+release of MCP, PLexus or pharo-image-fs, run, from checkouts of the
+releases in use and with the PLexus release in use (its `dist/cli.js`),
 
 ```sh
-npm run catalog -- --mcp <MCP> --plexus <PLexus> --pharo-image-fs <pharo-image-fs>
+npm run exception-names -- --mcp <MCP> --cli <PLexus CLI> --out <directory>
+npm run catalog -- --mcp <MCP> --plexus <PLexus> --pharo-image-fs <pharo-image-fs> --exceptions <directory>
 npm run generate
 ```
 
+`exception-names` has PLexus make an image of each Pharo version MCP's CI
+runs, with MCP's Telemetry group, named `exceptions-<version>`, recording
+nothing and deleted after, and evaluates `scripts/exception-names.st` in it, which writes the
+name MCP's own rule gives every exception class and compiler notice of the
+image; it says which version PLexus has no template of, and leaves it out.
+`catalog` leaves out a name a catalog could not add, not of a class name's
+strict shape, and says so.
+
 Until then, a tool or word the release adds is dropped, or kept as `_OTHER`.
-`releases` in the catalog names the commits it was read from, and
-`published` when it was read.
+`releases` in the catalog names the commits it was read from, `images` the
+images MCP named the exception classes in, and `published` when it was read.
 
 The agents already installed need no new package for it: deployed and
 signed again (`npm run sign-catalog`), the catalog reaches them within a day.

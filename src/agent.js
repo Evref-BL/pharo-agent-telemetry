@@ -114,13 +114,33 @@ export function createForwarder({ endpoint, token, now = Date.now, send }) {
         counts.dropped += requests;
         continue;
       }
+      const fail = (count) => {
+        failures += 1;
+        counts.failed += count;
+        closedUntil = now() + Math.min(backoff.first * 2 ** (failures - 1), backoff.last);
+        last = { at: now(), outcome: "failed" };
+      };
       const outcome = await attempt(body);
       if (outcome === "refused" && parts.length > 1) {
         // The collector may have refused one of the merged requests: each is sent again on its own, so the others are not lost with it.
         let sent = 0;
-        for (const part of parts) if ((await attempt(part)) === true) sent += 1;
+        let refused = 0;
+        for (const [index, part] of parts.entries()) {
+          const each = await attempt(part);
+          if (each === true) sent += 1;
+          else if (each === "refused") refused += 1;
+          else {
+            // The collector went down meanwhile: sending stops a while, as after any failure, and the parts not tried yet are dropped.
+            counts.sent += sent;
+            counts.refused += refused;
+            counts.dropped += parts.length - index - 1;
+            fail(1);
+            break;
+          }
+        }
+        if (now() < closedUntil) continue;
         counts.sent += sent;
-        counts.refused += parts.length - sent;
+        counts.refused += refused;
         if (sent > 0) failures = 0;
         last = { at: now(), outcome: sent > 0 ? "sent" : "refused" };
         continue;
@@ -134,10 +154,7 @@ export function createForwarder({ endpoint, token, now = Date.now, send }) {
         counts.refused += requests;
         last = { at: now(), outcome: "refused" };
       } else {
-        failures += 1;
-        counts.failed += requests;
-        closedUntil = now() + Math.min(backoff.first * 2 ** (failures - 1), backoff.last);
-        last = { at: now(), outcome: "failed" };
+        fail(requests);
       }
     }
     running = false;

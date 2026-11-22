@@ -350,6 +350,29 @@ test("a merged send the collector refuses is sent again request by request, so o
   assert.deepEqual({ ...forwarder.counts }, { sent: 3, failed: 0, dropped: 0, refused: 1 });
 });
 
+test("a part that fails while a refused merged send is sent again request by request stops sending a while, as any failure does", async () => {
+  let release;
+  const held = new Promise((resolve) => { release = resolve; });
+  const sent = [];
+  const request = (name) => JSON.stringify({ resourceSpans: [{ resource: { attributes: [] }, scopeSpans: [{ scope: { name }, spans: [] }] }] });
+  // The merged send is refused, then the collector goes down.
+  const forwarder = createForwarder({ endpoint: "https://c.test", send: async (body) => {
+    sent.push(body);
+    if (sent.length === 1) await held;
+    if (body.includes('"first"')) return true;
+    return body.includes('"a"') && body.includes('"c"') ? "refused" : false;
+  } });
+  forwarder.enqueue(request("first"));
+  for (const name of ["a", "b", "c"]) forwarder.enqueue(request(name));
+  release();
+  await forwarder.idle();
+  // The first part failed twice (pooled, then fresh); b and c were not tried.
+  assert.deepEqual(sent.slice(2), [request("a"), request("a")]);
+  assert.deepEqual({ ...forwarder.counts }, { sent: 1, failed: 1, dropped: 2, refused: 0 });
+  assert.ok(forwarder.closedUntil > Date.now());
+  assert.equal(forwarder.last?.outcome, "failed");
+});
+
 test("a stop is never asked of a port where the agent does not prove its key, and a preview says it is one", async () => {
   const asked = [];
   const impostor = http.createServer((request, response) => {

@@ -150,19 +150,70 @@ export function readSettings(file) {
   return { writer, text, others, outside: outside.join("\n").replace(/^\n+|\n+$/g, ""), block: block.join("\n") };
 }
 
+/** Whether a path is a symbolic link. */
+function isLink(file) {
+  try {
+    return fs.lstatSync(file).isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
+/** The file a write goes to: a symbolic link's target, so the link stays a link. */
+function target(file) {
+  return isLink(file) ? fs.realpathSync(file) : file;
+}
+
 /**
- * Writes the file whole, so a tool starting meanwhile reads all of it or none.
+ * Writes the file whole, so a tool starting meanwhile reads all of it or
+ * none; through a symbolic link, into the file it points to.
  *
  * @param {string} file
  * @param {string} text
  * @param {number} [mode]
  */
 export function writeSettings(file, text, mode = 0o600) {
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  const temporary = `${file}.${process.pid}.tmp`;
+  const written = target(file);
+  fs.mkdirSync(path.dirname(written), { recursive: true });
+  const temporary = `${written}.${process.pid}.tmp`;
   fs.writeFileSync(temporary, text, { mode });
   fs.chmodSync(temporary, mode);
-  fs.renameSync(temporary, file);
+  fs.renameSync(temporary, written);
+}
+
+/**
+ * Keeps what a settings file holds in `backup`, readable by its owner only:
+ * the file's text, or `text` when given (the settings of your own outside a
+ * block of ours).
+ */
+export function backUp(file, backup, text = fs.readFileSync(file, "utf8")) {
+  writeSettings(backup, text, 0o600);
+}
+
+/** Puts a backup back where it was taken, through a symbolic link if the file is one, and removes it. */
+export function restoreBackup(file, backup) {
+  const mode = fs.statSync(backup).mode & 0o777;
+  writeSettings(file, fs.readFileSync(backup, "utf8"), mode);
+  fs.rmSync(backup, { force: true });
+}
+
+/**
+ * Why a settings file could not be written, or undefined when it can be:
+ * checked before anything is installed, so a join never stops halfway.
+ *
+ * @param {string} file
+ */
+export function unwritable(file) {
+  try {
+    const written = target(file);
+    let directory = path.dirname(written);
+    while (!fs.existsSync(directory)) directory = path.dirname(directory);
+    fs.accessSync(directory, fs.constants.W_OK);
+    if (fs.existsSync(written)) fs.accessSync(written, fs.constants.W_OK);
+    return undefined;
+  } catch (error) {
+    return `${file} cannot be written (${error instanceof Error && "code" in error ? error.code : error}): join would stop halfway. Make its directory writable, then run join again.`;
+  }
 }
 
 /**
@@ -177,7 +228,9 @@ export function removeSettings(file, { force = false } = {}) {
   const current = readSettings(file);
   if (current === undefined) return "absent";
   if (force || (current.writer !== "other" && !current.others)) {
-    fs.rmSync(file, { force: true });
+    // A symbolic link stays, and points to what is left: nothing of ours.
+    if (isLink(file)) writeSettings(file, force ? "" : `${current.outside}${current.outside ? "\n" : ""}`, fs.statSync(file).mode & 0o777);
+    else fs.rmSync(file, { force: true });
     return "removed";
   }
   if (current.writer === "other") return "not ours";

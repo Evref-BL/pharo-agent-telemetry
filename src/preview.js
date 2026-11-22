@@ -6,7 +6,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import { startAgent } from "./agent.js";
 import { freePort } from "./install.js";
-import { agentSettings, backupSuffix, readSettings, removeSettings, settingsBlock, writeSettings } from "./settings.js";
+import { agentSettings, backUp, backupSuffix, readSettings, removeSettings, restoreBackup, settingsBlock, writeSettings } from "./settings.js";
 
 /** A span's kind, by its number. */
 const kindNames = ["unspecified", "internal", "server", "client", "producer", "consumer"];
@@ -54,7 +54,7 @@ export function describeRequest(request) {
 export function recoverPreview(file) {
   const backup = `${file}${backupSuffix}`;
   if (readSettings(file)?.writer !== "preview") return;
-  if (fs.existsSync(backup)) fs.renameSync(backup, file);
+  if (fs.existsSync(backup)) restoreBackup(file, backup);
   else removeSettings(file);
 }
 
@@ -88,7 +88,7 @@ export async function startPreview({ files, filter, key, print, signal, port }) 
   const backups = [];
   for (const file of files) {
     if (readSettings(file) !== undefined) {
-      fs.copyFileSync(file, `${file}${backupSuffix}`);
+      backUp(file, `${file}${backupSuffix}`);
       backups.push(file);
     }
     writeSettings(file, settingsBlock("preview", agentSettings({ port: started.port, environment: "preview" })));
@@ -99,8 +99,8 @@ export async function startPreview({ files, filter, key, print, signal, port }) 
     for (const file of files) {
       if (readSettings(file)?.writer !== "preview") continue;
       const backup = `${file}${backupSuffix}`;
-      if (backups.includes(file) && fs.existsSync(backup)) fs.renameSync(backup, file);
-      else fs.rmSync(file, { force: true });
+      if (backups.includes(file) && fs.existsSync(backup)) restoreBackup(file, backup);
+      else removeSettings(file);
     }
   });
   return { port: started.port, done };

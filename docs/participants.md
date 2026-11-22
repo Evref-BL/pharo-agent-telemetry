@@ -140,6 +140,7 @@ What happened:
 | `pharo.mcp.tool.refs` | pharo-mcp | The tools a discovery call (tool_search, tool_get) named. | a list of at most 16, each a tool a project publishes, else `_OTHER` |
 | `pharo.mcp.error.kind` | pharo-mcp | The kind of error MCP reported. | one of `input_schema`, `domain`, `tool_result`, `json_rpc`, `exception` |
 | `pharo.mcp.error.code` | pharo-mcp | The error code MCP gave its answer. | an identifier, made of the vocabulary's words, else `_OTHER`, only for MCP's own tools |
+| `pharo.mcp.error.schema.violation_count` | pharo-mcp | How many times the arguments broke the tool's input schema, where the rules and places they broke are each named once. | the lower bound of its bucket: 0, 1, 2, 6, 21, 101 |
 | `pharo.mcp.error.schema.keywords` | pharo-mcp | Which schema rules they broke. | a list of at most 8, each one of the schema keywords |
 | `pharo.mcp.error.schema.paths` | pharo-mcp | Where in the tool's input they broke them. | a list of at most 8, each a JSON pointer, each name in it made of the vocabulary's words |
 | `pharo.mcp.exception.type` | pharo-mcp | The nearest Pharo or MCP class of an exception. | one of the MCP exception classes, else `_OTHER` |

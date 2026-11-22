@@ -77,6 +77,7 @@
     "pharo.mcp.tool.refs": {"about": "The tools a discovery call (tool_search, tool_get) named.", "from": ["pharo-mcp"], "type": "string[]", "pattern": "identifier", "published": true, "otherwise": "_OTHER", "max": 16, "name": true},
     "pharo.mcp.error.kind": {"about": "The kind of error MCP reported.", "from": ["pharo-mcp"], "type": "string", "values": ["input_schema", "domain", "tool_result", "json_rpc", "exception"]},
     "pharo.mcp.error.code": {"about": "The error code MCP gave its answer.", "from": ["pharo-mcp"], "type": "string", "pattern": "identifier", "words": "name", "otherwise": "_OTHER", "own": true},
+    "pharo.mcp.error.schema.violation_count": {"about": "How many times the arguments broke the tool's input schema, where the rules and places they broke are each named once.", "from": ["pharo-mcp"], "type": "int", "buckets": [0, 1, 2, 6, 21, 101]},
     "pharo.mcp.error.schema.keywords": {"about": "Which schema rules they broke.", "from": ["pharo-mcp"], "type": "string[]", "values": "schema keywords", "max": 8},
     "pharo.mcp.error.schema.paths": {"about": "Where in the tool's input they broke them.", "from": ["pharo-mcp"], "type": "string[]", "pattern": "JSON pointer", "words": "pointer", "max": 8, "name": true},
     "pharo.mcp.exception.type": {"about": "The nearest Pharo or MCP class of an exception.", "from": ["pharo-mcp"], "type": "string", "values": ["MCP exception classes"], "otherwise": "_OTHER"},

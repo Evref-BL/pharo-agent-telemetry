@@ -317,6 +317,12 @@ const allowlist = {
       "otherwise": "_OTHER",
       "own": true
     },
+    "pharo.mcp.error.schema.violation_count": {
+      "about": "How many times the arguments broke the tool's input schema, where the rules and places they broke are each named once.",
+      "from": ["pharo-mcp"],
+      "type": "int",
+      "buckets": [0,1,2,6,21,101]
+    },
     "pharo.mcp.error.schema.keywords": {
       "about": "Which schema rules they broke.",
       "from": ["pharo-mcp"],

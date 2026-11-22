@@ -1,5 +1,5 @@
 {
-  "about": "What the note adds is kept and what it drops is not: constants, the always empty mcp.session.id, the output budget, plexus.image.from_base, the coerced arguments, the violation count, the SDK's version and the VM's description.",
+  "about": "What the note adds is kept and what it drops is not: constants, the always empty mcp.session.id, the output budget, plexus.image.from_base, the coerced arguments, the SDK's version and the VM's description.",
   "request": {
     "resourceSpans": [
       {
@@ -466,7 +466,8 @@
         "session.id": "4b1d3a1e-0000-4000-8000-000000000003",
         "span.duration_ms": {
           "double": 250
-        }
+        },
+        "pharo.mcp.error.schema.violation_count": 1
       }
     }
   ]

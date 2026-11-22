@@ -469,7 +469,8 @@
         "pharo.mcp.exception.type": "MCPInvalidToolInput",
         "span.duration_ms": {
           "double": 0
-        }
+        },
+        "pharo.mcp.error.schema.violation_count": 1
       }
     }
   ]

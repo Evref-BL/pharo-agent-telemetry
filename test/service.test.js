@@ -1,12 +1,13 @@
 // The agent's service on each system, its definition written into a home of
 // the test's own and its commands given to a runner that records them:
-// nothing is installed on the machine that runs the tests.
+// nothing is installed on the machine that runs the tests, and the default
+// runner refuses to reach the service manager under a test.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { installService, label, removeService, serviceDefinition, serviceState, task, unit } from "../src/service.js";
+import { installedDefinitions, installService, removeService, runCommand, serviceDefinition, serviceNames, serviceState, startService } from "../src/service.js";
 
 /** A runner that records each command, and answers as `answers` says. */
 function recorder(answers = () => ({ status: 0, stdout: "" })) {
@@ -27,7 +28,31 @@ function withHome(run) {
   }
 }
 
+test("each agent directory has a service of its own, named after it", () => {
+  const a = serviceNames("/Users/a/.config/pharo-agent-telemetry/agent.mjs", "darwin");
+  const b = serviceNames("/tmp/scratch/config/pharo-agent-telemetry/agent.mjs", "darwin");
+  assert.match(a.label, /^org\.evref-bl\.pharo-agent-telemetry\.[0-9a-f]{12}$/);
+  assert.match(a.unit, /^pharo-agent-telemetry-[0-9a-f]{12}\.service$/);
+  assert.match(a.task, /^pharo-agent-telemetry-[0-9a-f]{12}$/);
+  assert.notEqual(a.label, b.label);
+  assert.deepEqual(serviceNames("/Users/a/.config/pharo-agent-telemetry/agent.mjs", "darwin"), a);
+  // Windows paths are one whatever their case.
+  assert.deepEqual(serviceNames("C:\\Users\\A\\AppData\\Roaming\\pharo-agent-telemetry\\agent.mjs", "win32"), serviceNames("c:\\users\\a\\appdata\\roaming\\pharo-agent-telemetry\\agent.mjs", "win32"));
+});
+
+test("under a test, the default runner refuses to run a service command, but runs a fake one the test gives", () => withHome((home) => {
+  assert.ok(process.env.NODE_TEST_CONTEXT, "run by node --test");
+  assert.throws(() => runCommand("launchctl", ["print", "gui/0"]), /not run under a test/);
+  assert.throws(() => installService({ platform: "darwin", home, uid: 501, agent: path.join(home, "agent.mjs") }), /not run under a test/);
+  if (process.platform === "win32") return;
+  const fakes = path.join(home, "fakes");
+  fs.mkdirSync(fakes);
+  fs.writeFileSync(path.join(fakes, "launchctl"), "#!/bin/sh\necho \"fake $*\"\n", { mode: 0o755 });
+  assert.deepEqual(runCommand("launchctl", ["print", "x"], { ...process.env, PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS: fakes }), { status: 0, stdout: "fake print x\n" });
+}));
+
 test("on macOS, a LaunchAgent that starts at login and again when the agent fails", () => {
+  const { label } = serviceNames("/Users/a/.config/pharo-agent-telemetry/agent.mjs", "darwin");
   const { file, content } = serviceDefinition({ platform: "darwin", home: "/Users/a", node: "/opt/node & co/bin/node", agent: "/Users/a/.config/pharo-agent-telemetry/agent.mjs" });
   assert.equal(file, `/Users/a/Library/LaunchAgents/${label}.plist`);
   assert.match(content, /<string>\/opt\/node &amp; co\/bin\/node<\/string>\s*<string>\/Users\/a\/\.config\/pharo-agent-telemetry\/agent\.mjs<\/string>/);
@@ -35,13 +60,18 @@ test("on macOS, a LaunchAgent that starts at login and again when the agent fail
   assert.match(content, /<key>KeepAlive<\/key>\s*<dict>\s*<key>SuccessfulExit<\/key>\s*<false\/>/);
 });
 
-test("on Linux, a systemd user unit that starts at login and again when the agent fails", () => {
-  const { file, content } = serviceDefinition({ platform: "linux", home: "/home/a", env: {}, node: "/usr/bin/node", agent: "/home/a/.config/pharo-agent-telemetry/100% agent.mjs" });
+test("on Linux, a systemd user unit that starts at login and again when the agent fails, under both configuration directories", () => {
+  const { unit } = serviceNames("/home/a/.config/pharo-agent-telemetry/100% $agent.mjs", "linux");
+  const { file, content, extras } = serviceDefinition({ platform: "linux", home: "/home/a", env: {}, node: "/usr/bin/node", agent: "/home/a/.config/pharo-agent-telemetry/100% $agent.mjs" });
   assert.equal(file, `/home/a/.config/systemd/user/${unit}`);
-  assert.match(content, /^ExecStart="\/usr\/bin\/node" "\/home\/a\/\.config\/pharo-agent-telemetry\/100%% agent\.mjs"$/m);
+  assert.deepEqual(extras, []);
+  assert.match(content, /^ExecStart="\/usr\/bin\/node" "\/home\/a\/\.config\/pharo-agent-telemetry\/100%% \$\$agent\.mjs"$/m);
   assert.match(content, /^Restart=on-failure$/m);
   assert.match(content, /^WantedBy=default\.target$/m);
-  assert.equal(serviceDefinition({ platform: "linux", home: "/home/a", env: { XDG_CONFIG_HOME: "/x" }, agent: "/a" }).file, `/x/systemd/user/${unit}`);
+  // The user's systemd may read another XDG_CONFIG_HOME than this shell's.
+  const both = serviceDefinition({ platform: "linux", home: "/home/a", env: { XDG_CONFIG_HOME: "/x" }, agent: "/a/agent.mjs" });
+  const named = serviceNames("/a/agent.mjs", "linux").unit;
+  assert.deepEqual([both.file, ...both.extras.map((extra) => extra.file)], [`/home/a/.config/systemd/user/${named}`, `/x/systemd/user/${named}`]);
 });
 
 test("on Windows, a hidden task at logon that restarts on failure, in the UTF-16 schtasks reads", () => {
@@ -54,36 +84,85 @@ test("on Windows, a hidden task at logon that restarts on failure, in the UTF-16
   assert.match(text, /<LogonTrigger>\s*<Enabled>true<\/Enabled>\s*<UserId>D\\a<\/UserId>/);
   assert.match(text, /<RestartOnFailure>\s*<Interval>PT1M<\/Interval>/);
   assert.match(text, /<Hidden>true<\/Hidden>/);
-  assert.match(text, /<Command>C:\\Program Files\\nodejs\\node\.exe<\/Command>\s*<Arguments>&quot;\/agent\/agent\.mjs&quot;<\/Arguments>/);
+  // No console window: wscript runs node hidden, and again after it fails.
+  assert.match(text, /<Command>wscript\.exe<\/Command>\s*<Arguments>\/\/B \/\/Nologo &quot;\/agent\/agent\.vbs&quot;<\/Arguments>/);
+  const [launcher] = serviceDefinition({ platform: "win32", env: {}, node: "C:\\Program Files\\nodejs\\node.exe", agent: "/agent/agent.mjs" }).extras;
+  assert.equal(launcher.file, path.join("/agent", "agent.vbs"));
+  assert.match(launcher.content.subarray(2).toString("utf16le"), /shell\.Run\("""C:\\Program Files\\nodejs\\node\.exe"" ""\/agent\/agent\.mjs""", 0, True\)/);
 });
 
 test("installing writes the definition and starts the service again; removing stops it and deletes the definition", () => withHome((home, agent) => {
+  const names = (platform) => serviceNames(agent, platform);
   const expected = {
     darwin: {
-      install: [`launchctl bootout gui/501/${label}`, `launchctl bootstrap gui/501 ${home}/Library/LaunchAgents/${label}.plist`],
-      remove: [`launchctl bootout gui/501/${label}`],
+      install: [`launchctl bootout gui/501/${names("darwin").label}`, `launchctl bootstrap gui/501 ${home}/Library/LaunchAgents/${names("darwin").label}.plist`],
+      remove: [`launchctl bootout gui/501/${names("darwin").label}`],
+      start: [`launchctl kickstart gui/501/${names("darwin").label}`],
     },
     linux: {
-      install: ["systemctl --user daemon-reload", `systemctl --user enable ${unit}`, `systemctl --user restart ${unit}`],
-      remove: [`systemctl --user disable --now ${unit}`, "systemctl --user daemon-reload"],
+      install: ["systemctl --user daemon-reload", `systemctl --user enable ${names("linux").unit}`, `systemctl --user restart ${names("linux").unit}`],
+      remove: [`systemctl --user disable --now ${names("linux").unit}`, "systemctl --user daemon-reload"],
+      start: [`systemctl --user start ${names("linux").unit}`],
     },
     win32: {
-      install: [`schtasks /Create /TN ${task} /XML ${path.join(path.dirname(agent), "task.xml")} /F`, `schtasks /End /TN ${task}`, `schtasks /Run /TN ${task}`],
-      remove: [`schtasks /End /TN ${task}`, `schtasks /Delete /TN ${task} /F`],
+      install: [`schtasks /Create /TN ${names("win32").task} /XML ${path.join(path.dirname(agent), "task.xml")} /F`, `schtasks /End /TN ${names("win32").task}`, `schtasks /Run /TN ${names("win32").task}`],
+      remove: [`schtasks /End /TN ${names("win32").task}`, `schtasks /Delete /TN ${names("win32").task} /F`],
+      start: [`schtasks /Run /TN ${names("win32").task}`],
     },
   };
-  for (const [platform, { install, remove }] of Object.entries(expected)) {
+  for (const [platform, { install, remove, start }] of Object.entries(expected)) {
     // Stopping a service that does not run fails, and need not stop the install.
     const installing = recorder((command, args) => ({ status: args.includes("bootout") || args.includes("/End") ? 1 : 0, stdout: "" }));
     const options = { platform, home, env: {}, uid: 501, agent, run: installing.run };
     const file = installService(options);
     assert.ok(fs.existsSync(file), platform);
     assert.deepEqual(installing.commands, install, platform);
+    assert.deepEqual(installedDefinitions(options), [file], platform);
+    const starting = recorder();
+    assert.equal(startService({ ...options, run: starting.run }), true, platform);
+    assert.deepEqual(starting.commands, start, platform);
     const removing = recorder();
     assert.equal(removeService({ ...options, run: removing.run }), true, platform);
     assert.deepEqual(removing.commands, remove, platform);
     assert.equal(fs.existsSync(file), false, platform);
-    assert.equal(removeService({ ...options, run: recorder().run }), false, platform);
+    const after = recorder();
+    assert.equal(removeService({ ...options, run: after.run }), false, platform);
+    assert.equal(startService({ ...options, run: after.run }), false, platform);
+    assert.deepEqual(after.commands, [], platform);
+  }
+}));
+
+test("nothing is stopped, started or asked of a service whose definition is not this home's, nor names this agent", () => withHome((home, agent) => {
+  // Another home's agent, as the real one is for a test's scratch home.
+  const other = "/Users/someone/.config/pharo-agent-telemetry/agent.mjs";
+  for (const platform of ["darwin", "linux", "win32"]) {
+    const nothing = recorder();
+    const options = { platform, home, env: {}, uid: 501, agent, run: nothing.run };
+    // No definition at all in this home.
+    assert.equal(removeService(options), false, platform);
+    assert.equal(startService(options), false, platform);
+    assert.equal(serviceState(options), "not installed", platform);
+    // The other agent's definition, copied into this home under its own name.
+    const theirs = serviceDefinition({ ...options, agent: other });
+    // On Windows the definition is beside the agent, in the other home.
+    if (platform !== "win32") {
+      fs.mkdirSync(path.dirname(theirs.file), { recursive: true });
+      fs.writeFileSync(theirs.file, theirs.content);
+    }
+    // A definition under this agent's name that runs the other agent.
+    const ours = serviceDefinition(options);
+    const forged = serviceDefinition({ ...options, agent: other });
+    fs.mkdirSync(path.dirname(ours.file), { recursive: true });
+    fs.writeFileSync(ours.file, forged.content);
+    if (platform === "win32") fs.writeFileSync(ours.extras[0].file, forged.extras[0].content);
+    assert.deepEqual(installedDefinitions(options), [], platform);
+    assert.equal(removeService(options), false, platform);
+    assert.equal(startService(options), false, platform);
+    assert.equal(serviceState(options), "not installed", platform);
+    assert.deepEqual(nothing.commands, [], platform);
+    assert.ok(fs.existsSync(ours.file), platform);
+    fs.rmSync(ours.file);
+    if (platform !== "win32") fs.rmSync(theirs.file);
   }
 }));
 
@@ -109,9 +188,14 @@ test("the service's state, as each system reports it", () => withHome((home, age
     ["win32", 1, "", "not running"],
   ];
   for (const [platform, status, stdout, state] of cases) {
-    const options = { platform, home, env: {}, uid: 501, agent, run: answer(0, "") };
+    const options = { platform, home, env: {}, uid: 501, agent, node: process.execPath, run: answer(0, "") };
     installService(options);
     assert.equal(serviceState({ ...options, run: answer(status, stdout) }), state, `${platform}: ${stdout}`);
     removeService(options);
   }
+  // A node that went away with an upgrade.
+  const gone = { platform: "darwin", home, env: {}, uid: 501, agent, node: path.join(home, "Cellar", "node", "1.0.0", "bin", "node"), run: answer(0, "") };
+  installService(gone);
+  assert.equal(serviceState(gone), "without its node");
+  removeService(gone);
 }));

@@ -86,7 +86,7 @@ test("a preview prints each span, marks what the collector drops, and puts the s
 test("a span is described with its duration, attributes and resource", () => {
   const lines = describeRequest(fixture, allowlist);
   assert.ok(lines.includes("    1 event(s)   (dropped by the collector)"));
-  assert.ok(lines.includes('    pharo_agent.argument.names = ["name"]'));
+  assert.ok(lines.includes('    plexus.argument.names = ["name"]'));
 });
 
 test("the page names who answers for the data and where it is once they are set, and says so while they are not", () => {

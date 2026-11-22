@@ -132,9 +132,9 @@ test("the archive keeps what the allowlist allows, and nothing else", { skip: !d
     "error.type",
     "gen_ai.tool.name",
     "pharo.mcp.input.bytes",
-    "pharo_agent.argument.names",
-    "pharo_agent.client.name",
-    "pharo_agent.client.version",
+    "plexus.argument.names",
+    "plexus.client.name",
+    "plexus.client.version",
   ]);
   assert.equal(call.span.name, "tools/call class_get");
   assert.equal(call.span.traceId, "4bf92f3577b34da6a3ce929d0e0e4736");
@@ -177,7 +177,7 @@ test("sampling keeps or drops all of a call's spans together", { skip: !dockerRu
   const before = (await archivedSpans(0)).length;
   const traces = Array.from({ length: 60 }, (_, index) => `5a${index.toString(16).padStart(2, "0")}${"0".repeat(26)}${index.toString(16).padStart(2, "0")}`);
   for (const traceId of traces) {
-    for (const [service, spanId] of [["pharo-agent", "b000000000000001"], ["pharo-mcp", "b000000000000002"]]) {
+    for (const [service, spanId] of [["plexus", "b000000000000001"], ["pharo-mcp", "b000000000000002"]]) {
       for (let attempt = 0; ; attempt += 1) {
         const response = await fetch(`${endpoint}/v1/traces`, {
           method: "POST",
@@ -197,7 +197,7 @@ test("sampling keeps or drops all of a call's spans together", { skip: !dockerRu
   const kept = Object.keys(perTrace).length;
   assert.ok(kept > 10 && kept < 50, `kept ${kept} of 60 traces`);
   for (const [traceId, spans] of Object.entries(perTrace)) {
-    assert.deepEqual(spans.map(({ resource }) => attributes(resource.attributes)["service.name"].stringValue).sort(), ["pharo-agent", "pharo-mcp"], traceId);
+    assert.deepEqual(spans.map(({ resource }) => attributes(resource.attributes)["service.name"].stringValue).sort(), ["pharo-mcp", "plexus"], traceId);
   }
 });
 

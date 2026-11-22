@@ -21,6 +21,8 @@
     "generate": "node scripts/generate.js",
     "test": "node scripts/generate.js --check && node --test --test-concurrency=1 test/*.test.js",
     "audit": "node scripts/audit-archive.js",
-    "check-deployment": "node scripts/check-deployment.js"
+    "check-deployment": "node scripts/check-deployment.js",
+    "check-release": "node scripts/check-release.js",
+    "prepublishOnly": "node scripts/generate.js --check && node scripts/check-release.js"
   }
 }

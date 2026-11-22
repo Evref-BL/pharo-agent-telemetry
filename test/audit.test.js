@@ -71,3 +71,26 @@ test("two spans of a line that share an id are each set beside what the rules ma
   scopeSpans.spans = [first, { ...second, spanId: first.spanId }];
   assert.deepEqual(audit([JSON.stringify(kept)], allowlist).problems, []);
 });
+
+test("npm run audit takes a directory for the archive files in it", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "pat-audit-"));
+  try {
+    const transform = filter(testKey);
+    const kept = transform("traces", ruleFixtures().find(({ name }) => name === "vocabulary").request);
+    fs.writeFileSync(path.join(directory, "traces-2026-11-22.jsonl"), `${JSON.stringify(kept)}\n`);
+    fs.writeFileSync(path.join(directory, "notes.txt"), "not an archive");
+    const script = fileURLToPath(new URL("../scripts/audit-archive.js", import.meta.url));
+    const audited = spawnSync(process.execPath, [script, directory], { encoding: "utf8" });
+    assert.equal(audited.status, 0, audited.stderr);
+    assert.match(audited.stdout, /Nothing the allowlist does not allow\./);
+    assert.match(audited.stdout, /pharo-mcp tools\/call tests_run/);
+    const missing = spawnSync(process.execPath, [script, path.join(directory, "gone")], { encoding: "utf8" });
+    assert.equal(missing.status, 2);
+    assert.match(missing.stderr, /no such file or directory/);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});

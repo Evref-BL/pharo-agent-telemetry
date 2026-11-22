@@ -8,7 +8,7 @@
 // `join` copies this file into the agent's own directory as agent.mjs, with
 // the filter, its key and agent.json, and runs it as a per-user service, so
 // it imports nothing but Node's own modules and the filter.
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHmac, createPublicKey, randomBytes, timingSafeEqual, verify } from "node:crypto";
 import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
@@ -372,6 +372,112 @@ export function sessionsText(sessions, now = Date.now()) {
 }
 
 /** The services the agent counts requests of by name; any other is "other". */
+/** Where the agent keeps the last catalog it accepted, signed as it came, and when it last asked for one. */
+export const signedCatalogFile = "catalog.json";
+
+/** The largest catalog read, how long the agent waits for one, and how often it asks. */
+export const catalogCap = 1024 * 1024;
+const catalogTimeout = 30_000;
+export const catalogEvery = 24 * 3_600_000;
+
+/**
+ * The text a catalog's URL answers, read whole only when it is at most
+ * `cap` bytes, following no redirect; or why there is none: "unreachable",
+ * "too large", or the HTTP status.
+ *
+ * @param {string} url
+ * @returns {Promise<{ text: string } | { failure: string }>}
+ */
+export function fetchCatalog(url, { cap = catalogCap, timeout = catalogTimeout } = {}) {
+  return new Promise((resolve) => {
+    let target;
+    try {
+      target = new URL(url);
+    } catch {
+      resolve({ failure: "unreachable" });
+      return;
+    }
+    const client = target.protocol === "https:" ? https : target.protocol === "http:" ? http : undefined;
+    if (client === undefined) {
+      resolve({ failure: "unreachable" });
+      return;
+    }
+    let settled = false;
+    const settle = (result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      request.destroy();
+      resolve(result);
+    };
+    const request = client.get(target, { agent: false, headers: { accept: "application/json" }, ...(target.protocol === "https:" ? { rejectUnauthorized: true } : {}) }, (response) => {
+      const status = response.statusCode ?? 0;
+      if (status !== 200) return settle({ failure: `HTTP ${status}` });
+      if (Number(response.headers["content-length"] ?? 0) > cap) return settle({ failure: "too large" });
+      const chunks = [];
+      let size = 0;
+      response.on("data", (chunk) => {
+        size += chunk.length;
+        if (size > cap) settle({ failure: "too large" });
+        else chunks.push(chunk);
+      });
+      response.on("end", () => settle({ text: Buffer.concat(chunks).toString("utf8") }));
+      response.on("error", () => settle({ failure: "unreachable" }));
+    });
+    const timer = setTimeout(() => settle({ failure: "unreachable" }), timeout);
+    request.on("error", () => settle({ failure: "unreachable" }));
+  });
+}
+
+/**
+ * A signed catalog's payload, when its Ed25519 signature holds by the
+ * project's public key; or why it is refused. The signature is of the
+ * payload's text, as it came.
+ *
+ * @param {string} text `{ "payload": "<the catalog, as JSON text>", "signature": "<base64>" }`
+ * @param {string} publicKey the key's `x`, base64url, as a JWK gives it
+ * @returns {{ payload: any } | { refused: string }}
+ */
+export function verifyCatalog(text, publicKey) {
+  let envelope;
+  try {
+    envelope = JSON.parse(text);
+  } catch {
+    return { refused: "it is not JSON" };
+  }
+  if (typeof envelope?.payload !== "string" || typeof envelope?.signature !== "string") return { refused: "it is not a signed catalog" };
+  let holds = false;
+  try {
+    const key = createPublicKey({ key: { kty: "OKP", crv: "Ed25519", x: publicKey }, format: "jwk" });
+    holds = verify(null, Buffer.from(envelope.payload, "utf8"), key, Buffer.from(envelope.signature, "base64"));
+  } catch {
+    holds = false;
+  }
+  if (!holds) return { refused: "its signature does not hold" };
+  try {
+    return { payload: JSON.parse(envelope.payload) };
+  } catch {
+    return { refused: "it is not JSON" };
+  }
+}
+
+/**
+ * Whether a catalog whose signature holds replaces the one in use: the
+ * filter must take it (its form and its sets, `refusal`), and it must be
+ * newer.
+ *
+ * @param {any} payload
+ * @param {{ published: string }} inUse
+ * @param {(payload: any) => string | undefined} refusal the filter's catalogRefusal
+ * @returns {{ accepted: any } | { refused: string }}
+ */
+export function acceptCatalog(payload, inUse, refusal) {
+  const problem = refusal(payload);
+  if (problem) return { refused: problem };
+  if (!(Date.parse(payload.published) > Date.parse(inUse.published))) return { refused: `it is not newer than the one in use, of ${inUse.published}` };
+  return { accepted: payload };
+}
+
 const counted = ["plexus", "pharo-mcp"];
 
 /**
@@ -379,7 +485,7 @@ const counted = ["plexus", "pharo-mcp"];
  * received of each tool and when the last came, and what it sent. It stays
  * on this machine, for `status`.
  */
-function agentState(forwarder, now = Date.now) {
+function agentState(forwarder, now = Date.now, catalog = () => undefined) {
   const started = new Date(now()).toISOString();
   /** @type {Record<string, { requests: number, kept: number, last: string }>} */
   const received = {};
@@ -401,20 +507,53 @@ function agentState(forwarder, now = Date.now) {
         received,
         forwarded: { ...forwarder.counts, ...(last ? { last: { at: new Date(last.at).toISOString(), outcome: last.outcome } } : {}) },
         ...(forwarder.closedUntil > now() ? { pausedUntil: new Date(forwarder.closedUntil).toISOString() } : {}),
+        catalog: catalog(),
       }, null, 2)}\n`;
     },
   };
 }
 
+/** The catalog kept in the agent's directory: the signed text it accepted last, and when it last asked. */
+export function readSignedCatalog(directory) {
+  try {
+    const { signed, checked } = JSON.parse(fs.readFileSync(path.join(directory, signedCatalogFile), "utf8"));
+    return { signed: typeof signed === "string" ? signed : undefined, checked: typeof checked === "string" ? checked : undefined };
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * The catalog the agent of a directory filters with, when it kept one that
+ * still holds: signed by the key its settings name, taken by its filter, and
+ * newer than the filter's own. `preview` filters with it too.
+ *
+ * @param {string} directory
+ * @param {{ catalog?: { url: string, publicKey: string } }} config agent.json
+ * @param {{ catalog?: { published: string }, catalogRefusal?: (payload: any) => string | undefined }} transform the filter's module
+ */
+export function keptCatalog(directory, config, transform) {
+  const { signed } = readSignedCatalog(directory);
+  if (signed === undefined || typeof config?.catalog?.publicKey !== "string" || transform.catalog === undefined || transform.catalogRefusal === undefined) return undefined;
+  const verified = verifyCatalog(signed, config.catalog.publicKey);
+  if ("refused" in verified) return undefined;
+  const decided = acceptCatalog(verified.payload, transform.catalog, transform.catalogRefusal);
+  return "accepted" in decided ? decided.accepted : undefined;
+}
+
 /**
  * The agent as its service runs it, until a signal or a stop request ends
  * it: the settings, filter and key in its directory, where `join` put them.
+ * Sending to the project's collector, it asks the collector's host for a
+ * newer catalog at most once a day (`catalog` in agent.json), and filters
+ * with the sets of one whose signature holds from then on, without a restart.
  *
  * @param {string} directory
+ * @param {{ catalogEvery?: number, now?: () => number }} [options]
  */
-export async function runAgent(directory) {
-  const { port, endpoint, token } = JSON.parse(fs.readFileSync(path.join(directory, "agent.json"), "utf8"));
-  const { filter } = await import(pathToFileURL(path.join(directory, "telemetry-transform.mjs")).href);
+export async function runAgent(directory, { catalogEvery: every = catalogEvery, now = Date.now } = {}) {
+  const { port, endpoint, token, catalog: source } = JSON.parse(fs.readFileSync(path.join(directory, "agent.json"), "utf8"));
+  const { filter, catalog: builtIn, catalogRefusal } = await import(pathToFileURL(path.join(directory, "telemetry-transform.mjs")).href);
   let secret;
   try {
     secret = fs.readFileSync(path.join(directory, "telemetry-transform.key"), "utf8").trim() || undefined;
@@ -422,9 +561,25 @@ export async function runAgent(directory) {
     secret = undefined;
   }
   const sessions = readSessions(path.join(directory, sessionsFile));
-  const transform = filter(secret, { sessions });
+  const updates = typeof source?.url === "string" && typeof source?.publicKey === "string" && builtIn !== undefined;
+  // The catalog in use: the filter's own, until one the project signed and that is newer replaces it.
+  let inUse = { published: builtIn?.published, releases: builtIn?.releases, from: "package" };
+  let { signed, checked } = updates ? readSignedCatalog(directory) : {};
+  let outcome;
+  let transform = filter(secret, { sessions });
+  const take = (text) => {
+    const verified = verifyCatalog(text, source.publicKey);
+    if ("refused" in verified) return verified.refused;
+    const decided = acceptCatalog(verified.payload, inUse, catalogRefusal);
+    if ("refused" in decided) return decided.refused;
+    transform = filter(secret, { sessions, catalog: decided.accepted });
+    inUse = { published: decided.accepted.published, releases: decided.accepted.releases, from: source.url };
+    signed = text;
+    return undefined;
+  };
+  if (updates && signed !== undefined && take(signed) !== undefined) signed = undefined;
   const forwarder = createForwarder({ endpoint, token });
-  const state = agentState(forwarder);
+  const state = agentState(forwarder, now, () => ({ ...inUse, ...(checked ? { checked } : {}), ...(outcome ? { outcome } : {}) }));
   let pending;
   const write = (name, text) => {
     const file = path.join(directory, name);
@@ -446,9 +601,33 @@ export async function runAgent(directory) {
   };
   const stop = new AbortController();
   for (const name of ["SIGINT", "SIGTERM", "SIGHUP"]) process.once(name, () => stop.abort());
+  let asking = false;
+  const askCatalog = async () => {
+    if (asking || (checked !== undefined && now() - Date.parse(checked) < every)) return;
+    asking = true;
+    const fetched = await fetchCatalog(source.url);
+    checked = new Date(now()).toISOString();
+    if ("failure" in fetched) outcome = fetched.failure;
+    else if (fetched.text === signed) outcome = "unchanged";
+    else {
+      const refused = take(fetched.text);
+      outcome = refused === undefined ? "accepted" : `refused: ${refused}`;
+    }
+    try {
+      write(signedCatalogFile, `${JSON.stringify({ checked, ...(signed ? { signed } : {}) })}\n`);
+    } catch {
+      // Asked again at the next start.
+    }
+    asking = false;
+    changed();
+  };
+  const asker = updates ? setInterval(askCatalog, Math.min(every, 3_600_000)) : undefined;
+  asker?.unref?.();
+  if (updates) askCatalog();
+  stop.signal.addEventListener("abort", () => clearInterval(asker));
   const { closed } = await startAgent({
     port,
-    transform,
+    transform: (signal, request) => transform(signal, request),
     keep: (request) => {
       for (const part of split(request)) forwarder.enqueue(part);
     },

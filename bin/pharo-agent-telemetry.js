@@ -5,9 +5,10 @@
 // XDG_CONFIG_HOME say, and on that agent's own service: see src/service.js.
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import { runAgent, stopAgent, whoListens } from "../src/agent.js";
-import { missingForJoin, publicEndpoint, publicToken } from "../src/collector.js";
+import { keptCatalog, runAgent, stopAgent, whoListens } from "../src/agent.js";
+import { catalogPublicKey, catalogUrl, missingForJoin, publicEndpoint, publicToken } from "../src/collector.js";
 import { agentPorts, agentStatus, freePort, installAgent, packaged, readAgentConfig, readKey, removeAgent } from "../src/install.js";
 import { recoverPreview, startPreview } from "../src/preview.js";
 import { definedAgentDirectories, dryRun, installService, realServices, removeService, runCommand, serviceState, stableNode, startService } from "../src/service.js";
@@ -148,7 +149,9 @@ async function join() {
   fs.rmSync(previewMark(agentDirectory), { force: true });
   // A port from before the agent's ports were below the systems' ephemeral ranges moves.
   const port = earlier && earlier.port <= agentPorts.last ? earlier.port : await freePort();
-  installAgent(agentDirectory, { port, endpoint, token, ...(withService ? {} : { service: false }) });
+  // Only the project's collector's host serves the catalog the project signs.
+  const catalog = values.endpoint ? {} : { catalog: { url: catalogUrl, publicKey: catalogPublicKey } };
+  installAgent(agentDirectory, { port, endpoint, token, ...catalog, ...(withService ? {} : { service: false }) });
   if (withService) {
     try {
       installService(service);
@@ -254,6 +257,29 @@ function stateLines(state, port) {
   return lines;
 }
 
+/**
+ * What status says of the catalog of names the agent filters with: as its
+ * state says, or, before it ran, its filter's own.
+ */
+async function catalogLine(directory, state, config) {
+  let catalog = state?.catalog;
+  if (!catalog?.published) {
+    try {
+      const filter = await import(pathToFileURL(path.join(directory, "telemetry-transform.mjs")).href);
+      catalog = filter.catalog && { ...filter.catalog, from: "package" };
+    } catch {
+      return undefined;
+    }
+  }
+  if (!catalog?.published) return undefined;
+  const releases = Object.entries(catalog.releases ?? {}).map(([name, release]) => `${name} ${release}`).join(", ");
+  const from = catalog.from === "package" ? "the package's" : `from ${catalog.from}`;
+  const asked = catalog.checked
+    ? `; asked for a newer one ${ago(catalog.checked)}${catalog.outcome ? `: ${catalog.outcome}` : ""}`
+    : config?.catalog ? "; no newer one asked for yet" : "; it asks for none, sending to another collector than the project's";
+  return `Catalog of the names kept: ${from}, of ${catalog.published}, read from ${releases}${asked}.`;
+}
+
 /** What status says of an agent directory: its version, its port, who answers there, and how it has sent. */
 async function agentLines(directory, version) {
   const agent = agentStatus(directory);
@@ -279,6 +305,8 @@ async function agentLines(directory, version) {
         : `Something listens on 127.0.0.1:${agent.config.port}; without the agent's key, nothing tells whether it is the agent.`,
     }[listener]);
     lines.push(...stateLines(agent.state, agent.config.port));
+    const catalog = await catalogLine(directory, agent.state, agent.config);
+    if (catalog) lines.push(catalog);
   }
   return lines;
 }
@@ -315,9 +343,12 @@ async function status() {
 async function preview() {
   const stop = new AbortController();
   for (const name of ["SIGINT", "SIGTERM", "SIGHUP"]) process.once(name, () => stop.abort());
-  const { filter } = await import(packaged["telemetry-transform.mjs"].href);
+  const transform = await import(packaged["telemetry-transform.mjs"].href);
   const config = readAgentConfig(agentDirectory);
   const key = readKey(agentDirectory);
+  // With the catalog the agent took, if any, so that the preview keeps what the agent would.
+  const catalog = config ? keptCatalog(agentDirectory, config, transform) : undefined;
+  const filter = (other, options) => transform.filter(other, { ...options, ...(catalog ? { catalog } : {}) });
   // Joined, the preview takes the agent's place on its port, so that what the tools already running send shows too, and nothing is sent meanwhile.
   const joined = config !== undefined && key !== undefined && (config.service === false || serviceState(service) !== "not installed");
   if (joined) {

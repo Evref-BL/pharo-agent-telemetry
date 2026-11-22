@@ -9,7 +9,10 @@ import os from "node:os";
 import path from "node:path";
 import { after, before, test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { generateKeyPairSync } from "node:crypto";
+import { fetchCatalog, verifyCatalog } from "../src/agent.js";
 import { audit } from "../src/audit.js";
+import { catalogPayload, publicKeyOf, signCatalog } from "../src/catalog.js";
 import { checkDeployment } from "../src/check.js";
 import { readAllowlist } from "../src/generate.js";
 import { freePort } from "../src/install.js";
@@ -24,6 +27,11 @@ const dockerRuns = spawnSync("docker", ["info"], { stdio: "ignore" }).status ===
 
 /** @type {string} */
 let archive;
+/** Where the signed catalog is, which Caddy serves, and the throwaway key it is signed with. */
+/** @type {string} */
+let published;
+const catalogKey = /** @type {string} */ (generateKeyPairSync("ed25519").privateKey.export({ type: "pkcs8", format: "pem" }));
+const allowlist = readAllowlist(root);
 /** @type {string} */
 let endpoint;
 /** @type {Record<string, string>} */
@@ -40,6 +48,9 @@ before(async () => {
   if (!dockerRuns) return;
   archive = fs.mkdtempSync(path.join(os.tmpdir(), "pat-archive-"));
   fs.chmodSync(archive, 0o777);
+  published = fs.mkdtempSync(path.join(os.tmpdir(), "pat-published-"));
+  fs.chmodSync(published, 0o755);
+  fs.writeFileSync(path.join(published, "catalog.json"), signCatalog(catalogPayload(allowlist, new Date().toISOString()), catalogKey), { mode: 0o644 });
   const port = await freePort();
   endpoint = `http://127.0.0.1:${port}`;
   env = {
@@ -47,6 +58,7 @@ before(async () => {
     COLLECTOR_TOKEN: token,
     ID_HASH_KEY: testKey,
     ARCHIVE_DIR: archive,
+    PUBLISHED_DIR: published,
     HTTP_PORT: `127.0.0.1:${port}`,
     HTTPS_PORT: `127.0.0.1:${await freePort()}`,
     ARCHIVE_MAX_MB: "1000",
@@ -67,6 +79,7 @@ after(() => {
     compose("down", "-v");
   } finally {
     fs.rmSync(archive, { recursive: true, force: true });
+    fs.rmSync(published, { recursive: true, force: true });
   }
 }, { timeout: 120_000 });
 
@@ -99,14 +112,24 @@ test("a request without the token is refused and archives nothing", { skip: !doc
 });
 
 test("npm run check-deployment finds everything a participant relies on", { skip: !dockerRuns }, async () => {
-  const results = await checkDeployment(endpoint, token);
+  const results = await checkDeployment(endpoint, token, fetch, { publicKey: publicKeyOf(catalogKey), sets: allowlist.sets });
   assert.deepEqual(results.filter((result) => !result.held), []);
-  assert.equal(results.length, 5);
+  assert.equal(results.length, 7);
+  // Signed by another key, the catalog is said not to be the project's.
+  const other = await checkDeployment(endpoint, token, fetch, { publicKey: publicKeyOf(/** @type {string} */ (generateKeyPairSync("ed25519").privateKey.export({ type: "pkcs8", format: "pem" }))) });
+  assert.deepEqual(other.filter((result) => !result.held).map((result) => result.saw), ["its signature does not hold"]);
 });
 
-test("only /v1/traces is served", { skip: !dockerRuns }, async () => {
+test("only /v1/traces is served, and the signed catalog the agents ask for", { skip: !dockerRuns }, async () => {
   assert.equal((await send(forbidden, { authorization: `Bearer ${token}` }, `${endpoint}/v1/logs`)).status, 404);
   assert.equal((await fetch(`${endpoint}/`)).status, 404);
+  const fetched = await fetchCatalog(`${endpoint}/pharo-agent-telemetry/catalog.json`);
+  assert.ok("text" in fetched, JSON.stringify(fetched));
+  const verified = verifyCatalog(fetched.text, publicKeyOf(catalogKey));
+  assert.ok("payload" in verified, JSON.stringify(verified));
+  assert.deepEqual(verified.payload.sets, allowlist.sets);
+  assert.equal((await send("{}", {}, `${endpoint}/pharo-agent-telemetry/catalog.json`)).status, 404);
+  assert.equal((await fetch(`${endpoint}/pharo-agent-telemetry/other.json`)).status, 404);
 });
 
 test("the collector keeps of each rule fixture exactly what the agent's filter keeps", { skip: !dockerRuns, timeout: 120_000 }, async () => {

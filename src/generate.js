@@ -438,8 +438,14 @@ try {
 
 export default createTransform(allowlist, key);
 
-/** The same filter with another key, as \`preview\` runs it; without the places in sessions with \`{ offsets: false }\`. */
+/** The same filter with another key, as \`preview\` runs it; without the places in sessions with \`{ offsets: false }\`; with a newer catalog's sets with \`{ catalog }\`. */
 export const filter = (other, options) => createTransform(allowlist, other, options);
+
+/** The catalog this filter was generated with: its form, its date, and the releases it was read from. */
+export const catalog = { schema: catalogSchema, published: allowlist.catalogPublished, releases: allowlist.releases };
+
+/** Why a catalog cannot give this filter its sets, or undefined when it can. */
+export const catalogRefusal = (other) => catalogProblem(allowlist, other);
 `;
 }
 
@@ -572,6 +578,13 @@ says, all send to the agent.
 
 The collector applies the same rules again to whatever arrives, and drops
 what they do not keep. Both are made from one list, and so is this page.
+
+The agent updates its lists of our tools' names and words, and nothing else,
+from the project's server: the closed sets and the vocabulary this page
+lists below. At most once a day it asks the collector's server for a newer
+catalog of them, and takes it only when the project's key signed it. A
+catalog changes which names are kept, never which attributes are kept or in
+what shape.
 
 ## What is kept
 

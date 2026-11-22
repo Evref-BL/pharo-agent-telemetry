@@ -9,7 +9,9 @@ This repository is the experiment that uses them:
 
 - `bin/`, `src/`: `npx @evref-bl/pharo-agent-telemetry preview | join | status | leave`,
   and the agent `join` installs.
-- `collector/`: the collector participants send to, as Docker Compose.
+- `collector/`: the collector participants send to, as Docker Compose, which
+  also serves the signed catalog of names the agents update their filter
+  from.
 - `docs/participants.md`: what is sent.
 
 One file, [collector/allowlist.json](collector/allowlist.json), says what is
@@ -142,15 +144,30 @@ in the collector's environment only, never in the archive.
 `SAMPLING_PERCENTAGE` in `.env` keeps only that share of the traces, a call's
 spans all together; it stays at 100 unless the volume outgrows the import.
 
+Caddy also serves `GET /pharo-agent-telemetry/catalog.json` from
+`collector/published/` (`PUBLISHED_DIR`): the catalog the agents ask for at
+most once a day, signed with the administrators' Ed25519 key. Make that key
+once, outside the repository and outside the VM's checkout if you can, and
+sign from the commit you deploy, so that the catalog holds the sets the
+collector's configuration was generated from:
+
+```sh
+npm run sign-catalog -- --new-key <file outside this repository>   # once: prints the public key
+npm run sign-catalog -- --key <that file>                           # each deployment
+```
+
 From anywhere, check what participants rely on: the token is required,
-nothing but `/v1/traces` is served, and a span is taken. The span it sends is
-of no service of ours, so the collector keeps nothing of it.
+nothing but `/v1/traces` and the catalog is served, a span is taken, and,
+once `catalogPublicKey` is set, the catalog is signed by its key and holds
+this checkout's sets. The span it sends is of no service of ours, so the
+collector keeps nothing of it.
 
 ```sh
 npm run check-deployment -- https://<SITE_ADDRESS> <COLLECTOR_TOKEN>
 ```
 
-Then set `publicEndpoint`, `publicToken`, `controller`, `dpo` and `host` in
+Then set `publicEndpoint`, `publicToken`, `controller`, `dpo`, `host`,
+`catalogUrl` (on the collector's host) and `catalogPublicKey` in
 [src/collector.js](src/collector.js), run `npm run generate`, and publish the
 package. `join` refuses the project's collector until all are set, and the
 participants page says what is missing until then. `npm publish` refuses
@@ -197,4 +214,20 @@ npm run generate
 ```
 
 Until then, a tool or word the release adds is dropped, or kept as `_OTHER`.
-`releases` in the catalog names the commits it was read from.
+`releases` in the catalog names the commits it was read from, and
+`published` when it was read.
+
+The agents already installed need no new package for it: deployed and
+signed again (`npm run sign-catalog`), the catalog reaches them within a day.
+An agent sending to the project's collector asks `catalogUrl` for it at most
+once a day, and takes it only when its Ed25519 signature holds by
+`catalogPublicKey`, its form (`schema`) is the one its filter reads, its
+sets have a set's shape, and it is newer than the one in use (`published`,
+the signing time); it then filters with its sets from the next request on,
+keeps it in `catalog.json` beside its settings for its next start, and
+`status` shows its date and releases. A catalog gives the members of sets the
+rules already use, every set of the allowlist and the catalog; the rules
+stay code, so a catalog can change which names are kept, never which
+attributes or in what shape. A change to the rules, or to a set's form, needs
+a new package: raise `catalogSchema` in `src/rules.js` when the form changes,
+so that older agents refuse the catalogs they cannot read.

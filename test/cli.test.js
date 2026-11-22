@@ -13,7 +13,7 @@ import { dpoPlaceholder, participantsPage, readAllowlist } from "../src/generate
 import { describeRequest, recoverPreview, startPreview } from "../src/preview.js";
 import { installedDefinitions, serviceDefinition, serviceNames, stableNode } from "../src/service.js";
 import { everySettingsFile, readSettings, settingsBlock, settingsFiles, agentSettings } from "../src/settings.js";
-import { filter } from "../src/telemetry-transform.mjs";
+import { catalog as builtIn, filter } from "../src/telemetry-transform.mjs";
 import { comparable, expectedSpans, ruleFixtures, testKey } from "./support.js";
 
 const binary = new URL("../bin/pharo-agent-telemetry.js", import.meta.url).pathname;
@@ -109,7 +109,7 @@ test("join installs the agent and points both tools at it without the token; lea
 }));
 
 test("join refuses before the collector exists, and never replaces settings it did not write unless forced", () => withHome(({ cli, settings, agent }) => {
-  assert.match(cli("join").stderr, /its endpoint, token, controller, dpo, host are not set yet/);
+  assert.match(cli("join").stderr, /its endpoint, token, controller, dpo, host, catalogUrl, catalogPublicKey are not set yet/);
   fs.mkdirSync(path.dirname(settings.mcp), { recursive: true });
   fs.writeFileSync(settings.mcp, "OTEL_EXPORTER_OTLP_ENDPOINT=http://mine\n");
   const refused = cli("join", "--endpoint", "https://c.test");
@@ -261,8 +261,12 @@ test("the page names who answers for the data, its officer and where it is once 
 });
 
 test("join refuses the project's collector while anything about it is missing", () => {
-  assert.deepEqual(missingForJoin({}), ["endpoint", "token", "controller", "dpo", "host"]);
-  assert.deepEqual(missingForJoin({ endpoint: "https://c.test", token: "t", controller: { name: "n", contact: "c" }, dpo: "d", host: { provider: "p", region: "r", importer: "i", archive: "a" } }), []);
+  assert.deepEqual(missingForJoin({}), ["endpoint", "token", "controller", "dpo", "host", "catalogUrl", "catalogPublicKey"]);
+  const ready = { endpoint: "https://c.test", token: "t", controller: { name: "n", contact: "c" }, dpo: "d", host: { provider: "p", region: "r", importer: "i", archive: "a" }, catalogUrl: "https://c.test/pharo-agent-telemetry/catalog.json", catalogPublicKey: "k" };
+  assert.deepEqual(missingForJoin(ready), []);
+  // The catalog comes from the collector's own host, and no other.
+  assert.deepEqual(missingForJoin({ ...ready, catalogUrl: "https://elsewhere.test/pharo-agent-telemetry/catalog.json" }), ["catalogUrl"]);
+  assert.deepEqual(missingForJoin({ ...ready, catalogUrl: "http://c.test/pharo-agent-telemetry/catalog.json" }), ["catalogUrl"]);
 });
 
 /**
@@ -549,4 +553,16 @@ test("status and join know a joined preview from another program, and a preview 
   assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
   assert.equal(fs.existsSync(path.join(config, "pharo-agent-telemetry", "preview.json")), false);
   assert.doesNotMatch(cli("status").stdout, /preview was stopped/);
+}));
+
+test("status shows the catalog of names the agent filters with: its date, the releases it was read from, and where it came from", () => withHome(({ cli, agent }) => {
+  assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
+  const releases = Object.entries(builtIn.releases).map(([name, release]) => `${name} ${release}`).join(", ");
+  assert.ok(cli("status").stdout.includes(`Catalog of the names kept: the package's, of ${builtIn.published}, read from ${releases}; it asks for none, sending to another collector than the project's.`));
+  const config = JSON.parse(fs.readFileSync(path.join(agent, "agent.json"), "utf8"));
+  fs.writeFileSync(path.join(agent, "agent.json"), JSON.stringify({ ...config, catalog: { url: "https://c.test/pharo-agent-telemetry/catalog.json", publicKey: "k" } }));
+  const checked = new Date(Date.now() - 3 * 3_600_000).toISOString();
+  fs.writeFileSync(path.join(agent, "state.json"), JSON.stringify({ started: checked, received: {}, forwarded: {}, catalog: { published: "2030-01-01T00:00:00.000Z", releases: { MCP: "v9.0.0" }, from: "https://c.test/pharo-agent-telemetry/catalog.json", checked, outcome: "accepted" } }));
+  const status = cli("status").stdout;
+  assert.match(status, /^Catalog of the names kept: from https:\/\/c\.test\/pharo-agent-telemetry\/catalog\.json, of 2030-01-01T00:00:00\.000Z, read from MCP v9\.0\.0; asked for a newer one 3 h ago: accepted\.$/m);
 }));

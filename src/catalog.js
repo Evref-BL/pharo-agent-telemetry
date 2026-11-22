@@ -1,7 +1,8 @@
 // What scripts/catalog.js reads in the projects' source, and how the
 // allowlist takes in what it wrote: collector/catalog.json, the tools MCP,
 // PLexus and pharo-image-fs publish and the words of their own names.
-import { nameWords } from "./rules.js";
+import { createPrivateKey, createPublicKey, sign } from "node:crypto";
+import { catalogSchema, nameWords } from "./rules.js";
 
 /** Where the catalog is, from the repository's root. */
 export const catalogFile = "collector/catalog.json";
@@ -147,5 +148,37 @@ export function withCatalog(allowlist, catalog) {
   for (const name of Object.keys(catalog.sets)) {
     if (name in allowlist.sets) throw new Error(`${name} is both in the allowlist and in the catalog.`);
   }
-  return { ...allowlist, releases: catalog.releases, sets: { ...allowlist.sets, ...catalog.sets } };
+  return { ...allowlist, catalogPublished: catalog.published, releases: catalog.releases, sets: { ...allowlist.sets, ...catalog.sets } };
+}
+
+/**
+ * The catalog the agents may take in place of the one their filter was
+ * generated with, as it is signed and served: the form of catalog the rules
+ * read, a date, the releases it was read from, and every set of the
+ * allowlist with the catalog's sets among them, which the collector's
+ * configuration is generated from too.
+ *
+ * @param {any} allowlist the allowlist with the catalog's sets (readAllowlist)
+ * @param {string} published when it was signed, as an ISO date
+ */
+export function catalogPayload(allowlist, published) {
+  return { schema: catalogSchema, published, releases: allowlist.releases, sets: allowlist.sets };
+}
+
+/**
+ * A catalog signed as the collector serves it: its JSON text, and the
+ * Ed25519 signature of that text by the administrators' private key, which
+ * the agents check with the public key the package ships.
+ *
+ * @param {any} payload catalogPayload's
+ * @param {string} privateKey PEM
+ */
+export function signCatalog(payload, privateKey) {
+  const text = JSON.stringify(payload);
+  return `${JSON.stringify({ payload: text, signature: sign(null, Buffer.from(text, "utf8"), createPrivateKey(privateKey)).toString("base64") })}\n`;
+}
+
+/** The public key of a private one, as the agents take it: the `x` of its JWK. */
+export function publicKeyOf(privateKey) {
+  return /** @type {string} */ (createPublicKey(createPrivateKey(privateKey)).export({ format: "jwk" }).x);
 }

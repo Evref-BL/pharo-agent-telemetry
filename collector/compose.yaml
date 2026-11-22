@@ -1,4 +1,5 @@
-# The collector: Caddy terminates TLS and passes /v1/traces on, the
+# The collector: Caddy terminates TLS and passes /v1/traces on, and serves
+# the catalog `npm run sign-catalog` signed into ./published; the
 # OpenTelemetry Collector keeps what the allowlist allows and writes it to
 # ./archive, one file a day, where the import job collects it; the guard
 # makes Caddy refuse new spans while the archive is over its cap.
@@ -18,6 +19,7 @@ services:
       - caddy-data:/data
       - caddy-config:/config
       - guard:/guard:ro
+      - ${PUBLISHED_DIR:-./published}:/published:ro
     depends_on:
       - otelcol
     logging: &logs

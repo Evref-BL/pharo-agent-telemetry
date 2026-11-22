@@ -347,6 +347,7 @@ const allowlist = {
     "an IPv4 address": "(?s)^.*\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b.*$",
     "an IPv6 address": "(?is)^.*(?:::|\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\b).*$"
   },
+  "catalogPublished": "2026-11-22T18:07:10.262Z",
   "releases": {
     "MCP": "v4.2.1-10-g04d8445 + v4.2.1-5-g6208aed + v4.2.1-3-ge601136",
     "PLexus": "v0.20.0-4-g6075384",
@@ -859,6 +860,50 @@ function sessionOffsets(now = Date.now, sessions = new Map()) {
   };
 }
 
+/** The form of catalog these rules read: a catalog of another form is refused, never guessed at. */
+const catalogSchema = 1;
+
+/** The most members a set of a catalog may have. */
+const catalogMembers = 20_000;
+
+/** The shape of a member of a set in a catalog, and of a word of the vocabulary. */
+const memberShape = /^[A-Za-z0-9@_][A-Za-z0-9 ._@/+-]{0,63}$/;
+const wordShape = /^[a-z0-9]{1,32}$/;
+
+/**
+ * Why a catalog cannot give these rules their sets, or undefined when it
+ * can: it must be of this form and dated, and each set it gives that the
+ * allowlist has must be a list of names of a set's shape (a word's for the
+ * vocabulary), none a value the allowlist blocks. A set the allowlist does
+ * not have gates nothing, and is left out. A catalog changes which names a
+ * rule keeps, never which attributes are kept or in what shape: the rules
+ * stay this code.
+ *
+ * @param {any} allowlist
+ * @param {any} catalog `{ schema, published, releases, sets }`
+ */
+function catalogProblem(allowlist, catalog) {
+  if (catalog === null || typeof catalog !== "object" || Array.isArray(catalog)) return "it is not an object";
+  if (catalog.schema !== catalogSchema) return `it is of form ${JSON.stringify(catalog.schema)}, and this agent reads form ${catalogSchema}`;
+  if (typeof catalog.published !== "string" || Number.isNaN(Date.parse(catalog.published))) return "it has no date";
+  if (catalog.sets === null || typeof catalog.sets !== "object" || Array.isArray(catalog.sets)) return "it has no sets";
+  const vocabulary = [].concat(allowlist.vocabulary ?? []);
+  const blocked = Object.values(allowlist.blockedValues ?? {}).map(regExp);
+  for (const [name, values] of Object.entries(catalog.sets)) {
+    if (!Object.hasOwn(allowlist.sets ?? {}, name)) continue;
+    if (!Array.isArray(values) || values.length > catalogMembers) return `its ${name} is not a list of names`;
+    const shape = vocabulary.includes(name) ? wordShape : memberShape;
+    if (values.some((value) => typeof value !== "string" || !shape.test(value) || blocked.some((pattern) => pattern.test(value)))) return `its ${name} holds a member of another shape`;
+  }
+  return undefined;
+}
+
+/** The allowlist with a catalog's sets in place of its own, those it has. */
+function withCatalogSets(allowlist, catalog) {
+  const sets = Object.fromEntries(Object.entries(catalog.sets).filter(([name]) => Object.hasOwn(allowlist.sets ?? {}, name)));
+  return { ...allowlist, catalogPublished: catalog.published, releases: catalog.releases, sets: { ...allowlist.sets, ...sets } };
+}
+
 /**
  * The function the agent calls before it sends anything: traces as the rules
  * keep them, each span with its place in its session, and nothing of the
@@ -867,10 +912,11 @@ function sessionOffsets(now = Date.now, sessions = new Map()) {
  *
  * @param {any} allowlist
  * @param {string | undefined} key
- * @param {{ offsets?: boolean, sessions?: Map<string, { first: bigint, seen: number }> }} [options] `offsets: false` leaves out the places, as the collector, which cannot know them; `sessions`, the first span of each session the agent saw, which it keeps across its restarts
+ * @param {{ offsets?: boolean, sessions?: Map<string, { first: bigint, seen: number }>, catalog?: any }} [options] `offsets: false` leaves out the places, as the collector, which cannot know them; `sessions`, the first span of each session the agent saw, which it keeps across its restarts; `catalog`, a newer catalog the agent accepted (catalogProblem finds nothing in it), whose sets replace the allowlist's
  */
-function createTransform(allowlist, key, { offsets = true, sessions } = {}) {
-  const rules = compile(allowlist);
+function createTransform(allowlist, key, { offsets = true, sessions, catalog } = {}) {
+  if (catalog !== undefined && catalogProblem(allowlist, catalog)) throw new Error(`The catalog is refused: ${catalogProblem(allowlist, catalog)}.`);
+  const rules = compile(catalog === undefined ? allowlist : withCatalogSets(allowlist, catalog));
   const hash = typeof key === "string" && /^[0-9a-f]{32,128}$/.test(key) ? keyedHash(key) : undefined;
   const sessionOffset = offsets ? sessionOffsets(Date.now, sessions) : undefined;
   return (signal, request) => {
@@ -892,5 +938,11 @@ try {
 
 export default createTransform(allowlist, key);
 
-/** The same filter with another key, as `preview` runs it; without the places in sessions with `{ offsets: false }`. */
+/** The same filter with another key, as `preview` runs it; without the places in sessions with `{ offsets: false }`; with a newer catalog's sets with `{ catalog }`. */
 export const filter = (other, options) => createTransform(allowlist, other, options);
+
+/** The catalog this filter was generated with: its form, its date, and the releases it was read from. */
+export const catalog = { schema: catalogSchema, published: allowlist.catalogPublished, releases: allowlist.releases };
+
+/** Why a catalog cannot give this filter its sets, or undefined when it can. */
+export const catalogRefusal = (other) => catalogProblem(allowlist, other);

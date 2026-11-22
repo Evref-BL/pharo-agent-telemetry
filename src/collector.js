@@ -1,5 +1,6 @@
-// Where participants send their traces, and who answers for them. Every
-// field is empty until the collector is deployed and the controller named;
+// Where participants send their traces, who answers for them, and where the
+// agents find a newer catalog. Every field is empty until the collector is
+// deployed and the controller named;
 // `join` refuses the project's collector until all are set, the participants
 // page says what is missing rather than inventing it, and `npm publish`
 // refuses while the page says so (scripts/check-release.js).
@@ -37,9 +38,48 @@ export const dpo = undefined;
  */
 export const host = undefined;
 
-/** What `join` lacks before it may send to the project's collector, by name. */
-export function missingForJoin(collector = { endpoint: publicEndpoint, token: publicToken, controller, dpo, host }) {
-  return Object.entries({ endpoint: collector.endpoint, token: collector.token, controller: collector.controller, dpo: collector.dpo, host: collector.host })
+/**
+ * Where the agents ask for a newer catalog of the names the filter keeps: a
+ * URL on the collector's own host, which serves it as
+ * `/pharo-agent-telemetry/catalog.json` (for one,
+ * "https://telemetry.example.org/pharo-agent-telemetry/catalog.json").
+ *
+ * @type {string | undefined}
+ */
+export const catalogUrl = undefined;
+
+/**
+ * The Ed25519 public key the agents check a catalog's signature with: the
+ * `x` of its JWK, base64url, as `npm run sign-catalog -- --new-key` prints
+ * it. The private key is the administrators' alone, never in this
+ * repository.
+ *
+ * @type {string | undefined}
+ */
+export const catalogPublicKey = undefined;
+
+/** Whether a URL is on the same host as the collector's endpoint, over HTTPS as it is. */
+function onHostOf(url, endpoint) {
+  try {
+    const target = new URL(url);
+    const base = new URL(endpoint);
+    return target.host === base.host && target.protocol === base.protocol;
+  } catch {
+    return false;
+  }
+}
+
+/** What `join` lacks before it may send to the project's collector, by name; a catalog URL on another host than the collector's is lacking too. */
+export function missingForJoin(collector = { endpoint: publicEndpoint, token: publicToken, controller, dpo, host, catalogUrl, catalogPublicKey }) {
+  return Object.entries({
+    endpoint: collector.endpoint,
+    token: collector.token,
+    controller: collector.controller,
+    dpo: collector.dpo,
+    host: collector.host,
+    catalogUrl: collector.catalogUrl !== undefined && collector.endpoint !== undefined && !onHostOf(collector.catalogUrl, collector.endpoint) ? undefined : collector.catalogUrl,
+    catalogPublicKey: collector.catalogPublicKey,
+  })
     .filter(([, value]) => value === undefined)
     .map(([name]) => name);
 }

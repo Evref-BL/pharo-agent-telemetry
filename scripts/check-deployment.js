@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // npm run check-deployment -- <endpoint> <token>: asks a deployed collector,
 // from outside, what a participant's tools rely on. Exits 1 if anything fails.
-import { publicEndpoint, publicToken } from "../src/collector.js";
+import { fileURLToPath } from "node:url";
+import { catalogPublicKey, publicEndpoint, publicToken } from "../src/collector.js";
 import { checkDeployment } from "../src/check.js";
+import { readAllowlist } from "../src/generate.js";
 
 const [endpoint = publicEndpoint, token = publicToken] = process.argv.slice(2);
 if (endpoint === undefined || token === undefined) {
@@ -10,6 +12,8 @@ if (endpoint === undefined || token === undefined) {
   process.exit(2);
 }
 if (!endpoint.startsWith("https://")) console.log(`Note: ${endpoint} is not HTTPS; a deployed collector is.\n`);
-const results = await checkDeployment(endpoint, token);
+if (catalogPublicKey === undefined) console.log("Note: catalogPublicKey is not set in src/collector.js, so the served catalog is not checked.\n");
+const sets = readAllowlist(fileURLToPath(new URL("..", import.meta.url))).sets;
+const results = await checkDeployment(endpoint, token, fetch, catalogPublicKey === undefined ? {} : { publicKey: catalogPublicKey, sets });
 for (const { expectation, held, saw } of results) console.log(`${held ? "ok  " : "FAIL"}  ${expectation} (${saw})`);
 process.exit(results.every((result) => result.held) ? 0 : 1);

@@ -20,6 +20,13 @@ says, all send to the agent.
 The collector applies the same rules again to whatever arrives, and drops
 what they do not keep. Both are made from one list, and so is this page.
 
+The agent updates its lists of our tools' names and words, and nothing else,
+from the project's server: the closed sets and the vocabulary this page
+lists below. At most once a day it asks the collector's server for a newer
+catalog of them, and takes it only when the project's key signed it. A
+catalog changes which names are kept, never which attributes are kept or in
+what shape.
+
 ## What is kept
 
 Only PLexus's and MCP's spans of the operations they record:

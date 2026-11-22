@@ -1,8 +1,9 @@
 // What a deployed collector must do, asked from outside as a participant's
 // tools reach it: refuse a request without the token, serve nothing but
-// /v1/traces, and take a span with it. The span is of no service of ours, so
-// the collector takes it and keeps nothing of it: the archive never holds a
-// check.
+// /v1/traces and the signed catalog, and take a span with it. The span is of
+// no service of ours, so the collector takes it and keeps nothing of it: the
+// archive never holds a check.
+import { fetchCatalog, verifyCatalog } from "./agent.js";
 
 /** A span of no tool, as the check sends it. */
 export function checkRequest(now = Date.now()) {
@@ -28,12 +29,17 @@ export function checkRequest(now = Date.now()) {
 /**
  * Each expectation of a deployed collector, and whether it held.
  *
+ * With `publicKey`, the catalog the agents ask for must be served and signed
+ * by its private key; with `sets` too, it must hold those sets, the ones the
+ * collector's configuration was generated from.
+ *
  * @param {string} endpoint the collector's public URL
  * @param {string} token
  * @param {typeof fetch} [fetcher]
+ * @param {{ publicKey?: string, sets?: Record<string, string[]> }} [catalog]
  * @returns {Promise<Array<{ expectation: string, held: boolean, saw: string }>>}
  */
-export async function checkDeployment(endpoint, token, fetcher = fetch) {
+export async function checkDeployment(endpoint, token, fetcher = fetch, { publicKey, sets } = {}) {
   const base = endpoint.replace(/\/+$/, "");
   const post = (path, headers) => fetcher(`${base}${path}`, {
     method: "POST",
@@ -57,5 +63,14 @@ export async function checkDeployment(endpoint, token, fetcher = fetch) {
   await expect("nothing but /v1/traces is served", post("/v1/logs", { authorization: `Bearer ${token}` }), "404");
   await expect("the root serves nothing", fetcher(`${base}/`), "404");
   await expect("a span with the token is taken", post("/v1/traces", { authorization: `Bearer ${token}` }), "200");
+  if (publicKey !== undefined) {
+    const fetched = await fetchCatalog(`${base}/pharo-agent-telemetry/catalog.json`);
+    const verified = "text" in fetched ? verifyCatalog(fetched.text, publicKey) : { refused: fetched.failure };
+    results.push({ expectation: "the catalog is served, signed by the project's key", held: "payload" in verified, saw: "payload" in verified ? `the catalog of ${verified.payload?.published}` : verified.refused });
+    if (sets !== undefined && "payload" in verified) {
+      const same = JSON.stringify(verified.payload?.sets) === JSON.stringify(sets);
+      results.push({ expectation: "the catalog holds the sets the collector's configuration was generated from", held: same, saw: same ? "the same sets" : "other sets" });
+    }
+  }
   return results;
 }

@@ -21,6 +21,7 @@
   "scripts": {
     "generate": "node scripts/generate.js",
     "catalog": "node scripts/catalog.js",
+    "sign-catalog": "node scripts/sign-catalog.js",
     "test": "node scripts/generate.js --check && node --test --test-concurrency=1 test/*.test.js",
     "audit": "node scripts/audit-archive.js",
     "check-deployment": "node scripts/check-deployment.js",

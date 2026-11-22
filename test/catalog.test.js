@@ -100,6 +100,7 @@ test("a catalog only adds, and only to the sets that grow, members of their stri
       "MCP tools": ["class_get", "new_tool", "Bad-Tool", "/Users/ada", 7],
       "project words": ["zzqx", "Secret", "x".repeat(25), "ok2", "two words"],
       "Node exception classes": ["AcmeError", "not_a_class", "Error"],
+      "MCP exception classes": ["LGit_GIT_EZQX", "Ice-CloneError", "Ice.CloneError", "_Leading"],
       "PLexus error codes": ["new-code", "NewCode", "a--b"],
       "agent hosts": ["evil-host"],
       "OS types": ["plan9"],
@@ -107,7 +108,7 @@ test("a catalog only adds, and only to the sets that grow, members of their stri
       "secrets": ["anything"],
     },
   };
-  assert.deepEqual(catalogAdditions(allowlist, catalog), { "MCP tools": ["new_tool"], "project words": ["zzqx", "ok2"], "Node exception classes": ["AcmeError"], "PLexus error codes": ["new-code"] });
+  assert.deepEqual(catalogAdditions(allowlist, catalog), { "MCP tools": ["new_tool"], "project words": ["zzqx", "ok2"], "Node exception classes": ["AcmeError"], "MCP exception classes": ["LGit_GIT_EZQX"], "PLexus error codes": ["new-code"] });
   assert.deepEqual(catalogAdded(catalog), catalogAdditions(allowlist, catalog));
   const applied = withCatalogSets(allowlist, catalog);
   // Nothing removed: the package's members stay, the added ones follow.
@@ -116,7 +117,7 @@ test("a catalog only adds, and only to the sets that grow, members of their stri
   assert.equal("secrets" in applied.sets, false);
   for (const key of ["services", "resource", "span", "patterns", "blockedValues", "vocabulary", "published", "grows"]) assert.deepEqual(applied[key], allowlist[key], key);
   const leftOut = catalogLeftOut(allowlist, catalog);
-  for (const each of ['MCP tools: "Bad-Tool"', 'MCP tools: "/Users/ada"', 'project words: "Secret"', 'PLexus error codes: "NewCode"', "agent hosts (a set no catalog adds to)", "secrets (a set no catalog adds to)"]) assert.ok(leftOut.includes(each), each);
+  for (const each of ['MCP tools: "Bad-Tool"', 'MCP tools: "/Users/ada"', 'project words: "Secret"', 'PLexus error codes: "NewCode"', 'MCP exception classes: "Ice-CloneError"', 'MCP exception classes: "Ice.CloneError"', 'MCP exception classes: "_Leading"', "agent hosts (a set no catalog adds to)", "secrets (a set no catalog adds to)"]) assert.ok(leftOut.includes(each), each);
   // A catalog adds at most catalogAdditionCap members to a set.
   const many = Array.from({ length: catalogAdditionCap + 500 }, (_, index) => `zq${index.toString(36)}`);
   assert.equal(catalogAdditions(allowlist, { ...catalog, sets: { "project words": many } })["project words"].length, catalogAdditionCap);

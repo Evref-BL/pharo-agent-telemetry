@@ -525,12 +525,16 @@ export const catalogSchema = 1;
 /** The most members a catalog adds to a set. */
 export const catalogAdditionCap = 2_000;
 
-/** The shape of a member a catalog adds, by the kind of set it grows: a tool's name, a word, a code, a class. */
+/**
+ * The shape of a member a catalog adds, by the kind of set it grows: a tool's
+ * name, a word, a code, an exception's class (underscores in it, as libgit's
+ * LGit_GIT_EAUTH).
+ */
 const growthShapes = {
   tool: /^[a-z][a-z0-9_]{0,63}$/,
   word: /^[a-z0-9]{1,24}$/,
   code: /^[a-z][a-z0-9]{0,23}(?:-[a-z0-9]{1,24}){0,5}$/,
-  class: /^[A-Z][A-Za-z0-9]{0,63}$/,
+  class: /^[A-Z][A-Za-z0-9_]{0,63}$/,
 };
 
 /** A catalog's date: UTC, to the second or the millisecond, of a day that exists. */

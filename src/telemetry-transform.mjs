@@ -580,7 +580,7 @@ const allowlist = {
   },
   "blockedValues": {
     "a home directory path": "(?is)^.*(/Users/|/home/|[A-Z]:\\\\Users\\\\).*$",
-    "an email address": "(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}.*$",
+    "an email address": "(?s)^.*[A-Za-z0-9._%+-]@[A-Za-z0-9.-]+\\.[A-Za-z]{2}.*$",
     "an IPv4 address": "(?s)^.*\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b.*$",
     "an IPv6 address": "(?is)^.*(?:::|\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\b).*$"
   }
@@ -592,6 +592,9 @@ const clientKind = 3;
 /** A week in nanoseconds, and a Monday at midnight UTC: times are kept to the week they fall in. */
 const week = 604_800_000_000_000n;
 const monday = 345_600_000_000_000n;
+
+/** 2^63: no int64 reaches it, nor a time in nanoseconds the collector and Elasticsearch read (2262). */
+const int64 = 9_223_372_036_854_775_808n;
 
 /** What a value that holds an address, a path or an email becomes before its shape is checked. */
 const masked = "****";
@@ -674,8 +677,9 @@ function read(value) {
   if (typeof value.stringValue === "string") return { type: "string", value: value.stringValue };
   if ("intValue" in value) {
     const int = value.intValue;
-    if (typeof int === "number" && Number.isInteger(int)) return { type: "int", value: BigInt(int) };
-    if (typeof int === "string" && /^-?[0-9]{1,19}$/.test(int)) return { type: "int", value: BigInt(int) };
+    // An int64, as the collector reads one: a number past 2^53 has lost its digits already.
+    if (typeof int === "number" && Number.isSafeInteger(int)) return { type: "int", value: BigInt(int) };
+    if (typeof int === "string" && /^-?[0-9]{1,19}$/.test(int) && BigInt(int) >= -int64 && BigInt(int) < int64) return { type: "int", value: BigInt(int) };
     return { type: "other" };
   }
   if (typeof value.doubleValue === "number") return { type: "double", value: value.doubleValue };
@@ -810,7 +814,8 @@ function keepSpan(rules, span, service, options) {
   if (!root && !hex(span.parentSpanId, 16)) return drop("has no valid parent id");
   const start = nanos(span.startTimeUnixNano);
   const end = nanos(span.endTimeUnixNano);
-  if (start === undefined || end === undefined || start <= 0n || end < start) return drop("has no valid times");
+  // Before the first Monday of 1970 a week would start before the epoch; from 2^63 a time is no int64.
+  if (start === undefined || end === undefined || start < monday || end < start || end >= int64) return drop("has no valid times");
   const kind = enumValue(span.kind, kindNames);
   if (kind < 0 || kind > 5) return drop("has no valid kind");
   const status = enumValue(span.status?.code, statusNames);
@@ -907,7 +912,7 @@ function transformTraces(rules, request, options = {}) {
 }
 
 /**
- * The function PLexus calls before it sends anything: traces as the rules
+ * The function the agent calls before it sends anything: traces as the rules
  * keep them, and nothing of the other signals, which the collector does not
  * take. Without a key, nothing is sent: ids are never sent unhashed.
  *

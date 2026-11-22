@@ -33,8 +33,10 @@ Of each span, only this is kept:
 
 - its operation, `tools/call` followed by the tool's name when the attributes
   below keep it;
-- its kind (server, client, internal) and its status (unset, ok, error), never
-  a status message;
+- its kind (server, client, internal...) and its status (unset, ok, error),
+  never a status message;
+- its instrumentation scope's name, and its version when it has a version's
+  shape;
 - its trace, span and parent ids, each replaced by a keyed hash: by the agent,
   with a key `join` makes and that never leaves your machine, then again at
   the collector, with a key of its own that never enters the archive. A
@@ -111,7 +113,10 @@ What happened:
 - Argument values, results, source code, prompts, file contents.
 - Exception messages and stacks.
 - Paths, image names, project names, the names of your classes, methods or
-  packages, the names of tools other packages add or of their arguments.
+  packages, the names of tools other packages add or of their arguments. One
+  exception: a name an agent makes up for a tool or an argument that does not
+  exist is kept as the agent wrote it, when it has an identifier's shape, so
+  should an agent call a tool by one of your class names, that name is sent.
 - Host names, user names, email addresses, IP addresses.
 - Any identifier of you or your machine. There are no participant ids.
 - Precise times: only the week, and how long each span took.
@@ -120,8 +125,12 @@ What happened:
 
 The archive is. A session's calls share a hashed `session.id`, so the
 calls of one session can be studied together, and in order where PLexus
-numbered them, but a session cannot be linked to another session, to a
-machine or to a person, and nothing in a span says who sent it.
+numbered them, but nothing in a span says who sent it, and no id links a
+session to another session, to a machine or to a person. What a span says of
+where it ran (the versions of the tools, of Node, Pharo and its VM, of the
+agent host, and the OS family) is shared by everyone with the same setup; a
+setup nobody else has would set that person's sessions apart from the
+others', without saying whose they are.
 
 One thing about you does reach the server, as it reaches any server you
 connect to: your IP address, so that the connection can be made. The proxy in

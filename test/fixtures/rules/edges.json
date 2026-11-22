@@ -1,0 +1,304 @@
+{
+  "about": "What OTLP JSON allows and the rules do not: a resource entity reference, an attribute with an empty value, a start before the first Monday of 1970 (its week would start before the epoch) and a time from 2^63 (no int64, nor a date Elasticsearch takes) are not kept.",
+  "request": {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "pharo-mcp"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "4.2.1"
+              }
+            }
+          ],
+          "entityRefs": [
+            {
+              "schemaUrl": "https://example.org/ada",
+              "type": "ada@example.org",
+              "idKeys": [
+                "service.name"
+              ]
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "mcp-pharo"
+            },
+            "spans": [
+              {
+                "traceId": "1600abababababababababababababab",
+                "spanId": "cccccccccccc00a0",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1600abababababababababababababab",
+                "spanId": "cccccccccccc00a1",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {}
+                  },
+                  {
+                    "key": "pharo.mcp.result.more"
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1600abababababababababababababab",
+                "spanId": "cccccccccccc00a2",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.output.bytes",
+                    "value": {
+                      "intValue": "4294967296"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1600abababababababababababababab",
+                "spanId": "cccccccccccc00a3",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1",
+                "endTimeUnixNano": "2",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1600abababababababababababababab",
+                "spanId": "cccccccccccc00a4",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "345599999999999",
+                "endTimeUnixNano": "345600000000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1600abababababababababababababab",
+                "spanId": "cccccccccccc00a5",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "345600000000000",
+                "endTimeUnixNano": "345600000000000",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1600abababababababababababababab",
+                "spanId": "cccccccccccc00a6",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "9223372036854775808",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1600abababababababababababababab",
+                "spanId": "cccccccccccc00a7",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "18446744073709551615",
+                "endTimeUnixNano": "18446744073709551615",
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1600abababababababababababababab",
+      "span": "cccccccccccc00a0",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call",
+      "kind": 2,
+      "trace": "1600abababababababababababababab",
+      "span": "cccccccccccc00a1",
+      "start": "1763337600000000000",
+      "attributes": {
+        "pharo.mcp.tool.origin": "mcp",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1600abababababababababababababab",
+      "span": "cccccccccccc00a2",
+      "start": "1763337600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.output.bytes": 4294967296,
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.2.1"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1600abababababababababababababab",
+      "span": "cccccccccccc00a5",
+      "start": "345600000000000",
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    }
+  ]
+}

@@ -79,7 +79,7 @@
   },
   "blockedValues": {
     "a home directory path": "(?is)^.*(/Users/|/home/|[A-Z]:\\\\Users\\\\).*$",
-    "an email address": "(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}.*$",
+    "an email address": "(?s)^.*[A-Za-z0-9._%+-]@[A-Za-z0-9.-]+\\.[A-Za-z]{2}.*$",
     "an IPv4 address": "(?s)^.*\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b.*$",
     "an IPv6 address": "(?is)^.*(?:::|\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\b).*$"
   }

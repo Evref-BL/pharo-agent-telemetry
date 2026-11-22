@@ -10,6 +10,17 @@ export const blockedPattern = regExp;
 /** The resource attribute the collector adds to name each day's file: the archive's own, never imported. */
 export const archiveAttribute = "fileexporter.path_segment";
 
+/** The fields each level of an archived request may have: anything else came through without a rule, such as a resource's entity references. */
+const fields = {
+  resourceSpans: ["resource", "scopeSpans", "schemaUrl"],
+  resource: ["attributes", "droppedAttributesCount"],
+  scopeSpans: ["scope", "spans", "schemaUrl"],
+  scope: ["name", "version", "attributes", "droppedAttributesCount"],
+  span: ["traceId", "spanId", "parentSpanId", "name", "kind", "startTimeUnixNano", "endTimeUnixNano", "attributes", "status", "traceState", "flags", "events", "links", "droppedAttributesCount", "droppedEventsCount", "droppedLinksCount"],
+  status: ["code", "message"],
+};
+const unknown = (object, level) => Object.keys(object ?? {}).filter((key) => !fields[level].includes(key));
+
 const valueText = (value) => JSON.stringify(value && "intValue" in value ? { intValue: String(value.intValue) } : value);
 const byKey = (attributes) => new Map((attributes ?? []).map(({ key, value }) => [key, valueText(value)]));
 
@@ -50,6 +61,8 @@ export function audit(lines, allowlist) {
       const resource = attributes.filter(({ key }) => key !== archiveAttribute);
       const service = resource.find(({ key }) => key === "service.name")?.value?.stringValue ?? "?";
       if (resourceSpans.schemaUrl) problems.push(`${at} resource: a schema URL is kept`);
+      for (const key of unknown(resourceSpans, "resourceSpans")) problems.push(`${at} resource: ${key} is kept`);
+      for (const key of unknown(resourceSpans.resource, "resource")) problems.push(`${at} resource: ${key} is kept`);
       /** @type {string[]} */
       const reported = [];
       const kept = transformTraces(rules, { resourceSpans: [{ ...resourceSpans, resource: { attributes: resource } }] }, { report: (problem) => reported.push(`${at} ${problem}`) });
@@ -70,6 +83,7 @@ export function audit(lines, allowlist) {
       const outSpans = new Map((out?.scopeSpans ?? []).flatMap(({ scope, spans: each }) => each.map((span) => [span.spanId, { scope, span }])));
       for (const scopeSpans of resourceSpans.scopeSpans ?? []) {
         if (scopeSpans.schemaUrl) problems.push(`${at} scope: a schema URL is kept`);
+        for (const key of [...unknown(scopeSpans, "scopeSpans"), ...unknown(scopeSpans.scope, "scope")]) problems.push(`${at} scope: ${key} is kept`);
         for (const span of scopeSpans.spans ?? []) {
           const where = `span ${span.name}`;
           spans.set(`${service} ${span.name}`, (spans.get(`${service} ${span.name}`) ?? 0) + 1);
@@ -78,6 +92,7 @@ export function audit(lines, allowlist) {
           if (span.traceState) problems.push(`${at} ${where}: a trace state is kept`);
           if (span.status?.message) problems.push(`${at} ${where}: a status message is kept`);
           if (span.flags) problems.push(`${at} ${where}: flags are kept`);
+          for (const key of [...unknown(span, "span"), ...unknown(span.status, "status")]) problems.push(`${at} ${where}: ${key} is kept`);
           const after = outSpans.get(String(span.spanId).toLowerCase());
           if (after === undefined) continue;
           if (after.scope.version !== scopeSpans.scope?.version) problems.push(`${at} ${where}: the scope's version is not a version`);

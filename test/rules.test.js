@@ -70,3 +70,18 @@ test("the IPv6 pattern masks the usual ways of writing an address, and the tools
     assert.ok(blocked.every(({ test: pattern }) => !pattern.test(value)), value);
   }
 });
+
+test("an int is kept only as an int64, as the collector reads one, and a long value never makes a pattern backtrack", () => {
+  const rules = compile(allowlist);
+  const request = (value, tool = "class_get") => ({ resourceSpans: [{ resource: { attributes: [{ key: "service.name", value: { stringValue: "pharo-mcp" } }] }, scopeSpans: [{ scope: { name: "mcp-pharo" }, spans: [{
+    traceId: "1700abababababababababababababab", spanId: "cccccccccccc0001", name: "tools/call", startTimeUnixNano: "1763630000000000000", endTimeUnixNano: "1763630000000000000",
+    attributes: [{ key: "gen_ai.tool.name", value: { stringValue: tool } }, { key: "pharo.mcp.input.bytes", value: { intValue: value } }],
+  }] }] }] });
+  const bytes = (value) => transformTraces(rules, request(value), {}).resourceSpans[0].scopeSpans[0].spans[0].attributes.find(({ key }) => key === "pharo.mcp.input.bytes")?.value.intValue;
+  assert.equal(bytes("9223372036854775807"), "9223372036854775807");
+  assert.equal(bytes("9223372036854775808"), undefined);
+  assert.equal(bytes(9007199254740993), undefined);
+  const start = process.hrtime.bigint();
+  transformTraces(rules, request("1", "a".repeat(1_000_000)), {});
+  assert.ok(process.hrtime.bigint() - start < 2_000_000_000n, "a megabyte-long tool name took seconds");
+});

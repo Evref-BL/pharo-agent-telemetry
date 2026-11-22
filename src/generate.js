@@ -54,7 +54,8 @@ function attributeStatements(rules, spec, service) {
   const statements = [];
   if (spec.from) statements.push(drop(`not ${isService(spec.from)}`));
   if (spec.type === "double") statements.push(`set(${at}, Double(${at})) where IsInt(${at})`);
-  statements.push(drop(`${at} != nil and not ${ottlTypes[spec.type]}(${at})`));
+  // An empty value reads as nil: `!= nil` would let it through.
+  statements.push(drop(`not ${ottlTypes[spec.type]}(${at})`));
   if (!spec.hash && spec.type === "string") {
     for (const { pattern } of rules.blocked) statements.push(`set(${at}, ${quoted(masked)}) where IsString(${at}) and IsMatch(${at}, ${quoted(pattern)})`);
   }
@@ -100,7 +101,8 @@ export function dropConditions(rules) {
     "Len(ParseJSON(String(attributes))) != Len(attributes)",
     'Len(ParseJSON(String(resource.attributes))) != Len(resource.attributes)',
     'IsMatch(trace_id.string, "^0+$") or IsMatch(span_id.string, "^0+$")',
-    "start_time_unix_nano <= 0 or end_time_unix_nano < start_time_unix_nano",
+    // From 2^63 a time reads as negative: past 2262 a start is under the floor and an end under its start.
+    "start_time_unix_nano < 345600000000000 or end_time_unix_nano < start_time_unix_nano",
     "kind < 0 or kind > 5",
     "status.code < 0 or status.code > 2",
   ];
@@ -237,6 +239,10 @@ ${statements.scope.map(ottl).join("\n")}
         statements:
 ${statements.span.map(ottl).join("\n")}
 
+  # Builds each resource again from its attributes alone: fields OTTL cannot
+  # reach, such as a resource's entity references, are not carried over.
+  groupbyattrs/rebuild: {}
+
   redaction:
     allow_all_keys: true
     blocked_values:
@@ -271,7 +277,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, filter/spans, probabilistic_sampler, filter/events, transform/rules, redaction, batch]
+      processors: [memory_limiter, filter/spans, probabilistic_sampler, filter/events, transform/rules, groupbyattrs/rebuild, redaction, batch]
       exporters: [file/archive]
 `;
 }
@@ -431,8 +437,10 @@ Of each span, only this is kept:
 
 - its operation, \`${toolCall}\` followed by the tool's name when the attributes
   below keep it;
-- its kind (server, client, internal) and its status (unset, ok, error), never
-  a status message;
+- its kind (server, client, internal...) and its status (unset, ok, error),
+  never a status message;
+- its instrumentation scope's name, and its version when it has a version's
+  shape;
 - its trace, span and parent ids, each replaced by a keyed hash: by the agent,
   with a key \`join\` makes and that never leaves your machine, then again at
   the collector, with a key of its own that never enters the archive. A
@@ -470,7 +478,10 @@ ${rows(allowlist.span)}
 - Argument values, results, source code, prompts, file contents.
 - Exception messages and stacks.
 - Paths, image names, project names, the names of your classes, methods or
-  packages, the names of tools other packages add or of their arguments.
+  packages, the names of tools other packages add or of their arguments. One
+  exception: a name an agent makes up for a tool or an argument that does not
+  exist is kept as the agent wrote it, when it has an identifier's shape, so
+  should an agent call a tool by one of your class names, that name is sent.
 - Host names, user names, email addresses, IP addresses.
 - Any identifier of you or your machine. There are no participant ids.
 - Precise times: only the week, and how long each span took.
@@ -479,8 +490,12 @@ ${rows(allowlist.span)}
 
 The archive is. A session's calls share a hashed \`session.id\`, so the
 calls of one session can be studied together, and in order where PLexus
-numbered them, but a session cannot be linked to another session, to a
-machine or to a person, and nothing in a span says who sent it.
+numbered them, but nothing in a span says who sent it, and no id links a
+session to another session, to a machine or to a person. What a span says of
+where it ran (the versions of the tools, of Node, Pharo and its VM, of the
+agent host, and the OS family) is shared by everyone with the same setup; a
+setup nobody else has would set that person's sessions apart from the
+others', without saying whose they are.
 
 One thing about you does reach the server, as it reaches any server you
 connect to: your IP address, so that the connection can be made. The proxy in

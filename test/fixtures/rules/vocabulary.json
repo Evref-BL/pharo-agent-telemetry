@@ -1,5 +1,5 @@
 {
-  "about": "Error codes are kept when made of the vocabulary's words, one-letter words among them (NotATestClass), else _OTHER (foo__bar, acme_a, AcmeSecret); for a tool another package added, only when a project publishes it (pifs_list); a schema path's index has no leading zero; the compile notices MCP names are exception classes.",
+  "about": "Error codes are kept when made of the vocabulary's words, one-letter words among them (NotATestClass), else _OTHER (foo__bar, acme_a, AcmeSecret); for a tool another package added, only when a project publishes it (pharo-image-fs's ProjectionNotFound, DaemonExitedBeforeMounting); a schema path's index has no leading zero; the compile notices MCP names are exception classes.",
   "request": {
     "resourceSpans": [
       {
@@ -364,7 +364,7 @@
                   {
                     "key": "pharo.mcp.error.code",
                     "value": {
-                      "stringValue": "MountNotFound"
+                      "stringValue": "ProjectionNotFound"
                     }
                   }
                 ]
@@ -372,6 +372,92 @@
               {
                 "traceId": "1b00abababababababababababababab",
                 "spanId": "cccccccccccc0068",
+                "name": "tools/call pifs_start",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "pifs_start"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "other"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "DaemonExitedBeforeMounting"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc0069",
+                "name": "tools/call pifs_start",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "pifs_start"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "other"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "MountPathOrPortRequired"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc006a",
                 "name": "tools/call acme_tool",
                 "kind": 2,
                 "startTimeUnixNano": "1763630000000000000",
@@ -414,7 +500,7 @@
               },
               {
                 "traceId": "1b00abababababababababababababab",
-                "spanId": "cccccccccccc0069",
+                "spanId": "cccccccccccc006b",
                 "name": "tools/call class_get",
                 "kind": 2,
                 "startTimeUnixNano": "1763630000000000000",
@@ -472,7 +558,7 @@
               },
               {
                 "traceId": "1b00abababababababababababababab",
-                "spanId": "cccccccccccc006a",
+                "spanId": "cccccccccccc006c",
                 "name": "tools/call class_get",
                 "kind": 2,
                 "startTimeUnixNano": "1763630000000000000",
@@ -527,7 +613,7 @@
               },
               {
                 "traceId": "1b00abababababababababababababab",
-                "spanId": "cccccccccccc006b",
+                "spanId": "cccccccccccc006d",
                 "name": "tools/call method_compile",
                 "kind": 2,
                 "startTimeUnixNano": "1763630000000000000",
@@ -570,7 +656,7 @@
               },
               {
                 "traceId": "1b00abababababababababababababab",
-                "spanId": "cccccccccccc006c",
+                "spanId": "cccccccccccc006e",
                 "name": "tools/call method_compile",
                 "kind": 2,
                 "startTimeUnixNano": "1763630000000000000",
@@ -796,7 +882,53 @@
         "pharo.mcp.tool.origin": "other",
         "session.id": "v",
         "error.type": "tool_error",
-        "pharo.mcp.error.code": "MountNotFound",
+        "pharo.mcp.error.code": "ProjectionNotFound",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call pifs_start",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0068",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "pifs_start",
+        "pharo.mcp.tool.origin": "other",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.code": "DaemonExitedBeforeMounting",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call pifs_start",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0069",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "pifs_start",
+        "pharo.mcp.tool.origin": "other",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.code": "MountPathOrPortRequired",
         "span.duration_ms": {
           "double": 250
         }
@@ -811,7 +943,7 @@
       "name": "tools/call _OTHER",
       "kind": 2,
       "trace": "1b00abababababababababababababab",
-      "span": "cccccccccccc0068",
+      "span": "cccccccccccc006a",
       "start": "1763337600000000000",
       "status": 2,
       "attributes": {
@@ -833,7 +965,7 @@
       "name": "tools/call class_get",
       "kind": 2,
       "trace": "1b00abababababababababababababab",
-      "span": "cccccccccccc0069",
+      "span": "cccccccccccc006b",
       "start": "1763337600000000000",
       "status": 2,
       "attributes": {
@@ -860,7 +992,7 @@
       "name": "tools/call class_get",
       "kind": 2,
       "trace": "1b00abababababababababababababab",
-      "span": "cccccccccccc006a",
+      "span": "cccccccccccc006c",
       "start": "1763337600000000000",
       "status": 2,
       "attributes": {
@@ -883,7 +1015,7 @@
       "name": "tools/call method_compile",
       "kind": 2,
       "trace": "1b00abababababababababababababab",
-      "span": "cccccccccccc006b",
+      "span": "cccccccccccc006d",
       "start": "1763337600000000000",
       "status": 2,
       "attributes": {
@@ -906,7 +1038,7 @@
       "name": "tools/call method_compile",
       "kind": 2,
       "trace": "1b00abababababababababababababab",
-      "span": "cccccccccccc006c",
+      "span": "cccccccccccc006e",
       "start": "1763337600000000000",
       "status": 2,
       "attributes": {

@@ -24,7 +24,7 @@ what they do not keep. Both are made from one list, and so is this page.
 
 Only PLexus's and MCP's spans of the operations they record:
 
-- from `plexus`, with its scope `@evref-bl/plexus`: `tools/call <tool>`, `tools/list`, `plexus.image.create`, `plexus.image.start`, `plexus.image.stop`, `plexus.image.delete`, of every kind.
+- from `plexus`, with its scope `@evref-bl/plexus`: `tools/call <tool>`, `tools/list`, `plexus.image.create`, `plexus.image.start`, `plexus.image.stop`, `plexus.image.delete`, of every kind and only with `session.id`.
 - from `pharo-mcp`, with its scope `mcp-pharo`: `tools/call <tool>`, of kind server only and only with `session.id`.
 
 Any other span is dropped whole, such as one your own OpenTelemetry code
@@ -62,9 +62,9 @@ masked, whole, and the mask has no attribute's shape.
 A name an agent or another package chooses (`gen_ai.tool.name`, `plexus.argument.names`, `plexus.argument.unknown_names`, `pharo.mcp.argument.names`, `pharo.mcp.argument.unknown_names`, `pharo.mcp.tool.refs`, `pharo.mcp.error.code`, `pharo.mcp.error.schema.paths`) is kept only
 when it is the name of a tool a project publishes, or when every word of it
 (split at `_`, `-` and capitals) is in the vocabulary: the
-1141 words of the names in the code of MCP, PLexus and
+1164 words of the names in the code of MCP, PLexus and
 pharo-image-fs (their tools, arguments, errors and the rest), read from
-their source (MCP v4.2.1-1-g0d25fa4, PLexus v0.20.0, pharo-image-fs v0.13.0-5-g72c0abf), and of a list of words agents guess. Any
+their source (MCP v4.2.1-10-g04d8445 + v4.2.1-5-g6208aed + v4.2.1-3-ge601136, PLexus v0.20.0-4-g6075384, pharo-image-fs v0.13.0-5-g72c0abf), and of a list of words agents guess. Any
 other name is dropped, or becomes `_OTHER`, so a name with a word of your
 own in it, such as one of your classes, is never sent; a name made only of
 common words of the vocabulary, such as `class_name`, is. Both lists are in
@@ -99,9 +99,9 @@ What happened:
 | `mcp.method.name` | plexus, pharo-mcp | The MCP method. | one of `tools/call`, `tools/list` |
 | `mcp.protocol.version` | pharo-mcp | The MCP protocol version the client's request declared, a date. | a date |
 | `gen_ai.tool.name` | plexus, pharo-mcp | The tool's name: one a project publishes, else a name the agent asked for that no tool has, or MCP's own, when made of words of the vocabulary. | a tool a project publishes, else an identifier made of the vocabulary's words, else `_OTHER` |
-| `error.type` | plexus, pharo-mcp | How a call failed: tool_error, a JSON-RPC or HTTP code, how a connection failed, a PLexus error code, or an exception class of Pharo, MCP or Node. | one of the call failures, PLexus error codes or exception classes, or a numeric code, else `_OTHER` |
+| `error.type` | plexus, pharo-mcp | How a call failed: tool_error, a JSON-RPC or HTTP code, how a connection failed, a PLexus error code, or an exception class of Pharo, MCP or Node. | one of the call failures, PLexus error codes, exception classes or MCP exception classes, or a numeric code, else `_OTHER` |
 | `plexus.client.name` | plexus | The agent host, as it introduces itself to PLexus's server, when it is one the allowlist knows. | one of the agent hosts, else `_OTHER` |
-| `plexus.client.version` | plexus | The agent host's version, major and minor. | a version, major and minor |
+| `plexus.client.version` | plexus | The agent host's version, major and minor, beside a name the allowlist knows. | a version, major and minor, only beside a `plexus.client.name` of that set |
 | `plexus.call.index` | plexus | Where the call comes in its session: 1 for the first. | a whole number from 1 |
 | `plexus.call.forwarded` | plexus | Whether PLexus passed the call on to an image, which then names the tool. | true or false |
 | `plexus.argument.names` | plexus | The names of the arguments a call to one of PLexus's own tools gave, never their values. | a list of at most 32, each an identifier, made of the vocabulary's words |
@@ -111,12 +111,13 @@ What happened:
 | `pharo.mcp.tool.origin` | pharo-mcp | mcp for one of MCP's own tools, other for a tool another package added, unknown for a name no tool has. Names are kept only for mcp and unknown. | one of `mcp`, `other`, `unknown`, else `other` |
 | `pharo.mcp.dispatch_path` | pharo-mcp | How the image dispatched the request. | one of `direct`, `via_tool_call` |
 | `pharo.mcp.client.name` | pharo-mcp | The agent host, as it introduces itself to MCP's server, when it is one the allowlist knows: under PLexus, PLexus itself. | one of the agent hosts, else `_OTHER` |
-| `pharo.mcp.client.version` | pharo-mcp | Its version, major and minor. | a version, major and minor |
+| `pharo.mcp.client.version` | pharo-mcp | Its version, major and minor, beside a name the allowlist knows. | a version, major and minor, only beside a `pharo.mcp.client.name` of that set |
 | `pharo.mcp.argument.names` | pharo-mcp | The names of the arguments the tool declares that the call gave, never their values. | a list of at most 32, each an identifier, made of the vocabulary's words |
 | `pharo.mcp.argument.unknown_names` | pharo-mcp | Argument names the call gave that the tool does not declare. | a list of at most 32, each an identifier, made of the vocabulary's words |
 | `pharo.mcp.argument.options` | pharo-mcp | The options the call chose, as the evaluations count them: a property, a value of an enumeration, or a list given for several targets. | a list of at most 32, each an option |
 | `pharo.mcp.input.bytes` | pharo-mcp | The size of the arguments. | the lower bound of its bucket: 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608, 16777216 |
 | `pharo.mcp.output.bytes` | pharo-mcp | The size of the answer. | the lower bound of its bucket: 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304, 8388608, 16777216 |
+| `pharo.mcp.output_budget.exceeded` | pharo-mcp | Whether the answer was cut to fit the output budget, which its size, kept in buckets, does not say. | true or false |
 | `pharo.mcp.result.count` | pharo-mcp | How many results a search answered. | the lower bound of its bucket: 0, 1, 2, 6, 21, 101 |
 | `pharo.mcp.result.more` | pharo-mcp | Whether there were more results than answered. | true or false |
 | `pharo.mcp.test.outcome` | pharo-mcp | How a test run ended. | one of `passed`, `failed`, `errored`, `none` |
@@ -126,7 +127,7 @@ What happened:
 | `pharo.mcp.error.code` | pharo-mcp | The error code MCP gave its answer. | an identifier, made of the vocabulary's words, else `_OTHER`, only for MCP's own tools |
 | `pharo.mcp.error.schema.keywords` | pharo-mcp | Which schema rules they broke. | a list of at most 8, each one of the schema keywords |
 | `pharo.mcp.error.schema.paths` | pharo-mcp | Where in the tool's input they broke them. | a list of at most 8, each a JSON pointer, each name in it made of the vocabulary's words |
-| `pharo.mcp.exception.type` | pharo-mcp | The nearest Pharo or MCP class of an exception. | one of the exception classes, else `_OTHER` |
+| `pharo.mcp.exception.type` | pharo-mcp | The nearest Pharo or MCP class of an exception. | one of the exception classes or MCP exception classes, else `_OTHER` |
 | `span.duration_ms` | plexus, pharo-mcp | How long the span took, in whole milliseconds, kept since its times are not. | a whole number from 0 |
 | `pharo_agent_telemetry.session.offset_ms` | plexus, pharo-mcp | When the span started, in milliseconds after the first span of its session the agent on your machine saw (negative when it saw a later one first): the order of a session's calls, never a time of day. | a whole number |
 
@@ -141,6 +142,7 @@ The closed sets the table names, the tools each project publishes among them:
 - MCP tools: `class_create`, `class_get`, `class_remove`, `class_search`, `class_update`, `critique_run`, `debug_search`, `debug_watch`, `evaluate`, `history_entry_apply`, `history_entry_list`, `history_entry_revert`, `history_file_list`, `history_lost_change_list`, `history_lost_change_restore`, `method_compile`, `method_get`, `method_reference_search`, `method_remove`, `method_restore`, `method_rewrite`, `method_search`, `method_source_search`, `method_update`, `method_version_list`, `package_search`, `repository_attach`, `repository_change_discard`, `repository_change_list`, `repository_commit`, `repository_create`, `repository_export`, `repository_head_adopt`, `repository_identity_verify`, `repository_reload`, `repository_search`, `repository_update`, `screen_capture`, `screen_read`, `test_coverage_run`, `test_run`, `tool_call`, `tool_get`, `tool_search`.
 - PLexus tools: `image_create`, `image_delete`, `image_list`, `image_start`, `image_stop`, `image_templates`.
 - pharo-image-fs tools: `pifs_list`, `pifs_start`, `pifs_stop`.
+- MCP exception classes: `CodeError`, `CompileSyntaxError`, `EvaluationRuntimeError`, `EvaluationTimedOut`, `ExecutionError`, `FileDoesNotExistException`, `FileException`, `FileSystemError`, `IceError`, `JRPCError`, `MCMergeOrLoadWarning`, `MCPCommandError`, `MCPHeaderMismatch`, `MCPInvalidToolInput`, `MCPMissingPromptArgument`, `MCPResourceNotFound`, `MCPSyntaxError`, `MCPToolDefaultActionNotification`, `MCPToolNestedNotification`, `MCPToolRefusedNotification`, `MCPUnknownCompletionReference`, `MCPUnknownPrompt`, `MCPUnsupportedProtocolVersion`, `OCCodeError`, `OCCompilationError`, `OCErrorNotice`, `OCNotice`, `OCSemanticWarning`, `OCShadowVariableWarning`, `OCStoreIntoReadOnlyVariableError`, `OCSyntaxErrorNotice`, `OCUndeclaredVariableNotice`, `OCUndeclaredVariableWarning`, `OupsNullException`, `PCRE2CompileError`, `PullUpSlotRefactoringError`, `PullUpSlotRefactoringWarning`, `RBBreakingChangeChecksFailedWarning`, `RBRefactoringError`, `RBRefactoringFailure`, `RBRefactoringWarning`, `RBSyntaxErrorNotice`, `RefactoringError`, `RefactoringWarning`, `RegexSyntaxError`, `RemoveSlotRefactoringError`, `RemoveSlotRefactoringWarning`, `RuntimeSyntaxError`, `SocketError`, `SyntaxError`, `SyntaxErrorNotification`, `TestFailure`, `TonelParseError`, `ToolError`, `ToolExecutionError`, `UnhandledError`, `ZnCharacterEncodingError`.
 
 ## What is never sent
 

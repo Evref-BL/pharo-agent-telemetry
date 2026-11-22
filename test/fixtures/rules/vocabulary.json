@@ -1,0 +1,924 @@
+{
+  "about": "Error codes are kept when made of the vocabulary's words, one-letter words among them (NotATestClass), else _OTHER (foo__bar, acme_a, AcmeSecret); for a tool another package added, only when a project publishes it (pifs_list); a schema path's index has no leading zero; the compile notices MCP names are exception classes.",
+  "request": {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "pharo-mcp"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "4.3.0"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "mcp-pharo"
+            },
+            "spans": [
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc0060",
+                "name": "tools/call tests_run",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "tests_run"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "NotATestClass"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc0061",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "NotAClass"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc0062",
+                "name": "tools/call class_create",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_create"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "ClassNameIsAList"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc0063",
+                "name": "tools/call method_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "method_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "NameIsAList"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc0064",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "foo__bar"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc0065",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "acme_a"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc0066",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "AcmeSecret"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc0067",
+                "name": "tools/call pifs_list",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "pifs_list"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "other"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "MountNotFound"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc0068",
+                "name": "tools/call acme_tool",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "acme_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "other"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.code",
+                    "value": {
+                      "stringValue": "NotAClass"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc0069",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.kind",
+                    "value": {
+                      "stringValue": "input_schema"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.schema.paths",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "/classes/0"
+                          },
+                          {
+                            "stringValue": "/classes/10"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc006a",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.kind",
+                    "value": {
+                      "stringValue": "input_schema"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.error.schema.paths",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "/classes/01"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc006b",
+                "name": "tools/call method_compile",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "method_compile"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "OCSyntaxErrorNotice"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "1b00abababababababababababababab",
+                "spanId": "cccccccccccc006c",
+                "name": "tools/call method_compile",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250000000",
+                "status": {
+                  "code": 2
+                },
+                "attributes": [
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "method_compile"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "v"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "tool_error"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.exception.type",
+                    "value": {
+                      "stringValue": "OCUndeclaredVariableNotice"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call tests_run",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0060",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "tests_run",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.code": "NotATestClass",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0061",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.code": "NotAClass",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_create",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0062",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "class_create",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.code": "ClassNameIsAList",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call method_get",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0063",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "method_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.code": "NameIsAList",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0064",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.code": "_OTHER",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0065",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.code": "_OTHER",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0066",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.code": "_OTHER",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call pifs_list",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0067",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "pifs_list",
+        "pharo.mcp.tool.origin": "other",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.code": "MountNotFound",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call _OTHER",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0068",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "_OTHER",
+        "pharo.mcp.tool.origin": "other",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc0069",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.kind": "input_schema",
+        "pharo.mcp.error.schema.paths": [
+          "/classes/0",
+          "/classes/10"
+        ],
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc006a",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.error.kind": "input_schema",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call method_compile",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc006b",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "method_compile",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.exception.type": "OCSyntaxErrorNotice",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.3.0"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call method_compile",
+      "kind": 2,
+      "trace": "1b00abababababababababababababab",
+      "span": "cccccccccccc006c",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "gen_ai.tool.name": "method_compile",
+        "pharo.mcp.tool.origin": "mcp",
+        "session.id": "v",
+        "error.type": "tool_error",
+        "pharo.mcp.exception.type": "OCUndeclaredVariableNotice",
+        "span.duration_ms": {
+          "double": 250
+        }
+      }
+    }
+  ]
+}

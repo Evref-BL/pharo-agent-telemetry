@@ -184,7 +184,7 @@ function nameStatements(rules, spanService) {
       ...wordForm(tool, `${isMcp} and IsString(${tool}) and not IsMatch(${tool}, ${quoted(rules.publishedPattern)})`),
       `set(${tool}, "_OTHER") where IsString(${words}) and (attributes[${quoted(originKey)}] == "other" or not IsMatch(${words}, ${quoted(rules.words.name.scalar)}))`,
       `delete_key(attributes, ${quoted(wordsKey)})`,
-      ...rules.span.filter((spec) => spec.own).map((spec) => `delete_key(attributes, ${quoted(spec.key)}) where ${isOther}`),
+      ...rules.span.filter((spec) => spec.own).map((spec) => `delete_key(attributes, ${quoted(spec.key)}) where ${isOther} and not ${published}`),
       ...names.map((spec) => {
         const at = `attributes[${quoted(spec.key)}]`;
         return spec.nameOther === undefined
@@ -215,6 +215,15 @@ function idStatements(field, tag, length, condition) {
   ];
 }
 
+/** The statements that keep an attribute only beside another that holds a value of its set (keepAll's `beside`). */
+function besideStatements(specs) {
+  return specs.filter((spec) => spec.beside).map((spec) => {
+    const other = specs.find((each) => each.key === spec.beside);
+    const at = `attributes[${quoted(spec.beside)}]`;
+    return `delete_key(attributes, ${quoted(spec.key)}) where ${at} == nil${other?.otherwise === undefined ? "" : ` or ${at} == ${quoted(other.otherwise)}`}`;
+  });
+}
+
 /** The OTTL statements of each context, in the order src/rules.js applies the same rules. */
 export function ruleStatements(allowlist) {
   const rules = compile(allowlist);
@@ -223,6 +232,7 @@ export function ruleStatements(allowlist) {
   const resource = [
     `keep_keys(attributes, ${ottlList(rules.resource.map((spec) => spec.key))})`,
     ...rules.resource.flatMap((spec) => attributeStatements(rules, spec, resourceService)),
+    ...besideStatements(rules.resource),
     ...rules.resource.filter((spec) => spec.when).map((spec) =>
       `delete_key(attributes, ${quoted(spec.key)}) where ${Object.entries(spec.when).map(([key, value]) => `attributes[${quoted(key)}] != ${quoted(value)}`).join(" or ")}`),
     'set(schema_url, "")',
@@ -239,6 +249,7 @@ export function ruleStatements(allowlist) {
   const span = [
     `keep_keys(attributes, ${ottlList(rules.span.map((spec) => spec.key))})`,
     ...rules.span.flatMap((spec) => attributeStatements(rules, spec, spanService)),
+    ...besideStatements(rules.span),
     ...nameStatements(rules, spanService),
     `delete_key(attributes, ${quoted(offsetKey)}) where attributes[${quoted(sessionKey)}] == nil`,
     `set(name, Concat([${quoted(toolCall)}, attributes[${quoted(toolKey)}]], " ")) where IsMatch(name, ${quoted(`^${toolCall}(?: [\\s\\S]*)?$`)}) and IsString(attributes[${quoted(toolKey)}])`,
@@ -471,6 +482,7 @@ export function keptAs(allowlist, spec) {
   };
   const conditions = [
     ...(spec.own ? [", only for MCP's own tools"] : []),
+    ...(spec.beside ? [`, only beside a ${code(spec.beside)} of that set`] : []),
     ...(spec.when ? [`, only beside ${Object.entries(spec.when).map(([key, value]) => `${code(key)} ${code(value)}`).join(" and ")}`] : []),
   ].join("");
   const kept = (() => {

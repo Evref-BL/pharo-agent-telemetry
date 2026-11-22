@@ -489,25 +489,6 @@
         "service.version": "0.21.0"
       },
       "scope": "@evref-bl/plexus",
-      "name": "tools/call image_list",
-      "kind": 2,
-      "trace": "1900abababababababababababababab",
-      "span": "cccccccccccc0b09",
-      "start": "1763337600000000000",
-      "attributes": {
-        "gen_ai.tool.name": "image_list",
-        "plexus.call.forwarded": false,
-        "span.duration_ms": {
-          "double": 250
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "plexus",
-        "service.version": "0.21.0"
-      },
-      "scope": "@evref-bl/plexus",
       "name": "plexus.image.start",
       "kind": 1,
       "trace": "1900abababababababababababababab",
@@ -517,25 +498,6 @@
         "gen_ai.tool.name": "image_list",
         "plexus.call.forwarded": false,
         "session.id": "a",
-        "span.duration_ms": {
-          "double": 250
-        }
-      }
-    },
-    {
-      "resource": {
-        "service.name": "plexus",
-        "service.version": "0.21.0"
-      },
-      "scope": "@evref-bl/plexus",
-      "name": "tools/call image_list",
-      "kind": 2,
-      "trace": "1900abababababababababababababab",
-      "span": "cccccccccccc0b0b",
-      "start": "1763337600000000000",
-      "attributes": {
-        "gen_ai.tool.name": "image_list",
-        "plexus.call.forwarded": false,
         "span.duration_ms": {
           "double": 250
         }

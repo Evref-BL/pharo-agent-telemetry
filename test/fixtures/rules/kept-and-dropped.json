@@ -129,6 +129,12 @@
                     "value": {
                       "stringValue": "claude-code"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "kept-and-dropped-session"
+                    }
                   }
                 ]
               },
@@ -163,6 +169,12 @@
                     "value": {
                       "stringValue": "create-failed"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "kept-and-dropped-session"
+                    }
                   }
                 ]
               },
@@ -178,6 +190,12 @@
                     "key": "plexus.image.save",
                     "value": {
                       "boolValue": true
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "kept-and-dropped-session"
                     }
                   }
                 ]
@@ -368,6 +386,7 @@
         "plexus.call.index": 3,
         "plexus.call.forwarded": false,
         "plexus.client.name": "claude-code",
+        "session.id": "kept-and-dropped-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -392,6 +411,7 @@
       "attributes": {
         "error.type": "create-failed",
         "plexus.error.code": "create-failed",
+        "session.id": "kept-and-dropped-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -415,6 +435,7 @@
       "start": "1763337600000000000",
       "attributes": {
         "plexus.image.save": true,
+        "session.id": "kept-and-dropped-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -439,6 +460,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "class_get",
         "pharo.mcp.tool.origin": "mcp",
+        "pharo.mcp.output_budget.exceeded": false,
         "pharo.mcp.input.bytes": 32,
         "pharo.mcp.output.bytes": 8192,
         "session.id": "4b1d3a1e-0000-4000-8000-000000000003",

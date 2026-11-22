@@ -102,6 +102,12 @@
                     "value": {
                       "stringValue": "execute_tool"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "links-events-session"
+                    }
                   }
                 ],
                 "links": [
@@ -141,6 +147,12 @@
                     "key": "error.type",
                     "value": {
                       "stringValue": "no-such-image"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "links-events-session"
                     }
                   }
                 ],
@@ -198,6 +210,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_start",
         "error.type": "no-such-image",
+        "session.id": "links-events-session",
         "span.duration_ms": {
           "double": 250
         }

@@ -724,6 +724,12 @@
                         ]
                       }
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "lists-session"
+                    }
                   }
                 ]
               }
@@ -923,6 +929,7 @@
         "plexus.argument.unknown_names": [
           "display"
         ],
+        "session.id": "lists-session",
         "span.duration_ms": {
           "double": 250
         }

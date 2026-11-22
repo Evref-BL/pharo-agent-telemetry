@@ -93,6 +93,12 @@
                     "value": {
                       "stringValue": "execute_tool"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "times-session"
+                    }
                   }
                 ]
               },
@@ -120,6 +126,12 @@
                     "key": "gen_ai.operation.name",
                     "value": {
                       "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "times-session"
                     }
                   }
                 ]
@@ -155,6 +167,12 @@
                     "value": {
                       "doubleValue": 12.5
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "times-session"
+                    }
                   }
                 ]
               },
@@ -182,6 +200,12 @@
                     "key": "gen_ai.operation.name",
                     "value": {
                       "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "times-session"
                     }
                   }
                 ]
@@ -217,6 +241,12 @@
                     "value": {
                       "intValue": "7"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "times-session"
+                    }
                   }
                 ]
               },
@@ -251,6 +281,12 @@
                     "value": {
                       "intValue": "99"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "times-session"
+                    }
                   }
                 ]
               },
@@ -261,7 +297,14 @@
                 "kind": 1,
                 "startTimeUnixNano": "1763630000000000000",
                 "endTimeUnixNano": "1763630000000000500",
-                "attributes": []
+                "attributes": [
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "times-session"
+                    }
+                  }
+                ]
               }
             ]
           }
@@ -289,6 +332,7 @@
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_list",
+        "session.id": "times-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -313,6 +357,7 @@
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_start",
+        "session.id": "times-session",
         "span.duration_ms": {
           "double": 200
         }
@@ -339,7 +384,8 @@
         "gen_ai.tool.name": "image_stop",
         "span.duration_ms": {
           "double": 12
-        }
+        },
+        "session.id": "times-session"
       }
     },
     {
@@ -361,6 +407,7 @@
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_delete",
+        "session.id": "times-session",
         "span.duration_ms": {
           "double": 0
         }
@@ -387,7 +434,8 @@
         "gen_ai.tool.name": "image_create",
         "span.duration_ms": {
           "double": 7
-        }
+        },
+        "session.id": "times-session"
       }
     },
     {
@@ -411,7 +459,8 @@
         "gen_ai.tool.name": "image_templates",
         "span.duration_ms": {
           "double": 250
-        }
+        },
+        "session.id": "times-session"
       }
     },
     {
@@ -431,6 +480,7 @@
       "span": "cccccccccccc001d",
       "start": "1763337600000000000",
       "attributes": {
+        "session.id": "times-session",
         "span.duration_ms": {
           "double": 0
         }

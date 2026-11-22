@@ -2,7 +2,8 @@
 // Writes collector/catalog.json from the source of the projects whose names
 // the filter keeps: the tools MCP, PLexus and pharo-image-fs publish, and the
 // words of their own names, which a name an agent makes up is kept through.
-// Run it for each release of any of them, from checkouts of that release:
+// Run it for each release of any of them, from checkouts of that release
+// (each option may be given again, for branches not merged yet):
 //
 //   npm run catalog -- --mcp <MCP> --plexus <PLexus> --pharo-image-fs <pharo-image-fs>
 //
@@ -13,18 +14,18 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import vm from "node:vm";
-import { catalogFile, smalltalkLiterals, smalltalkToolNames, wordsOf } from "../src/catalog.js";
+import { catalogFile, exceptionClasses, smalltalkLiterals, smalltalkToolNames, wordsOf } from "../src/catalog.js";
 
 const { values } = parseArgs({
   options: {
-    mcp: { type: "string" },
-    plexus: { type: "string" },
-    "pharo-image-fs": { type: "string" },
+    mcp: { type: "string", multiple: true },
+    plexus: { type: "string", multiple: true },
+    "pharo-image-fs": { type: "string", multiple: true },
   },
 });
 for (const option of ["mcp", "plexus", "pharo-image-fs"]) {
-  if (!values[option]) {
-    console.error("Usage: npm run catalog -- --mcp <MCP checkout> --plexus <PLexus checkout> --pharo-image-fs <pharo-image-fs checkout>");
+  if (!values[option]?.length) {
+    console.error("Usage: npm run catalog -- --mcp <MCP checkout> --plexus <PLexus checkout> --pharo-image-fs <pharo-image-fs checkout>\nEach option may be given again: the catalog takes in every checkout named, as for branches not yet merged.");
     process.exit(1);
   }
 }
@@ -39,25 +40,31 @@ function described(directory) {
 }
 
 /**
- * The Tonel files of a Pharo project's packages, tests and baselines left
- * out: what a release loads for its tools.
+ * The Tonel files of a Pharo project's packages, baselines left out: what a
+ * release loads for its tools, or, with `tests`, only its tests.
  */
-function tonelFiles(directory, packagePrefix) {
+function tonelFiles(directory, packagePrefix, tests = false) {
   const source = path.join(directory, "src");
   return fs.readdirSync(source, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && entry.name.startsWith(packagePrefix) && !/Tests/.test(entry.name))
+    .filter((entry) => entry.isDirectory() && entry.name.startsWith(packagePrefix) && /Tests/.test(entry.name) === tests)
     .flatMap((entry) => fs.readdirSync(path.join(source, entry.name)).filter((name) => name.endsWith(".st")).map((name) => path.join(source, entry.name, name)))
     .sort();
 }
 
-/** A Pharo project's tools and the words of its own names: every string and symbol of its packages. */
-function pharoProject(directory, packagePrefix) {
-  const texts = tonelFiles(directory, packagePrefix).map((file) => fs.readFileSync(file, "utf8"));
-  if (texts.length === 0) throw new Error(`No ${packagePrefix} package under ${directory}/src.`);
+/**
+ * A Pharo project's tools, the words of its own names (every string and
+ * symbol of its packages), and the exception classes it can name, read from
+ * each checkout given.
+ */
+function pharoProject(directories, packagePrefix) {
+  const read = (files) => files.map((file) => fs.readFileSync(file, "utf8"));
+  const texts = directories.flatMap((directory) => read(tonelFiles(directory, packagePrefix)));
+  const tests = directories.flatMap((directory) => read(tonelFiles(directory, packagePrefix, true)));
+  if (texts.length === 0) throw new Error(`No ${packagePrefix} package under ${directories.join(", ")}.`);
   const tools = [...new Set(texts.flatMap(smalltalkToolNames))].sort();
   const words = new Set(texts.flatMap(smalltalkLiterals).flatMap(wordsOf));
   for (const tool of tools) for (const word of wordsOf(tool)) words.add(word);
-  return { tools, words, release: described(directory) };
+  return { tools, words, exceptions: exceptionClasses(texts, tests), release: directories.map(described).join(" + ") };
 }
 
 /**
@@ -65,7 +72,16 @@ function pharoProject(directory, packagePrefix) {
  * the words of their names, properties and values; and of the argument that
  * names an image, which PLexus adds to an image's tools.
  */
-function plexusProject(directory) {
+function plexusProject(directories) {
+  const read = directories.map((directory) => plexusCheckout(directory));
+  return {
+    tools: [...new Set(read.flatMap((each) => each.tools))].sort(),
+    words: new Set(read.flatMap((each) => [...each.words])),
+    release: read.map((each) => each.release).join(" + "),
+  };
+}
+
+function plexusCheckout(directory) {
   const file = path.join(directory, "packages", "plexus", "src", "mcp", "server.ts");
   const text = fs.readFileSync(file, "utf8");
   const start = text.indexOf("export const imageTools");
@@ -107,6 +123,7 @@ const catalog = {
     "PLexus tools": plexus.tools,
     "pharo-image-fs tools": pifs.tools.filter((name) => name.startsWith("pifs_")),
     "project words": [...new Set([...mcp.words, ...plexus.words, ...pifs.words])].sort(),
+    "MCP exception classes": mcp.exceptions,
   },
 };
 fs.writeFileSync(new URL(`../${catalogFile}`, import.meta.url), `${JSON.stringify(catalog, null, 2)}\n`);

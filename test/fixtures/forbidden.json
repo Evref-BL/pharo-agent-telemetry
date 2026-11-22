@@ -20,6 +20,7 @@
         "startTimeUnixNano": "1763630000000000000",
         "endTimeUnixNano": "1763630000250000000",
         "attributes": [
+          { "key": "session.id", "value": { "stringValue": "forbidden-session" } },
           { "key": "gen_ai.tool.name", "value": { "stringValue": "class_get" } },
           { "key": "pharo.mcp.input.bytes", "value": { "intValue": "42" } },
           { "key": "plexus.argument.names", "value": { "arrayValue": { "values": [ { "stringValue": "name" } ] } } },

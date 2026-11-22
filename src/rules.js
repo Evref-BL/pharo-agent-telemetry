@@ -101,7 +101,8 @@ function wordPatterns(words) {
   const list = (element) => `^\\[(?:\\]|(?:${element})+)$`;
   return {
     name: { scalar: `^(?:${word}[_-])*${word}$`, list: list(`"(?:${word}(?:[_-]|${end}))+`) },
-    pointer: { list: list(`"(?:${end}|/(?:(?:${word}|[0-9]{1,3})(?:[_/-]|${end}))+)`) },
+    // An index as MCP writes one: no leading zero, which would let any digits through.
+    pointer: { list: list(`"(?:${end}|/(?:(?:${word}|0|[1-9][0-9]{0,2})(?:[_/-]|${end}))+)`) },
   };
 }
 
@@ -119,7 +120,7 @@ export function compile(allowlist) {
     if (!(name in sets)) throw new Error(`No set named ${name}.`);
     return sets[name];
   });
-  const words = wordPatterns(members(allowlist.vocabulary).flatMap((each) => nameWords(each)).filter((word) => word.length > 1));
+  const words = wordPatterns(members(allowlist.vocabulary).flatMap((each) => nameWords(each)).filter((word) => word.length > 0));
   const publishedNames = new Set(members(allowlist.published));
   const publishedPattern = `^(?:${[...publishedNames].sort().map(escaped).join("|")})$`;
   const source = (spec) => {
@@ -304,6 +305,15 @@ function keepAll(rules, specs, attributes, service, options, where) {
     if (spec.default !== undefined && !kept.has(spec.key) && (!spec.from || spec.from.includes(service))) kept.set(spec.key, { type: "string", value: spec.default });
   }
   for (const spec of specs) {
+    if (!spec.beside || !kept.has(spec.key)) continue;
+    const other = specs.find((each) => each.key === spec.beside);
+    const value = kept.get(spec.beside)?.value;
+    if (value === undefined || value === other?.otherwise) {
+      kept.delete(spec.key);
+      options.report(`${where}: ${spec.key} is kept only beside a ${spec.beside} the allowlist knows`);
+    }
+  }
+  for (const spec of specs) {
     if (!spec.when || !kept.has(spec.key)) continue;
     if (Object.entries(spec.when).some(([key, value]) => kept.get(key)?.value !== value)) {
       kept.delete(spec.key);
@@ -342,14 +352,12 @@ function keepNames(rules, attributes, service, kind) {
   if (service === "pharo-mcp") {
     const origin = attributes.get(originKey)?.value;
     if (tool !== undefined && !published && (origin === "other" || !rules.nameWords.test(wordForm(tool.value)))) attributes.set(toolKey, { type: "string", value: "_OTHER" });
-    if (origin === "other") {
+    if (origin === "other" && !published) {
       for (const spec of rules.span.filter((each) => each.own)) attributes.delete(spec.key);
-      if (!published) {
-        for (const spec of names) {
-          if (!attributes.has(spec.key)) continue;
-          if (spec.nameOther === undefined) attributes.delete(spec.key);
-          else attributes.set(spec.key, { type: "string", value: spec.nameOther });
-        }
+      for (const spec of names) {
+        if (!attributes.has(spec.key)) continue;
+        if (spec.nameOther === undefined) attributes.delete(spec.key);
+        else attributes.set(spec.key, { type: "string", value: spec.nameOther });
       }
     }
   }

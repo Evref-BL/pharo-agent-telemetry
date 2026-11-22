@@ -1,12 +1,31 @@
 // What scripts/catalog.js reads in the projects' source.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { smalltalkLiterals, smalltalkToolNames, withCatalog, wordsOf } from "../src/catalog.js";
+import { exceptionClasses, smalltalkLiterals, smalltalkToolNames, withCatalog, wordsOf } from "../src/catalog.js";
 
-test("a name's words are split on _, - and camelCase, in lower case, single characters left out", () => {
+test("a name's words are split on _, - and camelCase, in lower case, one-letter words kept", () => {
   assert.deepEqual(wordsOf("ClassNotFound"), ["class", "not", "found"]);
-  assert.deepEqual(wordsOf("method_sourceAt-x"), ["method", "source", "at"]);
+  assert.deepEqual(wordsOf("method_sourceAt-x"), ["method", "source", "at", "x"]);
   assert.deepEqual(wordsOf("HTTPServer"), ["http", "server"]);
+  assert.deepEqual(wordsOf("NotATestClass"), ["not", "a", "test", "class"]);
+  assert.deepEqual(wordsOf("2fa_code"), ["code"]);
+});
+
+test("the exception classes a project can name: those it refers to, its tests' strings included, and those it defines below one", () => {
+  const code = `"A comment naming CommentOnlyError"
+Class {
+	#name : 'MCPInvalidToolInput',
+	#superclass : 'JRPCInvalidParameters',
+	#category : 'MCP'
+}
+Class {
+	#name : 'MCPTool',
+	#superclass : 'Object',
+	#category : 'MCP'
+}
+MCPTool >> run [ ^ [ self compile ] on: OCUndeclaredVariableNotice do: [ :e | $" ] ]`;
+  const test = "MCPToolTest >> testCompile [ self assert: (self typeOf: 'x') equals: 'OCSyntaxErrorNotice' ]";
+  assert.deepEqual(exceptionClasses([code], [test]), ["MCPInvalidToolInput", "OCSyntaxErrorNotice", "OCUndeclaredVariableNotice"]);
 });
 
 test("the strings and unary symbols of Tonel code are read, comments and characters left out", () => {

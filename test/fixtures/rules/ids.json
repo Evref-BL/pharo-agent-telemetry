@@ -127,6 +127,12 @@
                     "value": {
                       "stringValue": "execute_tool"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "ids-session"
+                    }
                   }
                 ],
                 "parentSpanId": "cccccccccccc001e"
@@ -334,6 +340,7 @@
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "class_get",
+        "session.id": "ids-session",
         "span.duration_ms": {
           "double": 250
         }

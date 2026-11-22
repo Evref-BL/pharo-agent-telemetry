@@ -132,11 +132,13 @@ test("a session id and the ids of its spans hash within the session and the week
   }
 });
 
-test("MCP's spans are kept only when they serve a call in a session: another kind, or no session, is someone else's code", () => {
+test("MCP's spans are kept only when they serve a call in a session, PLexus's of every kind in a session", () => {
   const installed = createTransform(allowlist, testKey);
   assert.notEqual(installed("traces", oneSpan("pharo-mcp", { session: "a" })), null);
   assert.equal(installed("traces", oneSpan("pharo-mcp")), null);
   assert.equal(installed("traces", oneSpan("pharo-mcp", { session: "a", kind: 1 })), null);
   assert.equal(installed("traces", oneSpan("pharo-mcp", { session: "" })), null);
-  assert.notEqual(installed("traces", oneSpan("plexus", { kind: 1 })), null);
+  assert.notEqual(installed("traces", oneSpan("plexus", { kind: 1, session: "a" })), null);
+  // A PLexus span without a session would hash to another trace than its image's spans, which have one.
+  assert.equal(installed("traces", oneSpan("plexus", { kind: 1 })), null);
 });

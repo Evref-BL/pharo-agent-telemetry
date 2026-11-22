@@ -93,6 +93,12 @@
                     "value": {
                       "stringValue": "execute_tool"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "malformed-session"
+                    }
                   }
                 ]
               },
@@ -120,6 +126,12 @@
                     "key": "gen_ai.operation.name",
                     "value": {
                       "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "malformed-session"
                     }
                   }
                 ]
@@ -149,6 +161,12 @@
                     "value": {
                       "stringValue": "execute_tool"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "malformed-session"
+                    }
                   }
                 ]
               },
@@ -177,6 +195,12 @@
                     "value": {
                       "stringValue": "execute_tool"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "malformed-session"
+                    }
                   }
                 ]
               },
@@ -204,6 +228,12 @@
                     "key": "gen_ai.operation.name",
                     "value": {
                       "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "malformed-session"
                     }
                   }
                 ],
@@ -242,6 +272,12 @@
                     "value": {
                       "stringValue": "/Users/ada/secret"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "malformed-session"
+                    }
                   }
                 ]
               },
@@ -269,6 +305,12 @@
                     "key": "gen_ai.operation.name",
                     "value": {
                       "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "malformed-session"
                     }
                   }
                 ]
@@ -373,6 +415,12 @@
                     "value": {
                       "stringValue": "execute_tool"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "malformed-session"
+                    }
                   }
                 ]
               }
@@ -402,6 +450,7 @@
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_templates",
+        "session.id": "malformed-session",
         "span.duration_ms": {
           "double": 250
         }

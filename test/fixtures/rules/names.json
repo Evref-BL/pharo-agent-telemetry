@@ -119,6 +119,12 @@
                     "value": {
                       "stringValue": "tool_error"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "names-session"
+                    }
                   }
                 ],
                 "droppedAttributesCount": 0,
@@ -1555,6 +1561,12 @@
                     "value": {
                       "stringValue": "http"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "names-session"
+                    }
                   }
                 ],
                 "droppedAttributesCount": 0,
@@ -2144,6 +2156,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "_OTHER",
         "error.type": "tool_error",
+        "session.id": "names-session",
         "span.duration_ms": {
           "double": 1
         }
@@ -2205,6 +2218,7 @@
         "session.id": "d6f5de28-00d7-4a43-a043-5a171ebc7c12",
         "pharo.mcp.input.bytes": 32,
         "pharo.mcp.output.bytes": 256,
+        "pharo.mcp.output_budget.exceeded": false,
         "error.type": "tool_error",
         "pharo.mcp.error.kind": "domain",
         "pharo.mcp.exception.type": "MCPCommandError",
@@ -2243,6 +2257,7 @@
         ],
         "pharo.mcp.input.bytes": 16,
         "pharo.mcp.output.bytes": 512,
+        "pharo.mcp.output_budget.exceeded": false,
         "pharo.mcp.tool.refs": [
           "_OTHER"
         ],
@@ -2279,6 +2294,7 @@
         ],
         "pharo.mcp.input.bytes": 128,
         "pharo.mcp.output.bytes": 2048,
+        "pharo.mcp.output_budget.exceeded": false,
         "error.type": "tool_error",
         "pharo.mcp.error.kind": "input_schema",
         "pharo.mcp.error.schema.keywords": [
@@ -2315,6 +2331,7 @@
         "session.id": "d6f5de28-00d7-4a43-a043-5a171ebc7c12",
         "pharo.mcp.input.bytes": 16,
         "pharo.mcp.output.bytes": 256,
+        "pharo.mcp.output_budget.exceeded": false,
         "error.type": "tool_error",
         "pharo.mcp.error.kind": "domain",
         "pharo.mcp.error.code": "ToolNotFound",
@@ -2357,6 +2374,7 @@
         ],
         "pharo.mcp.input.bytes": 64,
         "pharo.mcp.output.bytes": 512,
+        "pharo.mcp.output_budget.exceeded": false,
         "error.type": "tool_error",
         "pharo.mcp.error.kind": "input_schema",
         "pharo.mcp.error.schema.keywords": [
@@ -2392,7 +2410,6 @@
         "plexus.call.index": 3,
         "plexus.call.forwarded": false,
         "plexus.client.name": "_OTHER",
-        "plexus.client.version": "3.4",
         "plexus.error.code": "invalid-arguments",
         "error.type": "tool_error",
         "span.duration_ms": {
@@ -2425,6 +2442,7 @@
         "session.id": "688f5915-5ccd-438a-8900-b6ab02bba087",
         "pharo.mcp.input.bytes": 64,
         "pharo.mcp.output.bytes": 256,
+        "pharo.mcp.output_budget.exceeded": false,
         "error.type": "tool_error",
         "pharo.mcp.error.kind": "domain",
         "pharo.mcp.error.code": "ToolNotFound",
@@ -2454,6 +2472,7 @@
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "pifs_list",
+        "session.id": "names-session",
         "span.duration_ms": {
           "double": 1
         }
@@ -2483,6 +2502,7 @@
         "session.id": "e84ac428-a9b6-4833-8faa-4f10048b10a1",
         "pharo.mcp.input.bytes": 2,
         "pharo.mcp.output.bytes": 128,
+        "pharo.mcp.output_budget.exceeded": false,
         "span.duration_ms": {
           "double": 0
         }
@@ -2518,6 +2538,7 @@
         ],
         "pharo.mcp.input.bytes": 16,
         "pharo.mcp.output.bytes": 512,
+        "pharo.mcp.output_budget.exceeded": false,
         "pharo.mcp.tool.refs": [
           "pifs_list"
         ],
@@ -2555,6 +2576,7 @@
         ],
         "pharo.mcp.input.bytes": 32,
         "pharo.mcp.output.bytes": 256,
+        "pharo.mcp.output_budget.exceeded": false,
         "error.type": "tool_error",
         "pharo.mcp.error.kind": "domain",
         "pharo.mcp.error.code": "ToolNotFound",

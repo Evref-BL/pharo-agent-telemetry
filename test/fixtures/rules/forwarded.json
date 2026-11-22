@@ -120,6 +120,12 @@
                     "value": {
                       "intValue": "2"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "forwarded-session"
+                    }
                   }
                 ]
               },
@@ -159,6 +165,12 @@
                           }
                         ]
                       }
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "forwarded-session"
                     }
                   }
                 ]
@@ -218,6 +230,12 @@
                         ]
                       }
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "forwarded-session"
+                    }
                   }
                 ]
               },
@@ -258,6 +276,12 @@
                         ]
                       }
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "forwarded-session"
+                    }
                   }
                 ]
               },
@@ -291,6 +315,12 @@
                     "key": "plexus.call.forwarded",
                     "value": {
                       "boolValue": true
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "forwarded-session"
                     }
                   }
                 ]
@@ -332,6 +362,12 @@
                         ]
                       }
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "forwarded-session"
+                    }
                   }
                 ]
               }
@@ -363,6 +399,7 @@
         "gen_ai.tool.name": "class_get",
         "plexus.call.forwarded": true,
         "plexus.call.index": 2,
+        "session.id": "forwarded-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -387,6 +424,7 @@
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "class_get",
+        "session.id": "forwarded-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -415,6 +453,7 @@
         "plexus.argument.names": [
           "name"
         ],
+        "session.id": "forwarded-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -439,6 +478,7 @@
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "_OTHER",
+        "session.id": "forwarded-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -464,6 +504,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_list",
         "plexus.call.forwarded": true,
+        "session.id": "forwarded-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -488,6 +529,7 @@
       "attributes": {
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "_OTHER",
+        "session.id": "forwarded-session",
         "span.duration_ms": {
           "double": 250
         }

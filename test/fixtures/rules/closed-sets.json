@@ -99,6 +99,12 @@
                     "value": {
                       "stringValue": "TypeError"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
                   }
                 ]
               },
@@ -132,6 +138,12 @@
                     "key": "error.type",
                     "value": {
                       "stringValue": "AcmeSecretError"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
                     }
                   }
                 ]
@@ -167,6 +179,12 @@
                     "value": {
                       "stringValue": "-32602"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
                   }
                 ]
               },
@@ -200,6 +218,12 @@
                     "key": "error.type",
                     "value": {
                       "stringValue": "503"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
                     }
                   }
                 ]
@@ -241,6 +265,12 @@
                     "value": {
                       "stringValue": "stopped-unsaved"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
                   }
                 ]
               },
@@ -281,6 +311,12 @@
                     "value": {
                       "stringValue": "acme-code"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
+                    }
                   }
                 ]
               },
@@ -320,6 +356,12 @@
                     "key": "pharo.mcp.input.bytes",
                     "value": {
                       "intValue": "3"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "closed-sets-session"
                     }
                   }
                 ]
@@ -710,6 +752,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_start",
         "error.type": "TypeError",
+        "session.id": "closed-sets-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -735,6 +778,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_start",
         "error.type": "_OTHER",
+        "session.id": "closed-sets-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -760,6 +804,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_start",
         "error.type": "-32602",
+        "session.id": "closed-sets-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -785,6 +830,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_start",
         "error.type": "503",
+        "session.id": "closed-sets-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -811,6 +857,7 @@
         "gen_ai.tool.name": "image_start",
         "error.type": "stopped-unsaved",
         "plexus.error.code": "stopped-unsaved",
+        "session.id": "closed-sets-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -837,6 +884,7 @@
         "gen_ai.tool.name": "image_start",
         "error.type": "_OTHER",
         "plexus.error.code": "_OTHER",
+        "session.id": "closed-sets-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -860,6 +908,7 @@
       "start": "1763337600000000000",
       "attributes": {
         "gen_ai.tool.name": "image_start",
+        "session.id": "closed-sets-session",
         "span.duration_ms": {
           "double": 250
         }

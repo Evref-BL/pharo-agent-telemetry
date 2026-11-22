@@ -117,6 +117,12 @@
                     "value": {
                       "stringValue": "2.1.330"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "versions-session"
+                    }
                   }
                 ]
               }
@@ -342,6 +348,12 @@
                     "value": {
                       "stringValue": "codex 1.0"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "versions-session"
+                    }
                   }
                 ]
               },
@@ -381,6 +393,12 @@
                     "key": "plexus.client.version",
                     "value": {
                       "stringValue": "10.0.0.7"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "versions-session"
                     }
                   }
                 ]
@@ -528,6 +546,7 @@
         "gen_ai.tool.name": "image_list",
         "plexus.client.name": "claude-code",
         "plexus.client.version": "2.1",
+        "session.id": "versions-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -574,6 +593,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_list",
         "plexus.client.name": "_OTHER",
+        "session.id": "versions-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -596,6 +616,7 @@
         "mcp.method.name": "tools/call",
         "gen_ai.tool.name": "image_list",
         "plexus.client.name": "claude-code",
+        "session.id": "versions-session",
         "span.duration_ms": {
           "double": 250
         }

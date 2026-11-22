@@ -432,6 +432,12 @@
                     "value": {
                       "stringValue": "opencode"
                     }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "clients-session"
+                    }
                   }
                 ]
               },
@@ -459,6 +465,12 @@
                     "key": "plexus.client.name",
                     "value": {
                       "stringValue": "Claude Code"
+                    }
+                  },
+                  {
+                    "key": "session.id",
+                    "value": {
+                      "stringValue": "clients-session"
                     }
                   }
                 ]
@@ -561,7 +573,6 @@
         "pharo.mcp.tool.origin": "mcp",
         "session.id": "c",
         "pharo.mcp.client.name": "_OTHER",
-        "pharo.mcp.client.version": "3.4",
         "span.duration_ms": {
           "double": 250
         }
@@ -585,7 +596,6 @@
         "pharo.mcp.tool.origin": "mcp",
         "session.id": "c",
         "pharo.mcp.client.name": "_OTHER",
-        "pharo.mcp.client.version": "1.0",
         "span.duration_ms": {
           "double": 250
         }
@@ -653,6 +663,7 @@
         "plexus.call.forwarded": false,
         "plexus.client.name": "codex-mcp-client",
         "plexus.client.version": "0.173",
+        "session.id": "clients-session",
         "span.duration_ms": {
           "double": 250
         }
@@ -673,6 +684,7 @@
         "gen_ai.tool.name": "image_list",
         "plexus.call.forwarded": false,
         "plexus.client.name": "_OTHER",
+        "session.id": "clients-session",
         "span.duration_ms": {
           "double": 250
         }

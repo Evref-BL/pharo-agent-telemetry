@@ -457,6 +457,7 @@
         ],
         "pharo.mcp.input.bytes": 32,
         "pharo.mcp.output.bytes": 1024,
+        "pharo.mcp.output_budget.exceeded": false,
         "error.type": "tool_error",
         "pharo.mcp.error.kind": "input_schema",
         "pharo.mcp.error.schema.keywords": [

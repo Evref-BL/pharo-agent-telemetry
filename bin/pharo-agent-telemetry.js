@@ -206,11 +206,14 @@ async function status() {
     const fresh = agent.current ? `up to date with this package (${version})` : `version ${agent.version ?? "unknown"}, this package is ${version}: run join again to update it`;
     console.log(`Agent: ${agentDirectory}${port}; ${fresh}${agent.key ? "" : "; its key is missing, so it sends nothing"}.`);
     if (agent.config) {
-      const listener = await whoListens(agent.config.port, readKey(agentDirectory));
+      const key = readKey(agentDirectory);
+      const listener = await whoListens(agent.config.port, key);
       console.log({
         agent: `The agent answers on 127.0.0.1:${agent.config.port}.`,
         none: `Nothing listens on 127.0.0.1:${agent.config.port}, so nothing is sent.`,
-        other: `Another program listens on 127.0.0.1:${agent.config.port}, not the agent: the tools send to it, and the agent cannot start. Stop that program, or leave and join again for another port.`,
+        other: key
+          ? `Another program listens on 127.0.0.1:${agent.config.port}, not the agent: the tools send to it, and the agent cannot start. Stop that program, or leave and join again for another port.`
+          : `Something listens on 127.0.0.1:${agent.config.port}; without the agent's key, nothing tells whether it is the agent.`,
       }[listener]);
       for (const line of stateLines(agent.state, agent.config.port)) console.log(line);
     }

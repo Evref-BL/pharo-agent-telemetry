@@ -2,8 +2,9 @@
 // commands are recorded instead of run (PHARO_AGENT_TELEMETRY_DRY_RUN), so
 // nothing is installed on the machine that runs the tests.
 import assert from "node:assert/strict";
-import { spawn, spawnSync } from "node:child_process";
+import { execFile, spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -142,7 +143,7 @@ test("leave finds a block wherever a tool may have read it, and keeps the settin
   assert.match(left.stdout, /settings of your own in it stay/);
 }));
 
-test("status says when the agent is older than the package, has lost its key, or a tool's block is gone", () => withHome(({ cli, agent, settings }) => {
+test("status says when the agent is older than the package, has lost its key, or a tool's block is gone", () => withHome(async ({ cli, env, agent, settings }) => {
   assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
   const transform = path.join(agent, "telemetry-transform.mjs");
   fs.writeFileSync(transform, fs.readFileSync(transform, "utf8").replace(/^export const version = "[^"]+";$/m, 'export const version = "0.0.1";'));
@@ -152,6 +153,16 @@ test("status says when the agent is older than the package, has lost its key, or
   assert.match(status, /version 0\.0\.1, this package is [^:]+: run join again to update it/);
   assert.match(status, /its key is missing, so it sends nothing/);
   assert.ok(status.includes(`${settings.mcp}: no block of ours, so the tool that reads it sends nothing. Run join again.`), status);
+  // Something on the agent's port, which status cannot tell from the agent without its key.
+  const { port } = JSON.parse(fs.readFileSync(path.join(agent, "agent.json"), "utf8"));
+  const listener = http.createServer((request, response) => response.writeHead(404).end());
+  await new Promise((resolve) => listener.listen(port, "127.0.0.1", () => resolve(undefined)));
+  try {
+    const seen = await new Promise((resolve) => execFile(process.execPath, [binary, "status"], { env }, (error, stdout) => resolve(stdout)));
+    assert.match(seen, new RegExp(`^Something listens on 127\\.0\\.0\\.1:${port}; without the agent's key`, "m"));
+  } finally {
+    await new Promise((resolve) => listener.close(() => resolve(undefined)));
+  }
 }));
 
 test("a preview prints what the agent would send, sends nothing, and puts the settings back", () => withHome(async ({ settings }) => {

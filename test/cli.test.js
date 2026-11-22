@@ -341,6 +341,7 @@ test("a join the service manager refuses leaves nothing behind, and says why", {
   assert.equal(refused.status, 1);
   assert.match(refused.stderr, /service manager refused it/);
   assert.match(refused.stderr, /Nothing was installed, and nothing is sent\./);
+  assert.match(refused.stderr, /run join --no-service, then keep `npx @evref-bl\/pharo-agent-telemetry agent` running/);
   assert.equal(fs.existsSync(path.join(root, "config", "pharo-agent-telemetry")), false);
   assert.deepEqual(installedDefinitions({ home: root, env: refusing, agent: path.join(root, "config", "pharo-agent-telemetry", "agent.mjs") }), []);
   assert.equal(fs.readFileSync(mine, "utf8"), "# my notes\n");
@@ -386,7 +387,7 @@ test("settings of your own are put back as they were on leave, and status never 
   const status = cli("status").stdout;
   assert.equal(status.includes("s3cret"), false, status);
   assert.match(status, /settings of your own, values not shown: OTEL_EXPORTER_OTLP_HEADERS/);
-  assert.match(status, /^Nothing listens on 127\.0\.0\.1:\d+, so nothing is sent\.$/m);
+  assert.match(status, /^Nothing listens on 127\.0\.0\.1:\d+, so nothing is sent\. Run join again to start it\.$/m);
   assert.equal(cli("leave").status, 0);
   assert.equal(fs.readFileSync(settings.mcp, "utf8"), mine);
   assert.equal(fs.existsSync(`${settings.mcp}.before-join`), false);
@@ -428,4 +429,124 @@ test("joined, the preview takes the agent's port while it runs, and starts the a
   assert.equal(await second.exited, 0, second.output.text);
   assert.match(second.output.text, /The agent is not started again: its service is gone\./);
   assert.doesNotMatch(second.output.text, /ENOENT/);
+}));
+
+test("leave and status from a shell without join's XDG_CONFIG_HOME find the agent from this home's service definitions, and the settings beside it", { skip: process.platform === "win32" }, () => withHome(({ home, env }) => {
+  const { fakes, log } = fakeServiceCommands(home);
+  const root = path.join(home, "participant");
+  const joining = { ...fakedHome(env, root, fakes, log), XDG_CONFIG_HOME: path.join(root, "xdg") };
+  assert.equal(run(joining, "join", "--endpoint", "https://c.test").status, 0);
+  const directory = path.join(root, "xdg", "pharo-agent-telemetry");
+  const beside = [path.join(root, "xdg", "plexus", "otel.env"), path.join(root, "xdg", "pharo-mcp", "otel.env")];
+  for (const file of beside) assert.equal(readSettings(file)?.writer, "joined", file);
+  const shell = { ...joining };
+  delete shell.XDG_CONFIG_HOME;
+  const status = run(shell, "status").stdout;
+  assert.ok(status.includes(`Agent: ${directory} on 127.0.0.1:`), status);
+  const left = run(shell, "leave");
+  assert.equal(left.status, 0, left.stderr);
+  for (const file of beside) assert.equal(fs.existsSync(file), false, file);
+  assert.equal(fs.existsSync(directory), false);
+  assert.deepEqual(installedDefinitions({ home: root, env: joining, agent: path.join(directory, "agent.mjs") }), []);
+  assert.match(left.stdout, /Stopped and removed the agent/);
+}));
+
+test("join writes through a settings file's symbolic link, and leave puts back what the file it points to held", { skip: process.platform === "win32" }, () => withHome(({ home, cli, settings }) => {
+  const real = path.join(home, "dotfiles", "pharo-mcp.env");
+  fs.mkdirSync(path.dirname(real), { recursive: true });
+  fs.writeFileSync(real, "# my notes\n");
+  fs.mkdirSync(path.dirname(settings.mcp), { recursive: true });
+  fs.symlinkSync(real, settings.mcp);
+  const joined = cli("join", "--endpoint", "https://c.test");
+  assert.equal(joined.status, 0, joined.stderr);
+  assert.ok(fs.lstatSync(settings.mcp).isSymbolicLink());
+  assert.equal(readSettings(real)?.writer, "joined");
+  assert.equal(fs.readFileSync(`${settings.mcp}.before-join`, "utf8"), "# my notes\n");
+  assert.equal(mode(`${settings.mcp}.before-join`), 0o600);
+  assert.ok(joined.stdout.includes(`What was yours: ${settings.mcp}.before-join, which leave puts back.`), joined.stdout);
+  const left = cli("leave");
+  assert.equal(left.status, 0, left.stderr);
+  assert.ok(fs.lstatSync(settings.mcp).isSymbolicLink());
+  assert.equal(fs.readFileSync(real, "utf8"), "# my notes\n");
+  assert.equal(fs.existsSync(`${settings.mcp}.before-join`), false);
+}));
+
+test("join refuses a settings file it cannot read or write, and a backup older than the file, before installing anything", { skip: process.platform === "win32" || process.getuid?.() === 0 }, () => withHome(({ cli, settings, agent }) => {
+  const nothingInstalled = (result, message) => {
+    assert.equal(result.status, 1, result.stdout);
+    assert.match(result.stderr, message);
+    assert.equal(fs.existsSync(agent), false);
+  };
+  fs.mkdirSync(path.dirname(settings.mcp), { recursive: true });
+  fs.writeFileSync(settings.mcp, "OTEL_SERVICE_NAME=mine\n", { mode: 0o000 });
+  nothingInstalled(cli("join", "--endpoint", "https://c.test", "--force"), /otel\.env cannot be read: join would replace it without keeping it/);
+  fs.chmodSync(settings.mcp, 0o600);
+
+  fs.mkdirSync(path.dirname(settings.plexus), { recursive: true, mode: 0o500 });
+  fs.chmodSync(path.dirname(settings.plexus), 0o500);
+  nothingInstalled(cli("join", "--endpoint", "https://c.test", "--force"), /plexus\/otel\.env cannot be written \(EACCES\): join would stop halfway/);
+  fs.chmodSync(path.dirname(settings.plexus), 0o700);
+
+  fs.writeFileSync(`${settings.mcp}.before-join`, "OTEL_SERVICE_NAME=older\n");
+  nothingInstalled(cli("join", "--endpoint", "https://c.test", "--force"), /before-join holds what .* held before an earlier join, and .* has changed since/);
+  fs.rmSync(settings.mcp);
+  nothingInstalled(cli("join", "--endpoint", "https://c.test", "--force"), /and .*otel\.env is gone since/);
+  // A backup that holds what the file holds is the same: taken as it is.
+  fs.writeFileSync(settings.mcp, "OTEL_SERVICE_NAME=older\n");
+  assert.equal(cli("join", "--endpoint", "https://c.test", "--force").status, 0);
+  assert.equal(cli("leave").status, 0);
+  assert.equal(fs.readFileSync(settings.mcp, "utf8"), "OTEL_SERVICE_NAME=older\n");
+  assert.equal(fs.existsSync(`${settings.mcp}.before-join`), false);
+}));
+
+test("leave says where a backup it does not put back is", () => withHome(({ cli, settings }) => {
+  fs.mkdirSync(path.dirname(settings.mcp), { recursive: true });
+  fs.writeFileSync(settings.mcp, "OTEL_SERVICE_NAME=mine\n");
+  fs.mkdirSync(path.dirname(settings.plexus), { recursive: true });
+  fs.writeFileSync(settings.plexus, "OTEL_SERVICE_NAME=mine\n");
+  assert.equal(cli("join", "--endpoint", "https://c.test", "--force").status, 0);
+  // Settings of your own added beside the block since, and a file you wrote again whole.
+  fs.appendFileSync(settings.mcp, "OTEL_SERVICE_NAMESPACE=later\n");
+  fs.writeFileSync(settings.plexus, "OTEL_SERVICE_NAME=again\n");
+  const left = cli("leave");
+  assert.equal(left.status, 0, left.stderr);
+  assert.ok(left.stdout.includes(`Removed the block from ${settings.mcp}; the settings of your own in it stay. What it held before join is in ${settings.mcp}.before-join.`), left.stdout);
+  assert.ok(left.stdout.includes(`${settings.plexus} holds no block of ours: left as it is. What it held before join is in ${settings.plexus}.before-join.`), left.stdout);
+  assert.equal(fs.readFileSync(settings.mcp, "utf8"), "OTEL_SERVICE_NAMESPACE=later\n");
+  assert.equal(fs.readFileSync(settings.plexus, "utf8"), "OTEL_SERVICE_NAME=again\n");
+  assert.equal(fs.readFileSync(`${settings.mcp}.before-join`, "utf8"), "OTEL_SERVICE_NAME=mine\n");
+}));
+
+test("join --no-service installs no service, and says the agent sends only while the agent command runs", () => withHome(({ home, env, cli, agent }) => {
+  const joined = cli("join", "--endpoint", "https://c.test", "--no-service");
+  assert.equal(joined.status, 0, joined.stderr);
+  assert.match(joined.stdout, /No service runs the agent: it sends only while `npx @evref-bl\/pharo-agent-telemetry agent` runs\./);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(agent, "agent.json"), "utf8")).service, false);
+  assert.deepEqual(installedDefinitions({ home, env, agent: path.join(agent, "agent.mjs") }), []);
+  assert.equal(fs.existsSync(env.PHARO_AGENT_TELEMETRY_DRY_RUN) ? fs.readFileSync(env.PHARO_AGENT_TELEMETRY_DRY_RUN, "utf8") : "", "");
+  const status = cli("status").stdout;
+  assert.match(status, /^Agent service: none: join --no-service, so it sends only while the agent command runs\.$/m);
+  assert.match(status, /so nothing is sent\. Run the agent command to send\.$/m);
+  // Joined with a service again, the agent has one.
+  assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(agent, "agent.json"), "utf8")).service, undefined);
+  assert.ok(installedDefinitions({ home, env, agent: path.join(agent, "agent.mjs") }).length > 0);
+}));
+
+test("status and join know a joined preview from another program, and a preview killed before it started the agent again", () => withHome(async ({ config, env, cli }) => {
+  assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
+  const port = JSON.parse(fs.readFileSync(path.join(config, "pharo-agent-telemetry", "agent.json"), "utf8")).port;
+  const { child, output, exited } = await startedPreview(env, (text) => text.includes("Previewing on"));
+  assert.match(output.text, /Previewing on/);
+  const status = cli("status").stdout;
+  assert.ok(status.includes(`A preview runs on 127.0.0.1:${port}, in the agent's place: nothing is sent until it ends and starts the agent again.`), status);
+  const refused = cli("join", "--endpoint", "https://c.test");
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /A preview runs in the agent's place\. Stop it first\./);
+  child.kill("SIGKILL");
+  await exited;
+  assert.match(cli("status").stdout, /a preview was stopped without starting the agent again\. Run join again to start it\./);
+  assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
+  assert.equal(fs.existsSync(path.join(config, "pharo-agent-telemetry", "preview.json")), false);
+  assert.doesNotMatch(cli("status").stdout, /preview was stopped/);
 }));

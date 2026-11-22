@@ -207,3 +207,21 @@ test("the service's state, as each system reports it", () => withHome((home, age
   removeService(gone);
 }));
 
+test("the agents this home's service definitions run are found from the home alone, and only those under it", () => withHome((home) => {
+  const other = path.join(home, "elsewhere", "pharo-agent-telemetry", "agent.mjs");
+  const mine = path.join(home, "xdg", "pharo-agent-telemetry", "agent.mjs");
+  const foreign = path.join(path.dirname(home), "another-home", ".config", "pharo-agent-telemetry", "agent.mjs");
+  const run = recorder().run;
+  for (const platform of ["darwin", "linux"]) {
+    for (const agent of [other, mine]) installService({ platform, home, env: {}, uid: 501, agent, node: process.execPath, run });
+    // A definition copied from another home names that home's agent.
+    const { file, content } = serviceDefinition({ platform, home: path.join(path.dirname(home), "another-home"), env: {}, node: process.execPath, agent: foreign });
+    const copied = path.join(path.dirname(serviceDefinition({ platform, home, env: {}, node: process.execPath, agent: mine }).file), path.basename(file));
+    fs.writeFileSync(copied, content);
+    assert.deepEqual(definedAgentDirectories({ platform, home }).sort(), [path.dirname(other), path.dirname(mine)].sort(), platform);
+    for (const agent of [other, mine]) removeService({ platform, home, env: {}, uid: 501, agent, run });
+    fs.rmSync(copied);
+    assert.deepEqual(definedAgentDirectories({ platform, home }), [], platform);
+  }
+  assert.deepEqual(definedAgentDirectories({ platform: "win32", home }), []);
+}));

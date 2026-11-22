@@ -81,7 +81,11 @@ const allowlist = {
       "stop-failed",
       "save-failed",
       "stopped-unsaved",
-      "launcher-failed"
+      "launcher-failed",
+      "invalid-arguments",
+      "no-image-running",
+      "several-images",
+      "none-takes-calls"
     ],
     "call failures": [
       "tool_error",
@@ -148,6 +152,10 @@ const allowlist = {
       "MCPResourceNotFound",
       "MCPSyntaxError",
       "MCPUnsupportedProtocolVersion",
+      "MCPInvalidToolInput",
+      "MCPMissingPromptArgument",
+      "MCPUnknownCompletionReference",
+      "MCPUnknownPrompt",
       "AbortError",
       "AggregateError",
       "EvalError",

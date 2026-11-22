@@ -53,7 +53,10 @@ test("says nothing of an archive that holds only what the rules keep, and counts
   const archived = lines.map((line) => line.replace('"attributes":[', '"attributes":[{"key":"fileexporter.path_segment","value":{"stringValue":"2026-11-22"}},'));
   const { spans, keys, problems } = audit([...archived, ""], allowlist);
   assert.deepEqual(problems, []);
-  assert.equal(spans.get("plexus tools/call"), 7);
+  const plexusCalls = ruleFixtures().flatMap((fixture) => fixture.expected)
+    .filter((span) => span.resource["service.name"] === "plexus" && span.name === "tools/call").length;
+  assert.ok(plexusCalls > 0);
+  assert.equal(spans.get("plexus tools/call"), plexusCalls);
   assert.ok(keys.has("span.duration_ms"));
   assert.ok(!keys.has("fileexporter.path_segment"));
 });

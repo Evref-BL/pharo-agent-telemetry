@@ -450,7 +450,8 @@ test("a catalog is read whole only under its cap, from its URL alone: an unreach
 
 test("a catalog whose signature holds replaces the one in use only when the filter reads it, it is newer, and it is dated no later than tomorrow", () => {
   const now = Date.now();
-  const newer = catalogPayload(allowlist, new Date(now - 60_000).toISOString());
+  // A second after the filter's own, which `npm run catalog` may have dated a moment ago.
+  const newer = catalogPayload(allowlist, new Date(Date.parse(builtIn.published) + 1_000).toISOString());
   assert.deepEqual(acceptCatalog(newer, builtIn, catalogRefusal, now), { accepted: newer });
   // A clock a few hours behind still takes it.
   const ahead = catalogPayload(allowlist, new Date(now + 20 * 3_600_000).toISOString());
@@ -503,7 +504,7 @@ test("the agent asks for a newer catalog, takes one the project signed without a
     await eventually(() => served.requests >= 1);
     await send(first.port, "00f067aa0ba902b1", 1);
     assert.deepEqual(names(), ["tools/call _OTHER"]);
-    const grown = catalogPayload(allowlist, new Date(Date.now() - 60_000).toISOString());
+    const grown = catalogPayload(allowlist, new Date(Date.parse(builtIn.published) + 1_000).toISOString());
     const payload = { ...grown, sets: { ...grown.sets, "MCP tools": [...grown.sets["MCP tools"], "zyxwv_qtool", "Not-A-Tool"], "agent hosts": ["evil-host"] } };
     // Signed by another key, older, of another form, or dated ahead: refused, and the filter is as it was.
     for (const [text, outcome] of [

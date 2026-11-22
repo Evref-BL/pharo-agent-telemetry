@@ -202,6 +202,7 @@ OTEL_TRACES_EXPORTER=otlp
 OTEL_BSP_SCHEDULE_DELAY=1000
 OTEL_METRICS_EXPORTER=none
 OTEL_LOGS_EXPORTER=none
+OTEL_LOG_LEVEL=none
 OTEL_RESOURCE_ATTRIBUTES=deployment.environment.name=field
 # pharo-agent-telemetry: end
 ```

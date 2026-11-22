@@ -27,27 +27,53 @@ GitLab job, in its own repository (`pharo-agent-telemetry-import`).
 See [docs/participants.md](docs/participants.md). `join`:
 
 - copies the agent (`src/agent.js`, dependency-free) and its filter into
-  `~/.config/pharo-agent-telemetry/` (`%APPDATA%` on Windows), with
-  `agent.json` (its port, the collector and its token) and a key of its own
-  that hashes ids and never leaves the machine, both readable by their owner
-  only;
+  `pharo-agent-telemetry/` under `$XDG_CONFIG_HOME`, `~/.config` or
+  `%APPDATA%` on Windows, with `agent.json` (its port, the collector and its
+  token) and a key of its own that hashes ids and never leaves the machine,
+  both readable by their owner only;
 - runs it as a service of the user, started at login and again when it fails,
-  by an absolute path to node: a LaunchAgent on macOS, a systemd user unit on
-  Linux, a scheduled task at logon on Windows;
+  by an absolute path to node (the one on `PATH` that outlives an upgrade,
+  when there is one): a LaunchAgent on macOS, a systemd user unit on Linux, a
+  scheduled task at logon on Windows that runs it with no window. The service
+  is named after the agent's directory, and every command acts on a service
+  only while that home's definition names it and runs that agent: a command
+  run with another `HOME` or `XDG_CONFIG_HOME` never stops or replaces
+  another home's agent;
+- picks the agent's port below every system's ephemeral range (from 32768 on
+  Linux, 49152 on macOS and Windows), where no program is handed it while the
+  agent is down;
 - writes a marked block of standard `OTEL_*` settings, pointing at the agent
   on 127.0.0.1 and holding no token, into PLexus's settings file
-  (`~/.config/plexus/otel.env`, which PLexus passes on to the images it
-  starts) and MCP's (`~/.config/pharo-mcp/otel.env`, for an image started
-  some other way).
+  (`plexus/otel.env`, which PLexus passes on to the images it starts) and
+  MCP's (`pharo-mcp/otel.env`, for an image started some other way), under
+  `$XDG_CONFIG_HOME` and also under `~/.config` (`%APPDATA%`) when it differs,
+  where a tool started from the desktop reads them. A file of the
+  participant's own is kept as `otel.env.before-join` and put back by `leave`;
+- clears PLexus's memory of the agent's endpoint being unreachable, which
+  would keep PLexus from sending for hours.
 
 The agent takes OTLP/HTTP JSON from loopback only, answers at once, keeps only
 traces and of them only what the filter keeps, and sends that to the collector
-over verified TLS, one request at a time from a bounded queue, stopping a
-while after each failure. `leave` stops and removes the service, the agent's
-files and key, and both blocks, wherever a tool may have read them. `preview`
-runs the agent in the foreground with sending off and prints what it would
-send. Tests give the command `PHARO_AGENT_TELEMETRY_DRY_RUN`, a file the
-service commands are written to instead of run.
+over verified TLS, from a bounded queue, the requests waiting merged in one
+under the collector's limit. A send that fails is tried once more on a fresh
+connection, then sending stops a while; a request the collector refuses stops
+nothing. The agent answers `/pharo-agent-telemetry/health` with an HMAC of a
+challenge by its key, so `status` tells the agent from another program on its
+port, and stops on a request that proves the key, as `preview`, `join` and
+`leave` ask (on Windows, ending its task leaves node running). It writes what
+it received and sent to `state.json`, which `status` shows.
+
+`leave` stops and removes the service, the agent's files and key, and both
+blocks, wherever a tool may have read them. `preview` runs an agent in the
+foreground with sending off and prints what it would send; joined, it takes
+the agent's port while it runs, so the tools already running show too, and
+starts the agent again after.
+
+Tests give the command `PHARO_AGENT_TELEMETRY_DRY_RUN`, a file the service
+commands are written to instead of run, or
+`PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS`, a directory of fake commands run
+instead of the real ones. Under `node --test` the command refuses to run a
+service command otherwise.
 
 ## The collector
 

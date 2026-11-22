@@ -8,6 +8,9 @@ import { startAgent } from "./agent.js";
 import { freePort } from "./install.js";
 import { agentSettings, backupSuffix, readSettings, removeSettings, settingsBlock, writeSettings } from "./settings.js";
 
+/** A span's kind, by its number. */
+const kindNames = ["unspecified", "internal", "server", "client", "producer", "consumer"];
+
 /** An OTLP JSON attribute value, as text. */
 function valueText(value) {
   if ("stringValue" in value) return JSON.stringify(value.stringValue);
@@ -37,9 +40,10 @@ export function describeRequest(request) {
       for (const span of scopeSpans.spans ?? []) {
         const week = new Date(Number(BigInt(span.startTimeUnixNano ?? 0) / 1_000_000n)).toISOString().slice(0, 10);
         const failed = span.status?.code === 2 ? ", failed" : "";
-        lines.push(`${span.name} (week of ${week}${failed}) trace ${span.traceId} span ${span.spanId}${span.parentSpanId ? ` parent ${span.parentSpanId}` : ""}`);
+        const kind = kindNames[span.kind] ?? "unspecified";
+        lines.push(`${span.name} (${kind}, week of ${week}${failed}) trace ${span.traceId} span ${span.spanId}${span.parentSpanId ? ` parent ${span.parentSpanId}` : ""}`);
         lines.push(...attributeLines(span.attributes));
-        lines.push(`  from ${scopeSpans.scope?.name}:`, ...resource.map((line) => `  ${line}`));
+        lines.push(`  from ${scopeSpans.scope?.name}${scopeSpans.scope?.version ? ` ${scopeSpans.scope.version}` : ""}:`, ...resource.map((line) => `  ${line}`));
       }
     }
   }
@@ -88,9 +92,12 @@ export async function startPreview({ files, filter, key, print, signal, port }) 
     writeSettings(file, settingsBlock("preview", agentSettings({ port: started.port, environment: "preview" })));
   }
 
+  // A leave run meanwhile has put the files back already: only a file that is still the preview's is.
   const done = started.closed.then(() => {
     for (const file of files) {
-      if (backups.includes(file)) fs.renameSync(`${file}${backupSuffix}`, file);
+      if (readSettings(file)?.writer !== "preview") continue;
+      const backup = `${file}${backupSuffix}`;
+      if (backups.includes(file) && fs.existsSync(backup)) fs.renameSync(backup, file);
       else fs.rmSync(file, { force: true });
     }
   });

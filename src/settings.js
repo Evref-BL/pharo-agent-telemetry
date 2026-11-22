@@ -24,6 +24,9 @@ export const agentTool = "pharo-agent-telemetry";
 /** What a preview saves the settings file as while it runs. */
 export const backupSuffix = ".before-preview";
 
+/** What join saves a settings file it did not write as, for leave to put back. */
+export const joinBackupSuffix = ".before-join";
+
 /**
  * The configuration directories a tool may read its settings from, first the one it reads.
  *
@@ -53,10 +56,17 @@ export function configDirectory(tool, env = process.env, platform = process.plat
   return paths.join(directories[0], tool);
 }
 
-/** The settings file of each tool joining writes, as that tool finds it. */
+/**
+ * The settings files joining writes: each tool's as this environment finds
+ * it, and, when it differs, as a tool started without XDG_CONFIG_HOME finds
+ * it (`~/.config`, `%APPDATA%` on Windows), as an agent host started from
+ * the desktop does, or Pharo on Windows, which reads a `C:/` path as
+ * relative.
+ */
 export function settingsFiles(env = process.env, platform = process.platform, home = os.homedir()) {
   const paths = platform === "win32" ? path.win32 : path.posix;
-  return settingsTools.map((tool) => paths.join(configDirectory(tool, env, platform, home), "otel.env"));
+  const without = { ...env, XDG_CONFIG_HOME: undefined };
+  return [...new Set([env, without].flatMap((each) => settingsTools.map((tool) => paths.join(configDirectory(tool, each, platform, home), "otel.env"))))];
 }
 
 /**
@@ -93,6 +103,8 @@ export function agentSettings({ port, environment = "field" }) {
     OTEL_BSP_SCHEDULE_DELAY: "1000",
     OTEL_METRICS_EXPORTER: "none",
     OTEL_LOGS_EXPORTER: "none",
+    // An image whose agent is down, or gone after leave, prints nothing of it.
+    OTEL_LOG_LEVEL: "none",
     OTEL_RESOURCE_ATTRIBUTES: `deployment.environment.name=${environment}`,
   };
 }
@@ -171,4 +183,53 @@ export function removeSettings(file, { force = false } = {}) {
   if (current.writer === "other") return "not ours";
   writeSettings(file, `${current.outside}\n`);
   return "kept others";
+}
+
+/**
+ * The names of the settings a file holds outside our block, as `status`
+ * shows them: their values may be secrets (a collector's token in
+ * OTEL_EXPORTER_OTLP_HEADERS), and are never printed.
+ *
+ * @param {string} text
+ */
+export function ownSettingNames(text) {
+  return text.split(/\r?\n/).filter(isSetting).map((line) => /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)/.exec(line)?.[1]).filter(Boolean);
+}
+
+/**
+ * Where PLexus remembers a collector it could not reach, and stops sending
+ * to it for up to six hours: `$XDG_CACHE_HOME/plexus`, and the directory it
+ * uses without one (`~/.cache/plexus`, `%LOCALAPPDATA%\\plexus` on Windows).
+ */
+export function reachabilityFiles(env = process.env, platform = process.platform, home = os.homedir()) {
+  const paths = platform === "win32" ? path.win32 : path.posix;
+  const fallback = platform === "win32" ? env.LOCALAPPDATA?.trim() || paths.join(home, "AppData", "Local") : paths.join(home, ".cache");
+  return [...new Set([env.XDG_CACHE_HOME?.trim(), fallback].filter(Boolean).map((directory) => paths.join(directory, "plexus", "otel-reachability.json")))];
+}
+
+/**
+ * Forgets that PLexus could not reach the agent on these ports: a join or a
+ * preview that starts it again is sent to at once, not hours later.
+ *
+ * @param {number[]} ports
+ * @returns {string[]} the files changed
+ */
+export function clearReachability(ports, env = process.env, platform = process.platform, home = os.homedir()) {
+  const endpoints = ports.map((port) => `http://127.0.0.1:${port}/v1/traces`);
+  return reachabilityFiles(env, platform, home).filter((file) => {
+    let state;
+    try {
+      state = JSON.parse(fs.readFileSync(file, "utf8"));
+    } catch {
+      return false;
+    }
+    if (state === null || typeof state !== "object" || !endpoints.some((endpoint) => endpoint in state)) return false;
+    for (const endpoint of endpoints) delete state[endpoint];
+    try {
+      writeSettings(file, JSON.stringify(state), 0o644);
+      return true;
+    } catch {
+      return false;
+    }
+  });
 }

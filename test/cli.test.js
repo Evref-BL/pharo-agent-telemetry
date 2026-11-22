@@ -10,7 +10,7 @@ import test from "node:test";
 import { missingForJoin } from "../src/collector.js";
 import { dpoPlaceholder, participantsPage, readAllowlist } from "../src/generate.js";
 import { describeRequest, recoverPreview, startPreview } from "../src/preview.js";
-import { serviceDefinition } from "../src/service.js";
+import { installedDefinitions, serviceDefinition, serviceNames, stableNode } from "../src/service.js";
 import { everySettingsFile, readSettings, settingsBlock, settingsFiles, agentSettings } from "../src/settings.js";
 import { filter } from "../src/telemetry-transform.mjs";
 import { comparable, expectedSpans, ruleFixtures, testKey } from "./support.js";
@@ -41,10 +41,14 @@ async function withHome(run) {
 
 const mode = (file) => fs.statSync(file).mode & 0o777;
 
-test("each tool's settings file is where that tool reads it", () => {
-  assert.deepEqual(settingsFiles({ XDG_CONFIG_HOME: "/c" }, "linux", "/home/a"), ["/c/plexus/otel.env", "/c/pharo-mcp/otel.env"]);
+test("each tool's settings file is where that tool reads it, from this shell and from the desktop", () => {
+  // A tool started from the desktop has no XDG_CONFIG_HOME: the settings go where it reads them too.
+  assert.deepEqual(settingsFiles({ XDG_CONFIG_HOME: "/c" }, "linux", "/home/a"), ["/c/plexus/otel.env", "/c/pharo-mcp/otel.env", "/home/a/.config/plexus/otel.env", "/home/a/.config/pharo-mcp/otel.env"]);
+  assert.deepEqual(settingsFiles({}, "linux", "/home/a"), ["/home/a/.config/plexus/otel.env", "/home/a/.config/pharo-mcp/otel.env"]);
   assert.deepEqual(settingsFiles({ XDG_CONFIG_HOME: "relative" }, "darwin", "/Users/a"), ["/Users/a/.config/plexus/otel.env", "/Users/a/.config/pharo-mcp/otel.env"]);
   assert.deepEqual(settingsFiles({ APPDATA: "C:\\Users\\A\\AppData\\Roaming" }, "win32", "C:\\Users\\A"), ["C:\\Users\\A\\AppData\\Roaming\\plexus\\otel.env", "C:\\Users\\A\\AppData\\Roaming\\pharo-mcp\\otel.env"]);
+  // Pharo on Windows reads a C:/ XDG_CONFIG_HOME as relative, and MCP then reads %APPDATA%.
+  assert.deepEqual(settingsFiles({ XDG_CONFIG_HOME: "C:\\x", APPDATA: "C:\\R" }, "win32", "C:\\Users\\A"), ["C:\\x\\plexus\\otel.env", "C:\\x\\pharo-mcp\\otel.env", "C:\\R\\plexus\\otel.env", "C:\\R\\pharo-mcp\\otel.env"]);
   const everywhere = everySettingsFile({ XDG_CONFIG_HOME: "/c" }, "linux", "/home/a");
   for (const file of ["/c/plexus/otel.env", "/home/a/.config/plexus/otel.env", "/home/a/.config/pharo-mcp/otel.env", "/c/pharo-agent/otel.env"]) assert.ok(everywhere.includes(file), file);
 });
@@ -75,7 +79,9 @@ test("join installs the agent and points both tools at it without the token; lea
   assert.equal(mode(path.join(agent, "telemetry-transform.key")), 0o600);
   const service = serviceDefinition({ home, env: { XDG_CONFIG_HOME: config }, agent: path.join(agent, "agent.mjs") });
   const definition = fs.readFileSync(service.file);
-  assert.ok(definition.includes(process.execPath) || definition.includes(Buffer.from(process.execPath, "utf16le")));
+  // This node, by the path on PATH that outlives its upgrades when there is one.
+  const { node } = stableNode(env);
+  assert.ok(definition.includes(node) || definition.includes(Buffer.from(node, "utf16le")), node);
   const commands = fs.readFileSync(env.PHARO_AGENT_TELEMETRY_DRY_RUN, "utf8").trim().split("\n").map((line) => JSON.parse(line));
   assert.ok(commands.length >= 2, JSON.stringify(commands));
 
@@ -169,7 +175,7 @@ test("a preview prints what the agent would send, sends nothing, and puts the se
   assert.equal(fs.existsSync(settings.mcp), false);
   assert.equal(fs.existsSync(`${settings.plexus}.before-preview`), false);
   const text = printed.join("\n");
-  assert.match(text, /^tools\/call image_list \(week of \d{4}-\d{2}-\d{2}\) trace [0-9a-f]{32} span [0-9a-f]{16}/m);
+  assert.match(text, /^tools\/call image_list \(server, week of \d{4}-\d{2}-\d{2}\) trace [0-9a-f]{32} span [0-9a-f]{16}/m);
   for (const secret of ["adas-laptop", "/Users/ada", "acme", "4bf92f3577b34da6a3ce929d0e0e4736"]) assert.equal(text.includes(secret), false, secret);
 }));
 
@@ -212,10 +218,10 @@ test("a span is described with its week, ids, attributes and where it ran", () =
   const kept = filter(testKey, { offsets: false })("traces", fixture.request);
   const lines = describeRequest(kept);
   const [span] = expectedSpans(fixture);
-  assert.ok(lines.some((line) => line.startsWith(`${span.name} (week of `) && line.includes(`trace ${span.trace}`)), lines.join("\n"));
+  assert.ok(lines.some((line) => line.startsWith(`${span.name} (${["unspecified", "internal", "server", "client"][span.kind]}, week of `) && line.includes(`trace ${span.trace}`)), lines.join("\n"));
   assert.ok(lines.includes('    mcp.method.name = "tools/call"'), lines.join("\n"));
   assert.ok(lines.some((line) => /^ {4}span\.duration_ms = [0-9.]+$/.test(line)), lines.join("\n"));
-  assert.ok(lines.some((line) => /^ {2}from (@evref-bl\/plexus|mcp-pharo):$/.test(line)), lines.join("\n"));
+  assert.ok(lines.some((line) => /^ {2}from (@evref-bl\/plexus [0-9.]+|mcp-pharo):$/.test(line)), lines.join("\n"));
   assert.deepEqual(comparable([kept]), expectedSpans(fixture));
 });
 
@@ -247,3 +253,168 @@ test("join refuses the project's collector while anything about it is missing", 
   assert.deepEqual(missingForJoin({}), ["endpoint", "token", "controller", "dpo", "host"]);
   assert.deepEqual(missingForJoin({ endpoint: "https://c.test", token: "t", controller: { name: "n", contact: "c" }, dpo: "d", host: { provider: "p", region: "r", importer: "i", archive: "a" } }), []);
 });
+
+/**
+ * Fake service commands for the system the tests run on, which append how
+ * they were called to a log; a bootstrap or an enable fails when
+ * PAT_FAKE_FAIL is set.
+ */
+function fakeServiceCommands(home) {
+  const fakes = path.join(home, "fakes");
+  const log = path.join(home, "service.log");
+  fs.mkdirSync(fakes);
+  fs.writeFileSync(log, "");
+  for (const name of ["launchctl", "systemctl", "schtasks"]) {
+    fs.writeFileSync(path.join(fakes, name), `#!/bin/sh\necho "${name} $*" >> "$PAT_FAKE_LOG"\ncase "$1 $2" in bootstrap*|*" enable") [ -n "$PAT_FAKE_FAIL" ] && exit 5;; esac\nexit 0\n`, { mode: 0o755 });
+  }
+  return { fakes, log, calls: () => fs.readFileSync(log, "utf8").split("\n").filter(Boolean), clear: () => fs.writeFileSync(log, "") };
+}
+
+/** The environment of a home under `root`, with the fake service commands instead of the dry run. */
+function fakedHome(env, root, fakes, log) {
+  const faked = { ...env, HOME: root, USERPROFILE: root, XDG_CONFIG_HOME: path.join(root, "config"), PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS: fakes, PAT_FAKE_LOG: log };
+  delete faked.PHARO_AGENT_TELEMETRY_DRY_RUN;
+  return faked;
+}
+
+const run = (environment, ...args) => spawnSync(process.execPath, [binary, ...args], { env: environment, encoding: "utf8" });
+
+test("leave, status and join in a scratch home act on no other home's service, even with its definition copied in", { skip: process.platform === "win32" }, () => withHome(({ home, env }) => {
+  const { fakes, log, calls, clear } = fakeServiceCommands(home);
+  // Another home, joined: as the participant's own agent is for a reviewer's scratch home.
+  const otherRoot = path.join(home, "participant");
+  const other = fakedHome(env, otherRoot, fakes, log);
+  assert.equal(run(other, "join", "--endpoint", "https://c.test").status, 0);
+  const otherAgent = path.join(otherRoot, "config", "pharo-agent-telemetry", "agent.mjs");
+  const otherNames = serviceNames(otherAgent);
+  const otherDefinitions = installedDefinitions({ home: otherRoot, env: other, agent: otherAgent });
+  assert.ok(otherDefinitions.length > 0);
+  clear();
+
+  const scratchRoot = path.join(home, "scratch");
+  const scratch = fakedHome(env, scratchRoot, fakes, log);
+  const left = run(scratch, "leave");
+  assert.equal(left.status, 0, left.stderr);
+  assert.deepEqual(calls(), []);
+  // The other home's definitions, copied into the scratch home where its own would be.
+  for (const file of otherDefinitions) {
+    const copy = path.join(scratchRoot, path.relative(otherRoot, file));
+    fs.mkdirSync(path.dirname(copy), { recursive: true });
+    fs.copyFileSync(file, copy);
+  }
+  assert.equal(run(scratch, "leave").status, 0);
+  assert.match(run(scratch, "status").stdout, /^Agent service: not installed\.$/m);
+  assert.deepEqual(calls(), []);
+
+  // Joined and left in turn, the scratch home names its own service alone.
+  assert.equal(run(scratch, "join", "--endpoint", "https://c.test").status, 0);
+  assert.equal(run(scratch, "leave").status, 0);
+  const ours = serviceNames(path.join(scratchRoot, "config", "pharo-agent-telemetry", "agent.mjs"));
+  const named = calls();
+  assert.ok(named.some((line) => line.includes(ours.label) || line.includes(ours.unit)), named.join("\n"));
+  for (const line of named) {
+    assert.equal([otherNames.label, otherNames.unit, otherNames.task].some((name) => line.includes(name)), false, line);
+    assert.ok(/daemon-reload$/.test(line) || line.includes(ours.label) || line.includes(ours.unit), line);
+  }
+  for (const file of otherDefinitions) assert.ok(fs.existsSync(file), file);
+}));
+
+test("a join the service manager refuses leaves nothing behind, and says why", { skip: process.platform === "win32" }, () => withHome(({ home, env }) => {
+  const { fakes, log } = fakeServiceCommands(home);
+  const root = path.join(home, "refused");
+  const refusing = { ...fakedHome(env, root, fakes, log), PAT_FAKE_FAIL: "1" };
+  const mine = path.join(root, "config", "pharo-mcp", "otel.env");
+  fs.mkdirSync(path.dirname(mine), { recursive: true });
+  fs.writeFileSync(mine, "# my notes\n");
+  const refused = run(refusing, "join", "--endpoint", "https://c.test");
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /service manager refused it/);
+  assert.match(refused.stderr, /Nothing was installed, and nothing is sent\./);
+  assert.equal(fs.existsSync(path.join(root, "config", "pharo-agent-telemetry")), false);
+  assert.deepEqual(installedDefinitions({ home: root, env: refusing, agent: path.join(root, "config", "pharo-agent-telemetry", "agent.mjs") }), []);
+  assert.equal(fs.readFileSync(mine, "utf8"), "# my notes\n");
+  assert.equal(fs.existsSync(`${mine}.before-join`), false);
+  assert.equal(fs.existsSync(path.join(root, "config", "plexus", "otel.env")), false);
+}));
+
+test("join writes where the desktop's tools read too, quiets the images, and makes PLexus forget it could not reach the agent", () => withHome(({ home, config, cli, settings }) => {
+  assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
+  const port = JSON.parse(fs.readFileSync(path.join(config, "pharo-agent-telemetry", "agent.json"), "utf8")).port;
+  for (const file of [...Object.values(settings), path.join(home, ".config", "plexus", "otel.env"), path.join(home, ".config", "pharo-mcp", "otel.env")]) {
+    assert.equal(readSettings(file)?.writer, "joined", file);
+    assert.match(fs.readFileSync(file, "utf8"), /^OTEL_LOG_LEVEL=none$/m);
+  }
+  const reachability = path.join(home, ".cache", "plexus", "otel-reachability.json");
+  fs.mkdirSync(path.dirname(reachability), { recursive: true });
+  const elsewhere = { "https://elsewhere.test/v1/traces": { failures: 1, retryAt: Date.now() + 60_000 } };
+  fs.writeFileSync(reachability, JSON.stringify({ [`http://127.0.0.1:${port}/v1/traces`]: { failures: 3, retryAt: Date.now() + 3_600_000 }, ...elsewhere }));
+  const joined = cli("join", "--endpoint", "https://c.test");
+  assert.equal(joined.status, 0);
+  assert.deepEqual(JSON.parse(fs.readFileSync(reachability, "utf8")), elsewhere);
+  assert.match(joined.stdout, /Restart your agent host/);
+  assert.match(joined.stdout, /MCP useOpenTelemetryObservabilityByDefault/);
+}));
+
+test("an agent on an ephemeral port from an earlier join moves below the ephemeral ranges", () => withHome(({ config, cli }) => {
+  assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
+  const file = path.join(config, "pharo-agent-telemetry", "agent.json");
+  fs.writeFileSync(file, JSON.stringify({ port: 61149, endpoint: "https://c.test" }));
+  assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
+  const { port } = JSON.parse(fs.readFileSync(file, "utf8"));
+  assert.ok(port < 32768, String(port));
+}));
+
+test("settings of your own are put back as they were on leave, and status never shows their values", () => withHome(({ cli, settings }) => {
+  fs.mkdirSync(path.dirname(settings.mcp), { recursive: true });
+  const mine = "# mine\nOTEL_EXPORTER_OTLP_ENDPOINT=https://mine.test\nOTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer s3cret\n";
+  fs.writeFileSync(settings.mcp, mine);
+  assert.equal(cli("join", "--endpoint", "https://c.test", "--force").status, 0);
+  assert.equal(fs.readFileSync(`${settings.mcp}.before-join`, "utf8"), mine);
+  // A block of ours beside settings of your own: status names them, never their values.
+  fs.writeFileSync(settings.plexus, `OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer s3cret\n${fs.readFileSync(settings.mcp, "utf8")}`);
+  const status = cli("status").stdout;
+  assert.equal(status.includes("s3cret"), false, status);
+  assert.match(status, /settings of your own, values not shown: OTEL_EXPORTER_OTLP_HEADERS/);
+  assert.match(status, /^Nothing listens on 127\.0\.0\.1:\d+, so nothing is sent\.$/m);
+  assert.equal(cli("leave").status, 0);
+  assert.equal(fs.readFileSync(settings.mcp, "utf8"), mine);
+  assert.equal(fs.existsSync(`${settings.mcp}.before-join`), false);
+  assert.equal(fs.readFileSync(settings.plexus, "utf8"), "OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer s3cret\n");
+}));
+
+/** Runs the preview command until `until` holds of what it printed. */
+async function startedPreview(env, until) {
+  const child = spawn(process.execPath, [binary, "preview"], { env, stdio: ["ignore", "pipe", "pipe"] });
+  const output = { text: "" };
+  child.stdout.on("data", (chunk) => { output.text += chunk; });
+  child.stderr.on("data", (chunk) => { output.text += chunk; });
+  const exited = new Promise((resolve) => child.once("exit", (code) => resolve(code)));
+  for (let attempt = 0; attempt < 100 && !until(output.text); attempt += 1) await new Promise((resolve) => setTimeout(resolve, 50));
+  return { child, output, exited };
+}
+
+test("joined, the preview takes the agent's port while it runs, and starts the agent again after, unless leave ran meanwhile", () => withHome(async ({ config, env, cli, settings }) => {
+  assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
+  const port = JSON.parse(fs.readFileSync(path.join(config, "pharo-agent-telemetry", "agent.json"), "utf8")).port;
+  const joined = fs.readFileSync(settings.plexus, "utf8");
+  fs.writeFileSync(env.PHARO_AGENT_TELEMETRY_DRY_RUN, "");
+  const { child, output, exited } = await startedPreview(env, (text) => text.includes("Previewing on"));
+  assert.match(output.text, new RegExp(`Previewing on 127\\.0\\.0\\.1:${port}, the agent's port`));
+  // The tools' settings already point at the agent's port: left as they are.
+  assert.equal(fs.readFileSync(settings.plexus, "utf8"), joined);
+  assert.equal((await fetch(`http://127.0.0.1:${port}/v1/traces`, { method: "POST", body: forbidden, headers: { "content-type": "application/json" } })).status, 200);
+  for (let attempt = 0; attempt < 50 && !output.text.includes("tools/call image_list (server"); attempt += 1) await new Promise((resolve) => setTimeout(resolve, 20));
+  child.kill("SIGINT");
+  assert.equal(await exited, 0, output.text);
+  assert.match(output.text, /The agent runs again\./);
+  const names = serviceNames(path.join(config, "pharo-agent-telemetry", "agent.mjs"));
+  const started = fs.readFileSync(env.PHARO_AGENT_TELEMETRY_DRY_RUN, "utf8");
+  assert.ok([names.label, names.unit, names.task].some((name) => started.includes(name)) && /kickstart|"start"|\/Run/.test(started), started);
+
+  const second = await startedPreview(env, (text) => text.includes("Previewing on"));
+  assert.equal(cli("leave").status, 0);
+  second.child.kill("SIGINT");
+  assert.equal(await second.exited, 0, second.output.text);
+  assert.match(second.output.text, /The agent is not started again: its service is gone\./);
+  assert.doesNotMatch(second.output.text, /ENOENT/);
+}));

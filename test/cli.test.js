@@ -571,3 +571,27 @@ test("status shows the catalog of names the agent filters with: its date, the re
   assert.match(status, /^Catalog of the names kept: from https:\/\/c\.test\/pharo-agent-telemetry\/catalog\.json, of 2030-01-01T00:00:00\.000Z, read from MCP v9\.0\.0; asked for a newer one 3 h ago: accepted\.$/m);
   assert.match(status, /^It adds to the package's lists: MCP tools: new_tool; project words: zzqx, ok2\.$/m);
 }));
+
+test("join refuses while a preview answers, and puts back what one that was killed left: a stale mark or a reused process id stops nothing", () => withHome(async ({ env, cli, settings, agent }) => {
+  fs.mkdirSync(path.dirname(settings.mcp), { recursive: true });
+  fs.writeFileSync(settings.mcp, "# my notes\n");
+  // Not joined, the preview writes its own block in the settings files.
+  const { child, exited } = await startedPreview(env, (text) => text.includes("Previewing on"));
+  assert.equal(readSettings(settings.mcp)?.writer, "preview");
+  const refused = cli("join", "--endpoint", "https://c.test");
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /A preview is running\. Stop it first\./);
+  child.kill("SIGKILL");
+  await exited;
+  const joined = cli("join", "--endpoint", "https://c.test");
+  assert.equal(joined.status, 0, joined.stderr);
+  assert.equal(readSettings(settings.mcp)?.writer, "joined");
+  assert.equal(fs.readFileSync(`${settings.mcp}.before-join`, "utf8"), "# my notes\n");
+  // A mark a joined preview left, naming a process id another process holds now, is no preview.
+  fs.writeFileSync(path.join(agent, "preview.json"), JSON.stringify({ pid: process.pid, port: 1 }));
+  assert.match(cli("status").stdout, /a preview was stopped without starting the agent again\. Run join again to start it\./);
+  assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
+  assert.equal(fs.existsSync(path.join(agent, "preview.json")), false);
+  assert.equal(cli("leave").status, 0);
+  assert.equal(fs.readFileSync(settings.mcp, "utf8"), "# my notes\n");
+}));

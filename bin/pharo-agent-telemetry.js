@@ -73,24 +73,14 @@ const allSettingsFiles = () => [...new Set([
 /** Where a joined preview says it runs in the agent's place, in the agent's directory. */
 const previewMark = (directory) => path.join(directory, "preview.json");
 
-/** Whether a process runs. */
-function alive(pid) {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return /** @type {any} */ (error).code === "EPERM";
-  }
-}
-
-/** A joined preview's mark, and whether its process still runs. */
-function previewOf(directory) {
-  try {
-    const { pid } = JSON.parse(fs.readFileSync(previewMark(directory), "utf8"));
-    return Number.isInteger(pid) ? { running: alive(pid) } : undefined;
-  } catch {
-    return undefined;
-  }
+/**
+ * Whether a preview still runs for a settings file it wrote: something
+ * answers on the port its block names. A preview that was killed answers
+ * nothing there.
+ */
+async function previewRuns(current, key) {
+  const port = Number(/^OTEL_EXPORTER_OTLP_ENDPOINT=http:\/\/127\.0\.0\.1:([0-9]+)$/m.exec(current.block ?? "")?.[1]);
+  return Number.isInteger(port) && port > 0 && (await whoListens(port, key)) !== "none";
 }
 const hostRestart = "Restart your agent host (Claude Code, Codex, OpenCode...) now: PLexus reads these settings when it starts, and images made before that restart send nothing until they are made again.";
 const mcpAlone = "Using MCP in an image of your own, without PLexus? Load MCP's Telemetry group from the repository MCP came from, evaluate `MCP useOpenTelemetryObservabilityByDefault` and save the image: the participants page says how.";
@@ -116,6 +106,11 @@ async function join() {
   const withService = !values["no-service"];
   const missing = values.endpoint ? [] : missingForJoin();
   if (missing.length > 0) fail(`The project's collector is not ready: its ${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} not set yet. Give --endpoint to send to another one.`);
+  // What a preview that was killed left in a settings file is put back first.
+  for (const file of files) {
+    const current = readSettings(file);
+    if (current?.writer === "preview" && !(await previewRuns(current, readKey(agentDirectory)))) recoverPreview(file);
+  }
   // Everything that could stop the join is checked before anything is written.
   for (const file of files) {
     if (fs.existsSync(file) && readSettings(file) === undefined) fail(`${file} cannot be read: join would replace it without keeping it. Make it readable, or move it away, then run join again.`);
@@ -132,7 +127,7 @@ async function join() {
   }
   const earlier = readAgentConfig(agentDirectory);
   const earlierKey = readKey(agentDirectory);
-  if (previewOf(agentDirectory)?.running || (earlier && earlierKey && (await whoListens(earlier.port, earlierKey)) === "preview")) fail("A preview runs in the agent's place. Stop it first.");
+  if (earlier && earlierKey && (await whoListens(earlier.port, earlierKey)) === "preview") fail("A preview runs in the agent's place. Stop it first.");
   // What is yours in each file is kept for leave to put back: a file of your own whole, or your settings beside an earlier block of ours.
   const backups = [];
   for (const file of files) {
@@ -295,7 +290,8 @@ async function agentLines(directory, version) {
   if (agent.config) {
     const key = readKey(directory);
     const listener = await whoListens(agent.config.port, key);
-    const stoppedPreview = listener === "none" && previewOf(directory)?.running === false;
+    // A joined preview removes its mark when it starts the agent again: one left behind with nothing on the port was killed.
+    const stoppedPreview = listener === "none" && fs.existsSync(previewMark(directory));
     lines.push({
       agent: `The agent answers on 127.0.0.1:${agent.config.port}.`,
       preview: `A preview runs on 127.0.0.1:${agent.config.port}, in the agent's place: nothing is sent until it ends and starts the agent again.`,
@@ -368,7 +364,7 @@ async function preview() {
   }
   clearReachability([started.port]);
   // Killed before it starts the agent again, the preview leaves this behind for status and join to tell.
-  if (joined) fs.writeFileSync(previewMark(agentDirectory), `${JSON.stringify({ pid: process.pid, port: started.port })}\n`, { mode: 0o600 });
+  if (joined) fs.writeFileSync(previewMark(agentDirectory), `${JSON.stringify({ port: started.port })}\n`, { mode: 0o600 });
   console.log(joined
     ? `Previewing on 127.0.0.1:${started.port}, the agent's port, sending nothing: the agent is stopped until the preview ends. Use the Pharo tools: what the agent would send is printed here. Ctrl-C ends the preview${config.service === false ? "" : " and starts the agent again"}.\n`
     : `Previewing on 127.0.0.1:${started.port}, sending nothing. Restart your agent host, and any image you started yourself, then use the Pharo tools: what the agent would send is printed here. Ctrl-C ends the preview and puts your settings back.\n`);

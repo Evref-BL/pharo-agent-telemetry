@@ -126,9 +126,10 @@ npx @evref-bl/pharo-agent-telemetry status
 npx @evref-bl/pharo-agent-telemetry leave
 ```
 
-`join` writes a settings file, `~/.config/pharo-agent/otel.env`
-(`%APPDATA%\pharo-agent\otel.env` on Windows), that every Pharo tool reads
-when its environment configures no OpenTelemetry of its own. `leave` deletes
+`join` writes a settings file, `~/.config/plexus/otel.env`
+(`%APPDATA%\plexus\otel.env` on Windows), that PLexus reads when its
+environment configures no OpenTelemetry of its own, and passes on to the images
+it starts. `leave` deletes
 it. Tools already running keep their settings until they restart, and images
 made before joining send nothing until they are made again.
 

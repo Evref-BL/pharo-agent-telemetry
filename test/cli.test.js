@@ -16,7 +16,7 @@ const fixture = JSON.parse(fs.readFileSync(new URL("./fixtures/forbidden.json", 
 async function withConfigHome(run) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "pat-config-"));
   try {
-    return await run(home, path.join(home, "pharo-agent", "otel.env"));
+    return await run(home, path.join(home, "plexus", "otel.env"));
   } finally {
     fs.rmSync(home, { recursive: true, force: true });
   }
@@ -28,9 +28,9 @@ const cli = (home, ...args) => spawnSync(process.execPath, [binary, ...args], {
 });
 
 test("the settings file is where the tools look", () => {
-  assert.equal(settingsFile({ XDG_CONFIG_HOME: "/c" }, "linux", "/home/a"), "/c/pharo-agent/otel.env");
-  assert.equal(settingsFile({}, "darwin", "/Users/a"), "/Users/a/.config/pharo-agent/otel.env");
-  assert.equal(settingsFile({ APPDATA: "C:\\Users\\A\\AppData\\Roaming" }, "win32", "C:\\Users\\A"), "C:\\Users\\A\\AppData\\Roaming\\pharo-agent\\otel.env");
+  assert.equal(settingsFile({ XDG_CONFIG_HOME: "/c" }, "linux", "/home/a"), "/c/plexus/otel.env");
+  assert.equal(settingsFile({}, "darwin", "/Users/a"), "/Users/a/.config/plexus/otel.env");
+  assert.equal(settingsFile({ APPDATA: "C:\\Users\\A\\AppData\\Roaming" }, "win32", "C:\\Users\\A"), "C:\\Users\\A\\AppData\\Roaming\\plexus\\otel.env");
 });
 
 test("join writes traces-only settings with the token as a header, and leave deletes them", () => withConfigHome((home, file) => {

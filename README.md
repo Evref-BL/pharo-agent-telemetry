@@ -17,9 +17,10 @@ GitLab job, in its own repository (`pharo-agent-telemetry-import`).
 
 ## Joining
 
-See [docs/participants.md](docs/participants.md). `join` writes
-`~/.config/pharo-agent/otel.env`, which every Pharo tool reads when its
-environment configures no OpenTelemetry of its own; `leave` deletes it.
+See [docs/participants.md](docs/participants.md). `join` writes PLexus's
+settings file, `~/.config/plexus/otel.env`, which PLexus reads when its
+environment configures no OpenTelemetry of its own and passes on to the images
+it starts; `leave` deletes it.
 
 ## The collector
 

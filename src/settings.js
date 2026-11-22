@@ -9,7 +9,8 @@ import path from "node:path";
 const marker = "# Written by pharo-agent-telemetry";
 
 /**
- * Where the settings live: the same place the plugin, PLexus and MCP look.
+ * Where the settings live: PLexus's settings file. PLexus applies it to its
+ * environment, which the images it starts inherit.
  *
  * @param {Record<string, string | undefined>} [env]
  * @param {NodeJS.Platform} [platform]
@@ -18,9 +19,9 @@ const marker = "# Written by pharo-agent-telemetry";
 export function settingsFile(env = process.env, platform = process.platform, home = os.homedir()) {
   const paths = platform === "win32" ? path.win32 : path.posix;
   const xdg = env.XDG_CONFIG_HOME;
-  if (xdg && paths.isAbsolute(xdg)) return paths.join(xdg, "pharo-agent", "otel.env");
-  if (platform === "win32" && env.APPDATA) return paths.join(env.APPDATA, "pharo-agent", "otel.env");
-  return paths.join(home, ".config", "pharo-agent", "otel.env");
+  if (xdg && paths.isAbsolute(xdg)) return paths.join(xdg, "plexus", "otel.env");
+  if (platform === "win32" && env.APPDATA) return paths.join(env.APPDATA, "plexus", "otel.env");
+  return paths.join(home, ".config", "plexus", "otel.env");
 }
 
 /**

@@ -31,8 +31,9 @@ See [docs/participants.md](docs/participants.md). `join`:
 - copies the agent (`src/agent.js`, dependency-free) and its filter into
   `pharo-agent-telemetry/` under `$XDG_CONFIG_HOME`, `~/.config` or
   `%APPDATA%` on Windows, with `agent.json` (its port, the collector and its
-  token) and a key of its own that hashes ids and never leaves the machine,
-  both readable by their owner only;
+  token, and, for the project's collector, where to ask for a newer catalog
+  and the key that signs it) and a key of its own that hashes ids and never
+  leaves the machine, both readable by their owner only;
 - runs it as a service of the user, started at login and again when it fails,
   by an absolute path to node (the one on `PATH` that outlives an upgrade,
   when there is one): a LaunchAgent on macOS, a systemd user unit on Linux, a

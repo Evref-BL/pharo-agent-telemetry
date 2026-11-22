@@ -47,8 +47,12 @@ See [docs/participants.md](docs/participants.md). `join`:
   (`plexus/otel.env`, which PLexus passes on to the images it starts) and
   MCP's (`pharo-mcp/otel.env`, for an image started some other way), under
   `$XDG_CONFIG_HOME` and also under `~/.config` (`%APPDATA%`) when it differs,
-  where a tool started from the desktop reads them. A file of the
-  participant's own is kept as `otel.env.before-join` and put back by `leave`;
+  where a tool started from the desktop reads them, through a symbolic link
+  into the file it points to. What was the participant's own in a file (the
+  whole file, or settings beside an earlier block) is kept as
+  `otel.env.before-join`, readable by its owner only, and put back by `leave`.
+  Before writing anything, `join` refuses a file it cannot read or write, and
+  a backup that no longer holds what the file holds;
 - clears PLexus's memory of the agent's endpoint being unreachable, which
   would keep PLexus from sending for hours.
 
@@ -63,17 +67,36 @@ port, and stops on a request that proves the key, as `preview`, `join` and
 `leave` ask (on Windows, ending its task leaves node running). It writes what
 it received and sent to `state.json`, which `status` shows.
 
-`leave` stops and removes the service, the agent's files and key, and both
-blocks, wherever a tool may have read them. `preview` runs an agent in the
-foreground with sending off and prints what it would send; joined, it takes
-the agent's port while it runs, so the tools already running show too, and
-starts the agent again after.
+`join --no-service` installs no service: the agent runs only while
+`npx @evref-bl/pharo-agent-telemetry agent` does, as where the service manager
+refuses one (over SSH on macOS, on Linux without a systemd user session).
 
-Tests give the command `PHARO_AGENT_TELEMETRY_DRY_RUN`, a file the service
-commands are written to instead of run, or
+`leave` stops and removes the service, the agent's files and key, and both
+blocks, wherever a tool may have read them: it finds the agents this home's
+service definitions run, whatever `XDG_CONFIG_HOME` the join saw, and the
+settings files beside each, and says where a backup is that it does not put
+back. `preview` runs an agent in the foreground with sending off and prints
+what it would send; joined, it takes the agent's port while it runs, so the
+tools already running show too, answers `status` and `join` as a preview, and
+starts the agent again after. A joined preview that is killed leaves
+`preview.json` in the agent's directory, and `status` says to join again.
+
+Only the command line reaches the real service manager: `runCommand` runs a
+service command only when its environment opts in as the command line does,
+outside `node --test`, and when `HOME` is the account's own home (a service
+defined under any other home would still run in this account's service
+manager). Tests give the command `PHARO_AGENT_TELEMETRY_DRY_RUN`, a file the
+service commands are written to instead of run, or
 `PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS`, a directory of fake commands run
-instead of the real ones. Under `node --test` the command refuses to run a
-service command otherwise.
+instead of the real ones.
+
+### Known limits
+
+- Each span's ids are hashed within its session and the week it starts in
+  (from Monday 00:00 UTC), so a trace that runs across that instant is cut in
+  two: a span started after it hashes its trace and its parent's id in the
+  new week, while its parent, started before, was hashed in the old one, and
+  the link between them is lost. It is accepted as rare.
 
 ## The collector
 

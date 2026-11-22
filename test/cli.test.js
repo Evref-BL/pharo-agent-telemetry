@@ -8,7 +8,7 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { missingForJoin } from "../src/collector.js";
+import { isProjectCollector, missingForJoin } from "../src/collector.js";
 import { dpoPlaceholder, participantsPage, readAllowlist } from "../src/generate.js";
 import { describeRequest, recoverPreview, startPreview } from "../src/preview.js";
 import { fakesMarker, installedDefinitions, serviceDefinition, serviceNames, stableNode } from "../src/service.js";
@@ -258,6 +258,15 @@ test("the page names who answers for the data, its officer and where it is once 
   assert.match(set, /Example's Elasticsearch, in France keeps it/);
   assert.match(set, /consent/);
   assert.match(set, /CNIL/);
+});
+
+test("join --endpoint naming the project's collector, however written, joins it as the project's", () => {
+  const ours = "https://telemetry.example.org";
+  for (const given of [undefined, ours, `${ours}/`, "https://TELEMETRY.example.org", "https://telemetry.example.org:443/"]) assert.equal(isProjectCollector(given, ours), true, String(given));
+  for (const given of ["https://other.example.org", "http://telemetry.example.org", "https://telemetry.example.org/elsewhere", "not a url"]) assert.equal(isProjectCollector(given, ours), false, given);
+  // Before the project's collector exists, any --endpoint is another's.
+  assert.equal(isProjectCollector("https://c.test", undefined), false);
+  assert.equal(isProjectCollector(undefined, undefined), true);
 });
 
 test("join refuses the project's collector while anything about it is missing", () => {

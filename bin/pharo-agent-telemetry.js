@@ -8,7 +8,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { keptCatalog, runAgent, stopAgent, whoListens } from "../src/agent.js";
-import { catalogPublicKey, catalogUrl, missingForJoin, publicEndpoint, publicToken } from "../src/collector.js";
+import { catalogPublicKey, catalogUrl, isProjectCollector, missingForJoin, publicEndpoint, publicToken } from "../src/collector.js";
 import { agentPorts, agentStatus, freePort, installAgent, packaged, readAgentConfig, readKey, removeAgent } from "../src/install.js";
 import { recoverPreview, startPreview } from "../src/preview.js";
 import { RefusedCommand, definedAgentDirectories, dryRun, installService, realServices, removeService, runCommand, serviceState, stableNode, startService } from "../src/service.js";
@@ -123,10 +123,12 @@ async function answers(port, key, wait) {
 }
 
 async function join() {
-  const endpoint = values.endpoint ?? publicEndpoint;
-  const token = values.token ?? (values.endpoint ? undefined : publicToken);
+  // The project's collector, even when --endpoint names it, is joined as the project's.
+  const project = isProjectCollector(values.endpoint);
+  const endpoint = project ? publicEndpoint : values.endpoint;
+  const token = values.token ?? (project ? publicToken : undefined);
   const withService = !values["no-service"];
-  const missing = values.endpoint ? [] : missingForJoin();
+  const missing = project ? missingForJoin() : [];
   if (missing.length > 0) fail(`The project's collector is not ready: its ${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} not set yet. Give --endpoint to send to another one.`);
   // What a preview that was killed left in a settings file is put back first.
   for (const file of files) {
@@ -167,7 +169,7 @@ async function join() {
   // A port from before the agent's ports were below the systems' ephemeral ranges moves.
   const port = earlier && earlier.port <= agentPorts.last ? earlier.port : await freePort();
   // Only the project's collector's host serves the catalog the project signs.
-  const catalog = values.endpoint ? {} : { catalog: { url: catalogUrl, publicKey: catalogPublicKey } };
+  const catalog = project ? { catalog: { url: catalogUrl, publicKey: catalogPublicKey } } : {};
   installAgent(agentDirectory, { port, endpoint, token, ...catalog, ...(withService ? {} : { service: false }) });
   if (withService) {
     try {

@@ -72,6 +72,26 @@ function onHostOf(url, endpoint) {
 }
 
 /**
+ * Whether `join --endpoint` names the project's collector, however its URL
+ * is written (a trailing slash, the host's case): then it is joined as the
+ * project's, with its token, its catalog and its readiness checks.
+ *
+ * @param {string | undefined} endpoint what --endpoint gave, undefined for none
+ * @param {string | undefined} [project] the project's collector
+ */
+export function isProjectCollector(endpoint, project = publicEndpoint) {
+  if (endpoint === undefined) return true;
+  if (project === undefined) return false;
+  try {
+    const given = new URL(endpoint);
+    const ours = new URL(project);
+    return given.origin === ours.origin && given.pathname.replace(/\/+$/, "") === ours.pathname.replace(/\/+$/, "") && given.search === ours.search;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * What `join` lacks before it may send to the project's collector, by name:
  * a catalog URL on another host than the collector's is lacking too, and so
  * is a public key anyone could sign for.

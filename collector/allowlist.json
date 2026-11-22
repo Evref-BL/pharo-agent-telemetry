@@ -1,47 +1,86 @@
 {
-  "$comment": "What the collector keeps. Every other attribute is dropped before anything is written. `npm run generate` writes collector/otelcol.yaml and docs/participants.md from this file; a test fails when they are out of date.",
+  "$comment": "What is kept, and in what shape. `npm run generate` writes, from this file, the filter `join` installs on a participant's machine (src/telemetry-transform.mjs), the collector's configuration (collector/otelcol.yaml), which applies the same rules again, and docs/participants.md; a test fails when any is out of date. Every attribute not listed is dropped; a listed one is kept only from the services in `from` (both when absent), with the type given, and only when its value has the shape given, else it is dropped, or replaced by `otherwise`. `extract` keeps the first group of a pattern, per service. `name` marks a name the image reports only for its own tools: dropped (or replaced by `nameOther`) on a pharo-mcp span whose origin is other, and dropped on a plexus span that forwarded the call.",
+  "services": {
+    "plexus": {
+      "scope": "@evref-bl/plexus",
+      "spans": ["tools/call", "tools/list", "plexus.image.create", "plexus.image.start", "plexus.image.stop", "plexus.image.delete"],
+      "tools": ["image_templates", "image_list", "image_create", "image_start", "image_stop", "image_delete"]
+    },
+    "pharo-mcp": {
+      "scope": "mcp-pharo",
+      "spans": ["tools/call"]
+    }
+  },
+  "patterns": {
+    "identifier": "^[A-Za-z_][A-Za-z0-9_-]{0,63}$",
+    "version": "^[0-9]{1,4}(?:\\.[0-9]{1,4}){0,2}(?:-(?:alpha|beta|rc)(?:\\.[0-9]{1,4})?)?$",
+    "date": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+    "product name": "^[A-Za-z][A-Za-z0-9 ._-]{0,63}$",
+    "text": "^[\\s\\S]+$",
+    "JSON pointer": "^(?:/[A-Za-z0-9_-]{1,64}){0,8}$",
+    "option": "^[A-Za-z_][A-Za-z0-9_-]{0,63}(?:\\.[A-Za-z_][A-Za-z0-9_-]{0,63}){0,3}(?:\\[\\]|=[A-Za-z0-9_.-]{1,64})?$",
+    "code": "^-?[0-9]{1,6}$"
+  },
+  "sets": {
+    "OS types": ["windows", "linux", "darwin", "freebsd", "netbsd", "openbsd", "dragonflybsd", "hpux", "aix", "solaris", "z_os"],
+    "PLexus error codes": ["invalid-name", "no-such-image", "image-exists", "image-running", "being-started", "building", "not-running", "starting", "no-endpoint", "unknown-template", "ambiguous-template", "script-not-found", "create-failed", "start-failed", "stop-failed", "save-failed", "stopped-unsaved", "launcher-failed"],
+    "call failures": ["tool_error", "_OTHER", "timeout", "refused", "closed", "cancelled"],
+    "exception classes": [
+      "Abort", "ArgumentsCountMismatch", "ArithmeticError", "AssertionFailure", "BlockCannotReturn", "CannotReturn", "CollectionIsEmpty", "ConfirmationRequest", "ContextCannotReturn", "DomainError", "DuplicatedSlotName", "DuplicatedVariableError", "Error", "Exception", "ExtensionConflictError", "IllegalResumeAttempt", "IncompatibleLayoutConflict", "InformativeNotification", "InstanceVariableNotFound", "InvalidSlotName", "KeyNotFound", "MessageNotUnderstood", "ModificationForbidden", "NewUndeclaredWarning", "NonBooleanReceiver", "NotFound", "NotYetImplemented", "Notification", "OutOfMemory", "PackageConflictError", "PrimitiveFailed", "ProcessAlreadyTerminating", "SelectorException", "ShouldBeImplemented", "ShouldNotImplement", "SimulationExceptionWrapper", "SizeMismatch", "SlotNotFound", "SubclassResponsibility", "SubscriptOutOfBounds", "SystemNotification", "TimedOut", "UndeclaredVariableError", "UndeclaredVariableRead", "UndeclaredVariableWrite", "UnhandledError", "UnhandledException", "UnwindError", "ValueNotFound", "Warning", "ZeroDivide",
+      "MCPCommandError", "MCPHeaderMismatch", "MCPResourceNotFound", "MCPSyntaxError", "MCPUnsupportedProtocolVersion",
+      "AbortError", "AggregateError", "EvalError", "RangeError", "ReferenceError", "SyntaxError", "SystemError", "TimeoutError", "TypeError", "URIError"
+    ],
+    "schema keywords": ["type", "enum", "const", "required", "properties", "additionalProperties", "patternProperties", "propertyNames", "minProperties", "maxProperties", "dependentRequired", "items", "prefixItems", "contains", "minItems", "maxItems", "uniqueItems", "minLength", "maxLength", "pattern", "format", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf", "oneOf", "anyOf", "allOf", "not", "notBlank", "notEmpty", "methodReference", "selectionRequired"]
+  },
   "resource": {
-    "service.name": "Which tool sent the span: plexus or pharo-mcp.",
-    "service.version": "That tool's version.",
-    "telemetry.sdk.name": "The OpenTelemetry SDK that sent it.",
-    "telemetry.sdk.language": "The SDK's language: nodejs or pharo.",
-    "telemetry.sdk.version": "The SDK's version.",
-    "os.type": "The OS family: linux, darwin or windows.",
-    "process.runtime.name": "nodejs or pharo.",
-    "process.runtime.version": "Node's version, or Pharo's version and build.",
-    "process.runtime.description": "The Pharo VM's build.",
-    "deployment.environment.name": "field for participants, eval for our own evaluation runs, check for npm run check-deployment."
+    "service.name": { "about": "Which tool sent the span.", "type": "string", "values": ["plexus", "pharo-mcp"] },
+    "service.version": { "about": "That tool's version.", "type": "string", "pattern": "version" },
+    "telemetry.sdk.version": { "about": "The OpenTelemetry SDK's version.", "type": "string", "pattern": "version" },
+    "os.type": { "about": "The OS family.", "type": "string", "values": "OS types" },
+    "process.runtime.name": { "about": "nodejs or pharo.", "type": "string", "values": ["nodejs", "pharo"] },
+    "process.runtime.version": { "about": "Node's major version, or Pharo's version without its build.", "type": "string", "extract": { "plexus": "^v?([0-9]{1,4})(?:\\.[\\s\\S]*)?$", "pharo-mcp": "^v?([0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4})(?:[+-][\\s\\S]*)?$" }, "pattern": "version" },
+    "process.runtime.description": { "about": "The Pharo VM's release, nothing else of its description.", "from": ["pharo-mcp"], "type": "string", "extract": { "pharo-mcp": "^[\\s\\S]*?\\bv([0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}(?:-(?:alpha|beta|rc)(?:\\.[0-9]{1,4})?)?)(?:[^0-9A-Za-z.-][\\s\\S]*)?$" }, "pattern": "version" },
+    "deployment.environment.name": { "about": "field for participants, eval for our own evaluation runs, preview while previewing, check for npm run check-deployment.", "type": "string", "values": ["field", "eval", "preview", "check"] }
   },
   "span": {
-    "session.id": "A random value that groups the calls of one working session, made anew for each session; never tied to a person, a machine or another session.",
-    "mcp.method.name": "The MCP method: tools/call, tools/list, ...",
-    "mcp.protocol.version": "The MCP protocol version, a date.",
-    "mcp.session.id": "The random id the image's MCP server gives its connection.",
-    "gen_ai.operation.name": "execute_tool for a tool call.",
-    "gen_ai.tool.name": "The tool's name, when it reads as an identifier, including a name the agent asked for that no tool has.",
-    "error.type": "How a call failed: tool_error, a JSON-RPC code, or a class from Pharo, MCP or Node.",
-    "network.transport": "pipe or tcp.",
-    "network.protocol.name": "http.",
-    "plexus.client.name": "The agent host's name as it introduces itself to PLexus's server, for example claude-code.",
-    "plexus.client.version": "The agent host's version.",
-    "plexus.argument.names": "The names of the arguments a call to PLexus's server gave, never their values.",
-    "plexus.argument.unknown_names": "Argument names a call gave that PLexus's own image tools do not take.",
-    "plexus.image.from_base": "Whether a new image was copied from a prepared base.",
-    "plexus.image.save": "Whether stopping an image saved it.",
-    "pharo.mcp.dispatch_path": "How the image dispatched the request.",
-    "pharo.mcp.argument.names": "The names of the arguments the image received, never their values.",
-    "pharo.mcp.argument.unknown_names": "Argument names the tool does not declare.",
-    "pharo.mcp.input.bytes": "The size of the arguments.",
-    "pharo.mcp.output.bytes": "The size of the answer.",
-    "pharo.mcp.output_budget.exceeded": "Whether the answer was longer than the budget.",
-    "pharo.mcp.error.kind": "The kind of error MCP reported.",
-    "pharo.mcp.error.code": "MCP's own error code.",
-    "pharo.mcp.error.schema.violation_count": "How many schema rules the arguments broke.",
-    "pharo.mcp.exception.type": "The nearest Pharo or MCP class of an exception."
+    "session.id": { "about": "Groups the calls of one working session. The tools make it at random for each session; it is replaced by its keyed hash before it leaves your machine.", "type": "string", "pattern": "text", "hash": "session" },
+    "mcp.method.name": { "about": "The MCP method.", "type": "string", "values": ["tools/call", "tools/list"] },
+    "mcp.protocol.version": { "about": "The MCP protocol version, a date.", "type": "string", "pattern": "date" },
+    "gen_ai.tool.name": { "about": "The tool's name, including a name the agent asked for that no tool has.", "type": "string", "pattern": "identifier", "otherwise": "_OTHER", "name": true, "nameOther": "_OTHER" },
+    "error.type": { "about": "How a call failed: tool_error, a JSON-RPC or HTTP code, how a connection failed, a PLexus error code, or an exception class of Pharo, MCP or Node.", "type": "string", "values": ["call failures", "PLexus error codes", "exception classes"], "pattern": "code", "otherwise": "_OTHER" },
+    "plexus.client.name": { "about": "The agent host's name as it introduces itself to PLexus's server, for example claude-code.", "from": ["plexus"], "type": "string", "pattern": "product name" },
+    "plexus.client.version": { "about": "The agent host's version, major and minor.", "from": ["plexus"], "type": "string", "extract": "^v?([0-9]{1,4}\\.[0-9]{1,4})(?:[.+-][\\s\\S]*)?$", "pattern": "version" },
+    "plexus.call.index": { "about": "Where the call comes in its session: 1 for the first.", "from": ["plexus"], "type": "int", "min": 1 },
+    "plexus.call.forwarded": { "about": "Whether PLexus passed the call on to an image, which then names the tool.", "from": ["plexus"], "type": "bool" },
+    "plexus.argument.names": { "about": "The names of the arguments a call to one of PLexus's own tools gave, never their values.", "from": ["plexus"], "type": "string[]", "pattern": "identifier", "max": 32, "name": true },
+    "plexus.argument.unknown_names": { "about": "Argument names a call gave that PLexus's own tool does not take.", "from": ["plexus"], "type": "string[]", "pattern": "identifier", "max": 32, "name": true },
+    "plexus.error.code": { "about": "Why PLexus refused a call before any image saw it.", "from": ["plexus"], "type": "string", "values": "PLexus error codes", "otherwise": "_OTHER" },
+    "plexus.image.save": { "about": "Whether stopping an image saved it.", "from": ["plexus"], "type": "bool" },
+    "pharo.mcp.tool.origin": { "about": "mcp for one of MCP's own tools, other for a tool another package added, unknown for a name no tool has. Names are kept only for mcp and unknown.", "from": ["pharo-mcp"], "type": "string", "values": ["mcp", "other", "unknown"], "otherwise": "other", "default": "other" },
+    "pharo.mcp.dispatch_path": { "about": "How the image dispatched the request.", "from": ["pharo-mcp"], "type": "string", "values": ["direct", "via_tool_call"] },
+    "pharo.mcp.argument.names": { "about": "The names of the arguments the image received, never their values.", "from": ["pharo-mcp"], "type": "string[]", "pattern": "identifier", "max": 32, "name": true },
+    "pharo.mcp.argument.unknown_names": { "about": "Argument names the tool does not declare.", "from": ["pharo-mcp"], "type": "string[]", "pattern": "identifier", "max": 32, "name": true },
+    "pharo.mcp.argument.coerced": { "about": "Argument names whose values the tool accepted in another form than its schema says.", "from": ["pharo-mcp"], "type": "string[]", "pattern": "identifier", "max": 32, "name": true },
+    "pharo.mcp.argument.options": { "about": "The options the call chose, as the evaluations count them: a property, a value of an enumeration, or a list given for several targets.", "from": ["pharo-mcp"], "type": "string[]", "pattern": "option", "max": 32, "name": true },
+    "pharo.mcp.input.bytes": { "about": "The size of the arguments.", "from": ["pharo-mcp"], "type": "int", "min": 0 },
+    "pharo.mcp.output.bytes": { "about": "The size of the answer.", "from": ["pharo-mcp"], "type": "int", "min": 0 },
+    "pharo.mcp.result.count": { "about": "How many results a search answered.", "from": ["pharo-mcp"], "type": "int", "buckets": [0, 1, 2, 6, 21, 101] },
+    "pharo.mcp.result.more": { "about": "Whether there were more results than answered.", "from": ["pharo-mcp"], "type": "bool" },
+    "pharo.mcp.test.outcome": { "about": "How a test run ended.", "from": ["pharo-mcp"], "type": "string", "values": ["passed", "failed", "errored"] },
+    "pharo.mcp.test.count": { "about": "How many tests ran.", "from": ["pharo-mcp"], "type": "int", "buckets": [0, 1, 2, 6, 21, 101] },
+    "pharo.mcp.tool.refs": { "about": "The tools a discovery call (tool_search, tool_get) named.", "from": ["pharo-mcp"], "type": "string[]", "pattern": "identifier", "max": 16, "name": true },
+    "pharo.mcp.error.kind": { "about": "The kind of error MCP reported.", "from": ["pharo-mcp"], "type": "string", "values": ["input_schema", "domain", "tool_result", "json_rpc", "exception"] },
+    "pharo.mcp.error.code": { "about": "MCP's own error code.", "from": ["pharo-mcp"], "type": "string", "pattern": "identifier" },
+    "pharo.mcp.error.schema.violation_count": { "about": "How many schema rules the arguments broke.", "from": ["pharo-mcp"], "type": "int", "min": 0 },
+    "pharo.mcp.error.schema.keywords": { "about": "Which schema rules they broke.", "from": ["pharo-mcp"], "type": "string[]", "values": "schema keywords", "max": 8 },
+    "pharo.mcp.error.schema.paths": { "about": "Where in the tool's input they broke them.", "from": ["pharo-mcp"], "type": "string[]", "pattern": "JSON pointer", "max": 8, "name": true },
+    "pharo.mcp.exception.type": { "about": "The nearest Pharo or MCP class of an exception.", "from": ["pharo-mcp"], "type": "string", "values": "exception classes", "otherwise": "_OTHER" },
+    "span.duration_ms": { "about": "How long the span took, in milliseconds, kept since its times are not.", "type": "double", "min": 0 }
   },
   "blockedValues": {
     "a home directory path": "(?is)^.*(/Users/|/home/|[A-Z]:\\\\Users\\\\).*$",
     "an email address": "(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}.*$",
-    "an IPv4 address": "(?s)^.*\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b.*$"
+    "an IPv4 address": "(?s)^.*\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b.*$",
+    "an IPv6 address": "(?is)^.*(?:::|\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\b).*$"
   }
 }

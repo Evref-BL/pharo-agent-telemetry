@@ -1,0 +1,447 @@
+{
+  "about": "Times to the week they fall in, the end set to the start, and each span's duration kept as span.duration_ms.",
+  "request": {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "plexus"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "0.19.0"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "26.0.0"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "3.1.1"
+              }
+            },
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "@evref-bl/plexus",
+              "version": "0.19.0"
+            },
+            "spans": [
+              {
+                "traceId": "0400abababababababababababababab",
+                "spanId": "cccccccccccc0017",
+                "name": "tools/call image_list",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_list"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0400abababababababababababababab",
+                "spanId": "cccccccccccc0018",
+                "name": "tools/call image_start",
+                "kind": 2,
+                "startTimeUnixNano": "1763942399900000000",
+                "endTimeUnixNano": "1763942400100000000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_start"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0400abababababababababababababab",
+                "spanId": "cccccccccccc0019",
+                "name": "tools/call image_stop",
+                "kind": 2,
+                "startTimeUnixNano": "1763337600000000000",
+                "endTimeUnixNano": "1763337600000000000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_stop"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "span.duration_ms",
+                    "value": {
+                      "doubleValue": 12.5
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0400abababababababababababababab",
+                "spanId": "cccccccccccc001a",
+                "name": "tools/call image_delete",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000000000000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_delete"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0400abababababababababababababab",
+                "spanId": "cccccccccccc001b",
+                "name": "tools/call image_create",
+                "kind": 2,
+                "startTimeUnixNano": "1763337600000000000",
+                "endTimeUnixNano": "1763337600000000000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_create"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "span.duration_ms",
+                    "value": {
+                      "intValue": "7"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0400abababababababababababababab",
+                "spanId": "cccccccccccc001c",
+                "name": "tools/call image_templates",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_templates"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "span.duration_ms",
+                    "value": {
+                      "intValue": "99"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0400abababababababababababababab",
+                "spanId": "cccccccccccc001d",
+                "name": "plexus.image.start",
+                "kind": 1,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000000000500",
+                "attributes": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_list",
+      "kind": 2,
+      "trace": "0400abababababababababababababab",
+      "span": "cccccccccccc0017",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_list",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_templates",
+      "kind": 2,
+      "trace": "0400abababababababababababababab",
+      "span": "cccccccccccc001c",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_templates",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_start",
+      "kind": 2,
+      "trace": "0400abababababababababababababab",
+      "span": "cccccccccccc0018",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_start",
+        "span.duration_ms": {
+          "double": 200
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_create",
+      "kind": 2,
+      "trace": "0400abababababababababababababab",
+      "span": "cccccccccccc001b",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_create",
+        "span.duration_ms": {
+          "double": 7
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_stop",
+      "kind": 2,
+      "trace": "0400abababababababababababababab",
+      "span": "cccccccccccc0019",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_stop",
+        "span.duration_ms": {
+          "double": 12.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "plexus.image.start",
+      "kind": 1,
+      "trace": "0400abababababababababababababab",
+      "span": "cccccccccccc001d",
+      "start": "1763337600000000000",
+      "attributes": {
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_delete",
+      "kind": 2,
+      "trace": "0400abababababababababababababab",
+      "span": "cccccccccccc001a",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_delete",
+        "span.duration_ms": {
+          "double": 0
+        }
+      }
+    }
+  ]
+}

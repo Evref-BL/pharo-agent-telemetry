@@ -1,14 +1,16 @@
 {
   "resourceSpans": [{
+    "schemaUrl": "https://example.org/ada",
     "resource": { "attributes": [
       { "key": "service.name", "value": { "stringValue": "plexus" } },
       { "key": "service.version", "value": { "stringValue": "9.9.9" } },
       { "key": "host.name", "value": { "stringValue": "adas-laptop" } },
       { "key": "process.command_line", "value": { "stringValue": "/Users/ada/pharo/Pharo ada.image" } },
-      { "key": "process.pid", "value": { "intValue": "4242" } }
+      { "key": "process.pid", "value": { "intValue": "4242" } },
+      { "key": "process.runtime.version", "value": { "stringValue": "22.15.0-ada" } }
     ] },
     "scopeSpans": [{
-      "scope": { "name": "@evref-bl/plexus", "attributes": [ { "key": "user", "value": { "stringValue": "ada" } } ] },
+      "scope": { "name": "@evref-bl/plexus", "version": "0.19.0+adas-laptop", "attributes": [ { "key": "user", "value": { "stringValue": "ada" } } ] },
       "spans": [{
         "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
         "spanId": "00f067aa0ba902b7",
@@ -38,10 +40,43 @@
         "name": "open /Users/ada/project/secret.st",
         "kind": 1,
         "startTimeUnixNano": "1763630000010000000",
-        "endTimeUnixNano": "1763630000020000000",
+        "endTimeUnixNano": "1763630000020000000"
+      }, {
+        "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+        "spanId": "00f067aa0ba902b9",
+        "parentSpanId": "00f067aa0ba902b7",
+        "name": "tools/call image_list",
+        "kind": 2,
+        "startTimeUnixNano": "1763630000030000000",
+        "endTimeUnixNano": "1763630000040000000",
         "attributes": [
           { "key": "session.id", "value": { "stringValue": "4b1d3a1e-0000-4000-8000-000000000000" } },
-          { "key": "gen_ai.tool.name", "value": { "stringValue": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" } }
+          { "key": "gen_ai.tool.name", "value": { "stringValue": "image_list" } },
+          { "key": "plexus.client.name", "value": { "stringValue": "fe80::1" } },
+          { "key": "plexus.argument.unknown_names", "value": { "arrayValue": { "values": [ { "stringValue": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" } ] } } }
+        ]
+      }]
+    }]
+  }, {
+    "resource": { "attributes": [
+      { "key": "service.name", "value": { "stringValue": "pharo-mcp" } },
+      { "key": "process.runtime.description", "value": { "stringValue": "built by ada on adas-laptop" } }
+    ] },
+    "scopeSpans": [{
+      "scope": { "name": "mcp-pharo" },
+      "spans": [{
+        "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+        "spanId": "00f067aa0ba902ba",
+        "parentSpanId": "00f067aa0ba902b7",
+        "name": "tools/call acme_secret_tool",
+        "kind": 2,
+        "startTimeUnixNano": "1763630000050000000",
+        "endTimeUnixNano": "1763630000060000000",
+        "attributes": [
+          { "key": "gen_ai.tool.name", "value": { "stringValue": "acme_secret_tool" } },
+          { "key": "pharo.mcp.tool.origin", "value": { "stringValue": "other" } },
+          { "key": "pharo.mcp.argument.names", "value": { "arrayValue": { "values": [ { "stringValue": "acmePrivateArg" } ] } } },
+          { "key": "pharo.mcp.exception.type", "value": { "stringValue": "AcmeSecretError" } }
         ]
       }]
     }]

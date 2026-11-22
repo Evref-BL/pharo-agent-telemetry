@@ -1,0 +1,501 @@
+{
+  "about": "PLexus names only its own tools: on a call it forwarded to an image (plexus.call.forwarded, a client span, or a tool not its own) its span keeps no tool or argument names.",
+  "request": {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "plexus"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "0.19.0"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "26.0.0"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "3.1.1"
+              }
+            },
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "@evref-bl/plexus",
+              "version": "0.19.0"
+            },
+            "spans": [
+              {
+                "traceId": "0900abababababababababababababab",
+                "spanId": "cccccccccccc0030",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "plexus.call.forwarded",
+                    "value": {
+                      "boolValue": true
+                    }
+                  },
+                  {
+                    "key": "plexus.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "name"
+                          },
+                          {
+                            "stringValue": "image"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "plexus.call.index",
+                    "value": {
+                      "intValue": "2"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0900abababababababababababababab",
+                "spanId": "cccccccccccc0031",
+                "name": "tools/call class_get",
+                "kind": 3,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "plexus.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "name"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0900abababababababababababababab",
+                "spanId": "cccccccccccc0032",
+                "name": "tools/call image_start",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_start"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "plexus.call.forwarded",
+                    "value": {
+                      "boolValue": false
+                    }
+                  },
+                  {
+                    "key": "plexus.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "name"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "plexus.argument.unknown_names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "display2"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0900abababababababababababababab",
+                "spanId": "cccccccccccc0033",
+                "name": "tools/call acme_tool",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "acme_tool"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "plexus.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "acmePrivateArg"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0900abababababababababababababab",
+                "spanId": "cccccccccccc0034",
+                "name": "tools/call image_list",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_list"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "plexus.call.forwarded",
+                    "value": {
+                      "boolValue": true
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0900abababababababababababababab",
+                "spanId": "cccccccccccc0035",
+                "name": "tools/call _OTHER",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "_OTHER"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "plexus.argument.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "name"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call",
+      "kind": 2,
+      "trace": "0900abababababababababababababab",
+      "span": "cccccccccccc0035",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call",
+      "kind": 3,
+      "trace": "0900abababababababababababababab",
+      "span": "cccccccccccc0031",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call",
+      "kind": 2,
+      "trace": "0900abababababababababababababab",
+      "span": "cccccccccccc0030",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "plexus.call.forwarded": true,
+        "plexus.call.index": 2,
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call",
+      "kind": 2,
+      "trace": "0900abababababababababababababab",
+      "span": "cccccccccccc0033",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call",
+      "kind": 2,
+      "trace": "0900abababababababababababababab",
+      "span": "cccccccccccc0034",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "plexus.call.forwarded": true,
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_start",
+      "kind": 2,
+      "trace": "0900abababababababababababababab",
+      "span": "cccccccccccc0032",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_start",
+        "plexus.call.forwarded": false,
+        "plexus.argument.names": [
+          "name"
+        ],
+        "plexus.argument.unknown_names": [
+          "display2"
+        ],
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    }
+  ]
+}

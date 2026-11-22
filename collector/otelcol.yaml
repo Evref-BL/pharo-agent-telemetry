@@ -1,4 +1,6 @@
 # Generated from allowlist.json by `npm run generate`. Do not edit.
+# The same rules as the filter `join` installs on a participant's machine
+# (src/telemetry-transform.mjs), applied again to whatever arrives.
 extensions:
   bearertokenauth:
     token: ${env:COLLECTOR_TOKEN}
@@ -21,9 +23,25 @@ processors:
     limit_mib: 400
     spike_limit_mib: 100
 
+  # Only PLexus's and MCP's spans, of the operations they record: any other
+  # is dropped whole, as is one with links (OTTL cannot remove them), one that
+  # gives an attribute twice (a rule reads only the first), or a malformed one.
+  filter/spans:
+    error_mode: propagate
+    traces:
+      span:
+        - "not ((resource.attributes[\"service.name\"] == \"plexus\" and instrumentation_scope.name == \"@evref-bl/plexus\" and IsMatch(name, \"^(?:tools/call(?: [\\\\s\\\\S]*)?|tools/list|plexus\\\\.image\\\\.create|plexus\\\\.image\\\\.start|plexus\\\\.image\\\\.stop|plexus\\\\.image\\\\.delete)$\")) or (resource.attributes[\"service.name\"] == \"pharo-mcp\" and instrumentation_scope.name == \"mcp-pharo\" and IsMatch(name, \"^(?:tools/call(?: [\\\\s\\\\S]*)?)$\")))"
+        - "Len(links) > 0"
+        - "Len(ParseJSON(String(attributes))) != Len(attributes)"
+        - "Len(ParseJSON(String(resource.attributes))) != Len(resource.attributes)"
+        - "IsMatch(trace_id.string, \"^0+$\") or IsMatch(span_id.string, \"^0+$\")"
+        - "start_time_unix_nano <= 0 or end_time_unix_nano < start_time_unix_nano"
+        - "kind < 0 or kind > 5"
+        - "status.code < 0 or status.code > 2"
+
   # Keeps SAMPLING_PERCENTAGE of the traces, all of 100 unless set. Decided by
-  # the trace id, so the plugin's, PLexus's and the image's spans of one call,
-  # sent apart, are kept or dropped together.
+  # the trace id, so PLexus's and the image's spans of one call, sent apart,
+  # are kept or dropped together.
   probabilistic_sampler:
     mode: hash_seed
     hash_seed: 22
@@ -31,28 +49,321 @@ processors:
 
   # Events can carry exception messages and stacks: none is kept.
   filter/events:
-    error_mode: ignore
+    error_mode: propagate
     traces:
       spanevent:
         - "true"
 
-  transform/allowlist:
-    error_mode: ignore
+  # A statement that fails refuses the whole request rather than let a value
+  # through unchecked.
+  transform/rules:
+    error_mode: propagate
     trace_statements:
       - context: resource
         statements:
-          - "keep_keys(attributes, [\"service.name\", \"service.version\", \"telemetry.sdk.name\", \"telemetry.sdk.language\", \"telemetry.sdk.version\", \"os.type\", \"process.runtime.name\", \"process.runtime.version\", \"process.runtime.description\", \"deployment.environment.name\"])"
-          - "truncate_all(attributes, 256)"
+          - "keep_keys(attributes, [\"service.name\", \"service.version\", \"telemetry.sdk.version\", \"os.type\", \"process.runtime.name\", \"process.runtime.version\", \"process.runtime.description\", \"deployment.environment.name\"])"
+          - "delete_key(attributes, \"service.name\") where attributes[\"service.name\"] != nil and not IsString(attributes[\"service.name\"])"
+          - "set(attributes[\"service.name\"], \"****\") where IsString(attributes[\"service.name\"]) and IsMatch(attributes[\"service.name\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"service.name\"], \"****\") where IsString(attributes[\"service.name\"]) and IsMatch(attributes[\"service.name\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"service.name\"], \"****\") where IsString(attributes[\"service.name\"]) and IsMatch(attributes[\"service.name\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"service.name\"], \"****\") where IsString(attributes[\"service.name\"]) and IsMatch(attributes[\"service.name\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"service.name\") where IsString(attributes[\"service.name\"]) and not IsMatch(attributes[\"service.name\"], \"^(?:plexus|pharo-mcp)$\")"
+          - "delete_key(attributes, \"service.version\") where attributes[\"service.version\"] != nil and not IsString(attributes[\"service.version\"])"
+          - "set(attributes[\"service.version\"], \"****\") where IsString(attributes[\"service.version\"]) and IsMatch(attributes[\"service.version\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"service.version\"], \"****\") where IsString(attributes[\"service.version\"]) and IsMatch(attributes[\"service.version\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"service.version\"], \"****\") where IsString(attributes[\"service.version\"]) and IsMatch(attributes[\"service.version\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"service.version\"], \"****\") where IsString(attributes[\"service.version\"]) and IsMatch(attributes[\"service.version\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"service.version\") where IsString(attributes[\"service.version\"]) and not IsMatch(attributes[\"service.version\"], \"^(?:[0-9]{1,4}(?:\\\\.[0-9]{1,4}){0,2}(?:-(?:alpha|beta|rc)(?:\\\\.[0-9]{1,4})?)?)$\")"
+          - "delete_key(attributes, \"telemetry.sdk.version\") where attributes[\"telemetry.sdk.version\"] != nil and not IsString(attributes[\"telemetry.sdk.version\"])"
+          - "set(attributes[\"telemetry.sdk.version\"], \"****\") where IsString(attributes[\"telemetry.sdk.version\"]) and IsMatch(attributes[\"telemetry.sdk.version\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"telemetry.sdk.version\"], \"****\") where IsString(attributes[\"telemetry.sdk.version\"]) and IsMatch(attributes[\"telemetry.sdk.version\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"telemetry.sdk.version\"], \"****\") where IsString(attributes[\"telemetry.sdk.version\"]) and IsMatch(attributes[\"telemetry.sdk.version\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"telemetry.sdk.version\"], \"****\") where IsString(attributes[\"telemetry.sdk.version\"]) and IsMatch(attributes[\"telemetry.sdk.version\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"telemetry.sdk.version\") where IsString(attributes[\"telemetry.sdk.version\"]) and not IsMatch(attributes[\"telemetry.sdk.version\"], \"^(?:[0-9]{1,4}(?:\\\\.[0-9]{1,4}){0,2}(?:-(?:alpha|beta|rc)(?:\\\\.[0-9]{1,4})?)?)$\")"
+          - "delete_key(attributes, \"os.type\") where attributes[\"os.type\"] != nil and not IsString(attributes[\"os.type\"])"
+          - "set(attributes[\"os.type\"], \"****\") where IsString(attributes[\"os.type\"]) and IsMatch(attributes[\"os.type\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"os.type\"], \"****\") where IsString(attributes[\"os.type\"]) and IsMatch(attributes[\"os.type\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"os.type\"], \"****\") where IsString(attributes[\"os.type\"]) and IsMatch(attributes[\"os.type\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"os.type\"], \"****\") where IsString(attributes[\"os.type\"]) and IsMatch(attributes[\"os.type\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"os.type\") where IsString(attributes[\"os.type\"]) and not IsMatch(attributes[\"os.type\"], \"^(?:windows|linux|darwin|freebsd|netbsd|openbsd|dragonflybsd|hpux|aix|solaris|z_os)$\")"
+          - "delete_key(attributes, \"process.runtime.name\") where attributes[\"process.runtime.name\"] != nil and not IsString(attributes[\"process.runtime.name\"])"
+          - "set(attributes[\"process.runtime.name\"], \"****\") where IsString(attributes[\"process.runtime.name\"]) and IsMatch(attributes[\"process.runtime.name\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"process.runtime.name\"], \"****\") where IsString(attributes[\"process.runtime.name\"]) and IsMatch(attributes[\"process.runtime.name\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"process.runtime.name\"], \"****\") where IsString(attributes[\"process.runtime.name\"]) and IsMatch(attributes[\"process.runtime.name\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"process.runtime.name\"], \"****\") where IsString(attributes[\"process.runtime.name\"]) and IsMatch(attributes[\"process.runtime.name\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"process.runtime.name\") where IsString(attributes[\"process.runtime.name\"]) and not IsMatch(attributes[\"process.runtime.name\"], \"^(?:nodejs|pharo)$\")"
+          - "delete_key(attributes, \"process.runtime.version\") where attributes[\"process.runtime.version\"] != nil and not IsString(attributes[\"process.runtime.version\"])"
+          - "set(attributes[\"process.runtime.version\"], \"****\") where IsString(attributes[\"process.runtime.version\"]) and IsMatch(attributes[\"process.runtime.version\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"process.runtime.version\"], \"****\") where IsString(attributes[\"process.runtime.version\"]) and IsMatch(attributes[\"process.runtime.version\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"process.runtime.version\"], \"****\") where IsString(attributes[\"process.runtime.version\"]) and IsMatch(attributes[\"process.runtime.version\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"process.runtime.version\"], \"****\") where IsString(attributes[\"process.runtime.version\"]) and IsMatch(attributes[\"process.runtime.version\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "replace_pattern(attributes[\"process.runtime.version\"], \"^v?([0-9]{1,4})(?:\\\\.[\\\\s\\\\S]*)?$\", \"$$1\") where IsString(attributes[\"process.runtime.version\"]) and attributes[\"service.name\"] == \"plexus\""
+          - "replace_pattern(attributes[\"process.runtime.version\"], \"^v?([0-9]{1,4}\\\\.[0-9]{1,4}\\\\.[0-9]{1,4})(?:[+-][\\\\s\\\\S]*)?$\", \"$$1\") where IsString(attributes[\"process.runtime.version\"]) and attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"process.runtime.version\") where attributes[\"process.runtime.version\"] != nil and not IsMatch(attributes[\"service.name\"], \"^(?:plexus|pharo-mcp)$\")"
+          - "delete_key(attributes, \"process.runtime.version\") where IsString(attributes[\"process.runtime.version\"]) and not IsMatch(attributes[\"process.runtime.version\"], \"^(?:[0-9]{1,4}(?:\\\\.[0-9]{1,4}){0,2}(?:-(?:alpha|beta|rc)(?:\\\\.[0-9]{1,4})?)?)$\")"
+          - "delete_key(attributes, \"process.runtime.description\") where not attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"process.runtime.description\") where attributes[\"process.runtime.description\"] != nil and not IsString(attributes[\"process.runtime.description\"])"
+          - "set(attributes[\"process.runtime.description\"], \"****\") where IsString(attributes[\"process.runtime.description\"]) and IsMatch(attributes[\"process.runtime.description\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"process.runtime.description\"], \"****\") where IsString(attributes[\"process.runtime.description\"]) and IsMatch(attributes[\"process.runtime.description\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"process.runtime.description\"], \"****\") where IsString(attributes[\"process.runtime.description\"]) and IsMatch(attributes[\"process.runtime.description\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"process.runtime.description\"], \"****\") where IsString(attributes[\"process.runtime.description\"]) and IsMatch(attributes[\"process.runtime.description\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "replace_pattern(attributes[\"process.runtime.description\"], \"^[\\\\s\\\\S]*?\\\\bv([0-9]{1,4}\\\\.[0-9]{1,4}\\\\.[0-9]{1,4}(?:-(?:alpha|beta|rc)(?:\\\\.[0-9]{1,4})?)?)(?:[^0-9A-Za-z.-][\\\\s\\\\S]*)?$\", \"$$1\") where IsString(attributes[\"process.runtime.description\"]) and attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"process.runtime.description\") where attributes[\"process.runtime.description\"] != nil and not attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"process.runtime.description\") where IsString(attributes[\"process.runtime.description\"]) and not IsMatch(attributes[\"process.runtime.description\"], \"^(?:[0-9]{1,4}(?:\\\\.[0-9]{1,4}){0,2}(?:-(?:alpha|beta|rc)(?:\\\\.[0-9]{1,4})?)?)$\")"
+          - "delete_key(attributes, \"deployment.environment.name\") where attributes[\"deployment.environment.name\"] != nil and not IsString(attributes[\"deployment.environment.name\"])"
+          - "set(attributes[\"deployment.environment.name\"], \"****\") where IsString(attributes[\"deployment.environment.name\"]) and IsMatch(attributes[\"deployment.environment.name\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"deployment.environment.name\"], \"****\") where IsString(attributes[\"deployment.environment.name\"]) and IsMatch(attributes[\"deployment.environment.name\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"deployment.environment.name\"], \"****\") where IsString(attributes[\"deployment.environment.name\"]) and IsMatch(attributes[\"deployment.environment.name\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"deployment.environment.name\"], \"****\") where IsString(attributes[\"deployment.environment.name\"]) and IsMatch(attributes[\"deployment.environment.name\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"deployment.environment.name\") where IsString(attributes[\"deployment.environment.name\"]) and not IsMatch(attributes[\"deployment.environment.name\"], \"^(?:field|eval|preview|check)$\")"
+          - "set(schema_url, \"\")"
+          - "set(dropped_attributes_count, 0)"
+          - "set(attributes[\"fileexporter.path_segment\"], FormatTime(Now(), \"%Y-%m-%d\"))"
       - context: scope
         statements:
           - "keep_keys(attributes, [])"
+          - "set(version, \"\") where not IsMatch(version, \"^[0-9]{1,4}(?:\\\\.[0-9]{1,4}){0,2}(?:-(?:alpha|beta|rc)(?:\\\\.[0-9]{1,4})?)?$\")"
+          - "set(schema_url, \"\")"
+          - "set(dropped_attributes_count, 0)"
       - context: span
         statements:
-          - "keep_keys(attributes, [\"session.id\", \"mcp.method.name\", \"mcp.protocol.version\", \"mcp.session.id\", \"gen_ai.operation.name\", \"gen_ai.tool.name\", \"error.type\", \"network.transport\", \"network.protocol.name\", \"plexus.client.name\", \"plexus.client.version\", \"plexus.argument.names\", \"plexus.argument.unknown_names\", \"plexus.image.from_base\", \"plexus.image.save\", \"pharo.mcp.dispatch_path\", \"pharo.mcp.argument.names\", \"pharo.mcp.argument.unknown_names\", \"pharo.mcp.input.bytes\", \"pharo.mcp.output.bytes\", \"pharo.mcp.output_budget.exceeded\", \"pharo.mcp.error.kind\", \"pharo.mcp.error.code\", \"pharo.mcp.error.schema.violation_count\", \"pharo.mcp.exception.type\"])"
-          - "truncate_all(attributes, 256)"
-          - "set(status.message, \"\")"
+          - "keep_keys(attributes, [\"session.id\", \"mcp.method.name\", \"mcp.protocol.version\", \"gen_ai.tool.name\", \"error.type\", \"plexus.client.name\", \"plexus.client.version\", \"plexus.call.index\", \"plexus.call.forwarded\", \"plexus.argument.names\", \"plexus.argument.unknown_names\", \"plexus.error.code\", \"plexus.image.save\", \"pharo.mcp.tool.origin\", \"pharo.mcp.dispatch_path\", \"pharo.mcp.argument.names\", \"pharo.mcp.argument.unknown_names\", \"pharo.mcp.argument.coerced\", \"pharo.mcp.argument.options\", \"pharo.mcp.input.bytes\", \"pharo.mcp.output.bytes\", \"pharo.mcp.result.count\", \"pharo.mcp.result.more\", \"pharo.mcp.test.outcome\", \"pharo.mcp.test.count\", \"pharo.mcp.tool.refs\", \"pharo.mcp.error.kind\", \"pharo.mcp.error.code\", \"pharo.mcp.error.schema.violation_count\", \"pharo.mcp.error.schema.keywords\", \"pharo.mcp.error.schema.paths\", \"pharo.mcp.exception.type\", \"span.duration_ms\"])"
+          - "delete_key(attributes, \"session.id\") where attributes[\"session.id\"] != nil and not IsString(attributes[\"session.id\"])"
+          - "delete_key(attributes, \"session.id\") where IsString(attributes[\"session.id\"]) and not IsMatch(attributes[\"session.id\"], \"^(?:[\\\\s\\\\S]+)$\")"
+          - "set(attributes[\"session.id\"], Substring(SHA256(Concat([\"${env:ID_HASH_KEY}\", \"session\", attributes[\"session.id\"]], \":\")), 0, 32)) where IsString(attributes[\"session.id\"])"
+          - "delete_key(attributes, \"mcp.method.name\") where attributes[\"mcp.method.name\"] != nil and not IsString(attributes[\"mcp.method.name\"])"
+          - "set(attributes[\"mcp.method.name\"], \"****\") where IsString(attributes[\"mcp.method.name\"]) and IsMatch(attributes[\"mcp.method.name\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"mcp.method.name\"], \"****\") where IsString(attributes[\"mcp.method.name\"]) and IsMatch(attributes[\"mcp.method.name\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"mcp.method.name\"], \"****\") where IsString(attributes[\"mcp.method.name\"]) and IsMatch(attributes[\"mcp.method.name\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"mcp.method.name\"], \"****\") where IsString(attributes[\"mcp.method.name\"]) and IsMatch(attributes[\"mcp.method.name\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"mcp.method.name\") where IsString(attributes[\"mcp.method.name\"]) and not IsMatch(attributes[\"mcp.method.name\"], \"^(?:tools/call|tools/list)$\")"
+          - "delete_key(attributes, \"mcp.protocol.version\") where attributes[\"mcp.protocol.version\"] != nil and not IsString(attributes[\"mcp.protocol.version\"])"
+          - "set(attributes[\"mcp.protocol.version\"], \"****\") where IsString(attributes[\"mcp.protocol.version\"]) and IsMatch(attributes[\"mcp.protocol.version\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"mcp.protocol.version\"], \"****\") where IsString(attributes[\"mcp.protocol.version\"]) and IsMatch(attributes[\"mcp.protocol.version\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"mcp.protocol.version\"], \"****\") where IsString(attributes[\"mcp.protocol.version\"]) and IsMatch(attributes[\"mcp.protocol.version\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"mcp.protocol.version\"], \"****\") where IsString(attributes[\"mcp.protocol.version\"]) and IsMatch(attributes[\"mcp.protocol.version\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"mcp.protocol.version\") where IsString(attributes[\"mcp.protocol.version\"]) and not IsMatch(attributes[\"mcp.protocol.version\"], \"^(?:[0-9]{4}-[0-9]{2}-[0-9]{2})$\")"
+          - "delete_key(attributes, \"gen_ai.tool.name\") where attributes[\"gen_ai.tool.name\"] != nil and not IsString(attributes[\"gen_ai.tool.name\"])"
+          - "set(attributes[\"gen_ai.tool.name\"], \"****\") where IsString(attributes[\"gen_ai.tool.name\"]) and IsMatch(attributes[\"gen_ai.tool.name\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"gen_ai.tool.name\"], \"****\") where IsString(attributes[\"gen_ai.tool.name\"]) and IsMatch(attributes[\"gen_ai.tool.name\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"gen_ai.tool.name\"], \"****\") where IsString(attributes[\"gen_ai.tool.name\"]) and IsMatch(attributes[\"gen_ai.tool.name\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"gen_ai.tool.name\"], \"****\") where IsString(attributes[\"gen_ai.tool.name\"]) and IsMatch(attributes[\"gen_ai.tool.name\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "set(attributes[\"gen_ai.tool.name\"], \"_OTHER\") where IsString(attributes[\"gen_ai.tool.name\"]) and not IsMatch(attributes[\"gen_ai.tool.name\"], \"^(?:[A-Za-z_][A-Za-z0-9_-]{0,63})$\")"
+          - "delete_key(attributes, \"error.type\") where attributes[\"error.type\"] != nil and not IsString(attributes[\"error.type\"])"
+          - "set(attributes[\"error.type\"], \"****\") where IsString(attributes[\"error.type\"]) and IsMatch(attributes[\"error.type\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"error.type\"], \"****\") where IsString(attributes[\"error.type\"]) and IsMatch(attributes[\"error.type\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"error.type\"], \"****\") where IsString(attributes[\"error.type\"]) and IsMatch(attributes[\"error.type\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"error.type\"], \"****\") where IsString(attributes[\"error.type\"]) and IsMatch(attributes[\"error.type\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "set(attributes[\"error.type\"], \"_OTHER\") where IsString(attributes[\"error.type\"]) and not IsMatch(attributes[\"error.type\"], \"^(?:tool_error|_OTHER|timeout|refused|closed|cancelled|invalid-name|no-such-image|image-exists|image-running|being-started|building|not-running|starting|no-endpoint|unknown-template|ambiguous-template|script-not-found|create-failed|start-failed|stop-failed|save-failed|stopped-unsaved|launcher-failed|Abort|ArgumentsCountMismatch|ArithmeticError|AssertionFailure|BlockCannotReturn|CannotReturn|CollectionIsEmpty|ConfirmationRequest|ContextCannotReturn|DomainError|DuplicatedSlotName|DuplicatedVariableError|Error|Exception|ExtensionConflictError|IllegalResumeAttempt|IncompatibleLayoutConflict|InformativeNotification|InstanceVariableNotFound|InvalidSlotName|KeyNotFound|MessageNotUnderstood|ModificationForbidden|NewUndeclaredWarning|NonBooleanReceiver|NotFound|NotYetImplemented|Notification|OutOfMemory|PackageConflictError|PrimitiveFailed|ProcessAlreadyTerminating|SelectorException|ShouldBeImplemented|ShouldNotImplement|SimulationExceptionWrapper|SizeMismatch|SlotNotFound|SubclassResponsibility|SubscriptOutOfBounds|SystemNotification|TimedOut|UndeclaredVariableError|UndeclaredVariableRead|UndeclaredVariableWrite|UnhandledError|UnhandledException|UnwindError|ValueNotFound|Warning|ZeroDivide|MCPCommandError|MCPHeaderMismatch|MCPResourceNotFound|MCPSyntaxError|MCPUnsupportedProtocolVersion|AbortError|AggregateError|EvalError|RangeError|ReferenceError|SyntaxError|SystemError|TimeoutError|TypeError|URIError|-?[0-9]{1,6})$\")"
+          - "delete_key(attributes, \"plexus.client.name\") where not resource.attributes[\"service.name\"] == \"plexus\""
+          - "delete_key(attributes, \"plexus.client.name\") where attributes[\"plexus.client.name\"] != nil and not IsString(attributes[\"plexus.client.name\"])"
+          - "set(attributes[\"plexus.client.name\"], \"****\") where IsString(attributes[\"plexus.client.name\"]) and IsMatch(attributes[\"plexus.client.name\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"plexus.client.name\"], \"****\") where IsString(attributes[\"plexus.client.name\"]) and IsMatch(attributes[\"plexus.client.name\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"plexus.client.name\"], \"****\") where IsString(attributes[\"plexus.client.name\"]) and IsMatch(attributes[\"plexus.client.name\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"plexus.client.name\"], \"****\") where IsString(attributes[\"plexus.client.name\"]) and IsMatch(attributes[\"plexus.client.name\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"plexus.client.name\") where IsString(attributes[\"plexus.client.name\"]) and not IsMatch(attributes[\"plexus.client.name\"], \"^(?:[A-Za-z][A-Za-z0-9 ._-]{0,63})$\")"
+          - "delete_key(attributes, \"plexus.client.version\") where not resource.attributes[\"service.name\"] == \"plexus\""
+          - "delete_key(attributes, \"plexus.client.version\") where attributes[\"plexus.client.version\"] != nil and not IsString(attributes[\"plexus.client.version\"])"
+          - "set(attributes[\"plexus.client.version\"], \"****\") where IsString(attributes[\"plexus.client.version\"]) and IsMatch(attributes[\"plexus.client.version\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"plexus.client.version\"], \"****\") where IsString(attributes[\"plexus.client.version\"]) and IsMatch(attributes[\"plexus.client.version\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"plexus.client.version\"], \"****\") where IsString(attributes[\"plexus.client.version\"]) and IsMatch(attributes[\"plexus.client.version\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"plexus.client.version\"], \"****\") where IsString(attributes[\"plexus.client.version\"]) and IsMatch(attributes[\"plexus.client.version\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "replace_pattern(attributes[\"plexus.client.version\"], \"^v?([0-9]{1,4}\\\\.[0-9]{1,4})(?:[.+-][\\\\s\\\\S]*)?$\", \"$$1\") where IsString(attributes[\"plexus.client.version\"])"
+          - "delete_key(attributes, \"plexus.client.version\") where IsString(attributes[\"plexus.client.version\"]) and not IsMatch(attributes[\"plexus.client.version\"], \"^(?:[0-9]{1,4}(?:\\\\.[0-9]{1,4}){0,2}(?:-(?:alpha|beta|rc)(?:\\\\.[0-9]{1,4})?)?)$\")"
+          - "delete_key(attributes, \"plexus.call.index\") where not resource.attributes[\"service.name\"] == \"plexus\""
+          - "delete_key(attributes, \"plexus.call.index\") where attributes[\"plexus.call.index\"] != nil and not IsInt(attributes[\"plexus.call.index\"])"
+          - "delete_key(attributes, \"plexus.call.index\") where IsInt(attributes[\"plexus.call.index\"]) and attributes[\"plexus.call.index\"] < 1"
+          - "delete_key(attributes, \"plexus.call.forwarded\") where not resource.attributes[\"service.name\"] == \"plexus\""
+          - "delete_key(attributes, \"plexus.call.forwarded\") where attributes[\"plexus.call.forwarded\"] != nil and not IsBool(attributes[\"plexus.call.forwarded\"])"
+          - "delete_key(attributes, \"plexus.argument.names\") where not resource.attributes[\"service.name\"] == \"plexus\""
+          - "delete_key(attributes, \"plexus.argument.names\") where attributes[\"plexus.argument.names\"] != nil and not IsList(attributes[\"plexus.argument.names\"])"
+          - "delete_key(attributes, \"plexus.argument.names\") where IsList(attributes[\"plexus.argument.names\"]) and IsMatch(String(attributes[\"plexus.argument.names\"]), \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "delete_key(attributes, \"plexus.argument.names\") where IsList(attributes[\"plexus.argument.names\"]) and IsMatch(String(attributes[\"plexus.argument.names\"]), \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "delete_key(attributes, \"plexus.argument.names\") where IsList(attributes[\"plexus.argument.names\"]) and IsMatch(String(attributes[\"plexus.argument.names\"]), \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "delete_key(attributes, \"plexus.argument.names\") where IsList(attributes[\"plexus.argument.names\"]) and IsMatch(String(attributes[\"plexus.argument.names\"]), \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"plexus.argument.names\") where IsList(attributes[\"plexus.argument.names\"]) and Len(attributes[\"plexus.argument.names\"]) > 32"
+          - "delete_key(attributes, \"plexus.argument.names\") where IsList(attributes[\"plexus.argument.names\"]) and not IsMatch(String(attributes[\"plexus.argument.names\"]), \"^\\\\[(?:\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\"(?:,\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\")*)?\\\\]$\")"
+          - "delete_key(attributes, \"plexus.argument.unknown_names\") where not resource.attributes[\"service.name\"] == \"plexus\""
+          - "delete_key(attributes, \"plexus.argument.unknown_names\") where attributes[\"plexus.argument.unknown_names\"] != nil and not IsList(attributes[\"plexus.argument.unknown_names\"])"
+          - "delete_key(attributes, \"plexus.argument.unknown_names\") where IsList(attributes[\"plexus.argument.unknown_names\"]) and IsMatch(String(attributes[\"plexus.argument.unknown_names\"]), \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "delete_key(attributes, \"plexus.argument.unknown_names\") where IsList(attributes[\"plexus.argument.unknown_names\"]) and IsMatch(String(attributes[\"plexus.argument.unknown_names\"]), \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "delete_key(attributes, \"plexus.argument.unknown_names\") where IsList(attributes[\"plexus.argument.unknown_names\"]) and IsMatch(String(attributes[\"plexus.argument.unknown_names\"]), \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "delete_key(attributes, \"plexus.argument.unknown_names\") where IsList(attributes[\"plexus.argument.unknown_names\"]) and IsMatch(String(attributes[\"plexus.argument.unknown_names\"]), \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"plexus.argument.unknown_names\") where IsList(attributes[\"plexus.argument.unknown_names\"]) and Len(attributes[\"plexus.argument.unknown_names\"]) > 32"
+          - "delete_key(attributes, \"plexus.argument.unknown_names\") where IsList(attributes[\"plexus.argument.unknown_names\"]) and not IsMatch(String(attributes[\"plexus.argument.unknown_names\"]), \"^\\\\[(?:\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\"(?:,\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\")*)?\\\\]$\")"
+          - "delete_key(attributes, \"plexus.error.code\") where not resource.attributes[\"service.name\"] == \"plexus\""
+          - "delete_key(attributes, \"plexus.error.code\") where attributes[\"plexus.error.code\"] != nil and not IsString(attributes[\"plexus.error.code\"])"
+          - "set(attributes[\"plexus.error.code\"], \"****\") where IsString(attributes[\"plexus.error.code\"]) and IsMatch(attributes[\"plexus.error.code\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"plexus.error.code\"], \"****\") where IsString(attributes[\"plexus.error.code\"]) and IsMatch(attributes[\"plexus.error.code\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"plexus.error.code\"], \"****\") where IsString(attributes[\"plexus.error.code\"]) and IsMatch(attributes[\"plexus.error.code\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"plexus.error.code\"], \"****\") where IsString(attributes[\"plexus.error.code\"]) and IsMatch(attributes[\"plexus.error.code\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "set(attributes[\"plexus.error.code\"], \"_OTHER\") where IsString(attributes[\"plexus.error.code\"]) and not IsMatch(attributes[\"plexus.error.code\"], \"^(?:invalid-name|no-such-image|image-exists|image-running|being-started|building|not-running|starting|no-endpoint|unknown-template|ambiguous-template|script-not-found|create-failed|start-failed|stop-failed|save-failed|stopped-unsaved|launcher-failed)$\")"
+          - "delete_key(attributes, \"plexus.image.save\") where not resource.attributes[\"service.name\"] == \"plexus\""
+          - "delete_key(attributes, \"plexus.image.save\") where attributes[\"plexus.image.save\"] != nil and not IsBool(attributes[\"plexus.image.save\"])"
+          - "delete_key(attributes, \"pharo.mcp.tool.origin\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.tool.origin\") where attributes[\"pharo.mcp.tool.origin\"] != nil and not IsString(attributes[\"pharo.mcp.tool.origin\"])"
+          - "set(attributes[\"pharo.mcp.tool.origin\"], \"****\") where IsString(attributes[\"pharo.mcp.tool.origin\"]) and IsMatch(attributes[\"pharo.mcp.tool.origin\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"pharo.mcp.tool.origin\"], \"****\") where IsString(attributes[\"pharo.mcp.tool.origin\"]) and IsMatch(attributes[\"pharo.mcp.tool.origin\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"pharo.mcp.tool.origin\"], \"****\") where IsString(attributes[\"pharo.mcp.tool.origin\"]) and IsMatch(attributes[\"pharo.mcp.tool.origin\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"pharo.mcp.tool.origin\"], \"****\") where IsString(attributes[\"pharo.mcp.tool.origin\"]) and IsMatch(attributes[\"pharo.mcp.tool.origin\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "set(attributes[\"pharo.mcp.tool.origin\"], \"other\") where IsString(attributes[\"pharo.mcp.tool.origin\"]) and not IsMatch(attributes[\"pharo.mcp.tool.origin\"], \"^(?:mcp|other|unknown)$\")"
+          - "set(attributes[\"pharo.mcp.tool.origin\"], \"other\") where attributes[\"pharo.mcp.tool.origin\"] == nil and resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.dispatch_path\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.dispatch_path\") where attributes[\"pharo.mcp.dispatch_path\"] != nil and not IsString(attributes[\"pharo.mcp.dispatch_path\"])"
+          - "set(attributes[\"pharo.mcp.dispatch_path\"], \"****\") where IsString(attributes[\"pharo.mcp.dispatch_path\"]) and IsMatch(attributes[\"pharo.mcp.dispatch_path\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"pharo.mcp.dispatch_path\"], \"****\") where IsString(attributes[\"pharo.mcp.dispatch_path\"]) and IsMatch(attributes[\"pharo.mcp.dispatch_path\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"pharo.mcp.dispatch_path\"], \"****\") where IsString(attributes[\"pharo.mcp.dispatch_path\"]) and IsMatch(attributes[\"pharo.mcp.dispatch_path\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"pharo.mcp.dispatch_path\"], \"****\") where IsString(attributes[\"pharo.mcp.dispatch_path\"]) and IsMatch(attributes[\"pharo.mcp.dispatch_path\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.dispatch_path\") where IsString(attributes[\"pharo.mcp.dispatch_path\"]) and not IsMatch(attributes[\"pharo.mcp.dispatch_path\"], \"^(?:direct|via_tool_call)$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.names\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.argument.names\") where attributes[\"pharo.mcp.argument.names\"] != nil and not IsList(attributes[\"pharo.mcp.argument.names\"])"
+          - "delete_key(attributes, \"pharo.mcp.argument.names\") where IsList(attributes[\"pharo.mcp.argument.names\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.names\"]), \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.names\") where IsList(attributes[\"pharo.mcp.argument.names\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.names\"]), \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.names\") where IsList(attributes[\"pharo.mcp.argument.names\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.names\"]), \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.names\") where IsList(attributes[\"pharo.mcp.argument.names\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.names\"]), \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.names\") where IsList(attributes[\"pharo.mcp.argument.names\"]) and Len(attributes[\"pharo.mcp.argument.names\"]) > 32"
+          - "delete_key(attributes, \"pharo.mcp.argument.names\") where IsList(attributes[\"pharo.mcp.argument.names\"]) and not IsMatch(String(attributes[\"pharo.mcp.argument.names\"]), \"^\\\\[(?:\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\"(?:,\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\")*)?\\\\]$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.unknown_names\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.argument.unknown_names\") where attributes[\"pharo.mcp.argument.unknown_names\"] != nil and not IsList(attributes[\"pharo.mcp.argument.unknown_names\"])"
+          - "delete_key(attributes, \"pharo.mcp.argument.unknown_names\") where IsList(attributes[\"pharo.mcp.argument.unknown_names\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.unknown_names\"]), \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.unknown_names\") where IsList(attributes[\"pharo.mcp.argument.unknown_names\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.unknown_names\"]), \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.unknown_names\") where IsList(attributes[\"pharo.mcp.argument.unknown_names\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.unknown_names\"]), \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.unknown_names\") where IsList(attributes[\"pharo.mcp.argument.unknown_names\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.unknown_names\"]), \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.unknown_names\") where IsList(attributes[\"pharo.mcp.argument.unknown_names\"]) and Len(attributes[\"pharo.mcp.argument.unknown_names\"]) > 32"
+          - "delete_key(attributes, \"pharo.mcp.argument.unknown_names\") where IsList(attributes[\"pharo.mcp.argument.unknown_names\"]) and not IsMatch(String(attributes[\"pharo.mcp.argument.unknown_names\"]), \"^\\\\[(?:\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\"(?:,\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\")*)?\\\\]$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.coerced\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.argument.coerced\") where attributes[\"pharo.mcp.argument.coerced\"] != nil and not IsList(attributes[\"pharo.mcp.argument.coerced\"])"
+          - "delete_key(attributes, \"pharo.mcp.argument.coerced\") where IsList(attributes[\"pharo.mcp.argument.coerced\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.coerced\"]), \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.coerced\") where IsList(attributes[\"pharo.mcp.argument.coerced\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.coerced\"]), \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.coerced\") where IsList(attributes[\"pharo.mcp.argument.coerced\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.coerced\"]), \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.coerced\") where IsList(attributes[\"pharo.mcp.argument.coerced\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.coerced\"]), \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.coerced\") where IsList(attributes[\"pharo.mcp.argument.coerced\"]) and Len(attributes[\"pharo.mcp.argument.coerced\"]) > 32"
+          - "delete_key(attributes, \"pharo.mcp.argument.coerced\") where IsList(attributes[\"pharo.mcp.argument.coerced\"]) and not IsMatch(String(attributes[\"pharo.mcp.argument.coerced\"]), \"^\\\\[(?:\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\"(?:,\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\")*)?\\\\]$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.options\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.argument.options\") where attributes[\"pharo.mcp.argument.options\"] != nil and not IsList(attributes[\"pharo.mcp.argument.options\"])"
+          - "delete_key(attributes, \"pharo.mcp.argument.options\") where IsList(attributes[\"pharo.mcp.argument.options\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.options\"]), \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.options\") where IsList(attributes[\"pharo.mcp.argument.options\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.options\"]), \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.options\") where IsList(attributes[\"pharo.mcp.argument.options\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.options\"]), \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.options\") where IsList(attributes[\"pharo.mcp.argument.options\"]) and IsMatch(String(attributes[\"pharo.mcp.argument.options\"]), \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.argument.options\") where IsList(attributes[\"pharo.mcp.argument.options\"]) and Len(attributes[\"pharo.mcp.argument.options\"]) > 32"
+          - "delete_key(attributes, \"pharo.mcp.argument.options\") where IsList(attributes[\"pharo.mcp.argument.options\"]) and not IsMatch(String(attributes[\"pharo.mcp.argument.options\"]), \"^\\\\[(?:\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}(?:\\\\.[A-Za-z_][A-Za-z0-9_-]{0,63}){0,3}(?:\\\\[\\\\]|=[A-Za-z0-9_.-]{1,64})?))\\\"(?:,\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}(?:\\\\.[A-Za-z_][A-Za-z0-9_-]{0,63}){0,3}(?:\\\\[\\\\]|=[A-Za-z0-9_.-]{1,64})?))\\\")*)?\\\\]$\")"
+          - "delete_key(attributes, \"pharo.mcp.input.bytes\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.input.bytes\") where attributes[\"pharo.mcp.input.bytes\"] != nil and not IsInt(attributes[\"pharo.mcp.input.bytes\"])"
+          - "delete_key(attributes, \"pharo.mcp.input.bytes\") where IsInt(attributes[\"pharo.mcp.input.bytes\"]) and attributes[\"pharo.mcp.input.bytes\"] < 0"
+          - "delete_key(attributes, \"pharo.mcp.output.bytes\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.output.bytes\") where attributes[\"pharo.mcp.output.bytes\"] != nil and not IsInt(attributes[\"pharo.mcp.output.bytes\"])"
+          - "delete_key(attributes, \"pharo.mcp.output.bytes\") where IsInt(attributes[\"pharo.mcp.output.bytes\"]) and attributes[\"pharo.mcp.output.bytes\"] < 0"
+          - "delete_key(attributes, \"pharo.mcp.result.count\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.result.count\") where attributes[\"pharo.mcp.result.count\"] != nil and not IsInt(attributes[\"pharo.mcp.result.count\"])"
+          - "delete_key(attributes, \"pharo.mcp.result.count\") where IsInt(attributes[\"pharo.mcp.result.count\"]) and attributes[\"pharo.mcp.result.count\"] < 0"
+          - "set(attributes[\"pharo.mcp.result.count\"], 0) where IsInt(attributes[\"pharo.mcp.result.count\"]) and attributes[\"pharo.mcp.result.count\"] >= 0 and attributes[\"pharo.mcp.result.count\"] < 1"
+          - "set(attributes[\"pharo.mcp.result.count\"], 1) where IsInt(attributes[\"pharo.mcp.result.count\"]) and attributes[\"pharo.mcp.result.count\"] >= 1 and attributes[\"pharo.mcp.result.count\"] < 2"
+          - "set(attributes[\"pharo.mcp.result.count\"], 2) where IsInt(attributes[\"pharo.mcp.result.count\"]) and attributes[\"pharo.mcp.result.count\"] >= 2 and attributes[\"pharo.mcp.result.count\"] < 6"
+          - "set(attributes[\"pharo.mcp.result.count\"], 6) where IsInt(attributes[\"pharo.mcp.result.count\"]) and attributes[\"pharo.mcp.result.count\"] >= 6 and attributes[\"pharo.mcp.result.count\"] < 21"
+          - "set(attributes[\"pharo.mcp.result.count\"], 21) where IsInt(attributes[\"pharo.mcp.result.count\"]) and attributes[\"pharo.mcp.result.count\"] >= 21 and attributes[\"pharo.mcp.result.count\"] < 101"
+          - "set(attributes[\"pharo.mcp.result.count\"], 101) where IsInt(attributes[\"pharo.mcp.result.count\"]) and attributes[\"pharo.mcp.result.count\"] >= 101"
+          - "delete_key(attributes, \"pharo.mcp.result.more\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.result.more\") where attributes[\"pharo.mcp.result.more\"] != nil and not IsBool(attributes[\"pharo.mcp.result.more\"])"
+          - "delete_key(attributes, \"pharo.mcp.test.outcome\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.test.outcome\") where attributes[\"pharo.mcp.test.outcome\"] != nil and not IsString(attributes[\"pharo.mcp.test.outcome\"])"
+          - "set(attributes[\"pharo.mcp.test.outcome\"], \"****\") where IsString(attributes[\"pharo.mcp.test.outcome\"]) and IsMatch(attributes[\"pharo.mcp.test.outcome\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"pharo.mcp.test.outcome\"], \"****\") where IsString(attributes[\"pharo.mcp.test.outcome\"]) and IsMatch(attributes[\"pharo.mcp.test.outcome\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"pharo.mcp.test.outcome\"], \"****\") where IsString(attributes[\"pharo.mcp.test.outcome\"]) and IsMatch(attributes[\"pharo.mcp.test.outcome\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"pharo.mcp.test.outcome\"], \"****\") where IsString(attributes[\"pharo.mcp.test.outcome\"]) and IsMatch(attributes[\"pharo.mcp.test.outcome\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.test.outcome\") where IsString(attributes[\"pharo.mcp.test.outcome\"]) and not IsMatch(attributes[\"pharo.mcp.test.outcome\"], \"^(?:passed|failed|errored)$\")"
+          - "delete_key(attributes, \"pharo.mcp.test.count\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.test.count\") where attributes[\"pharo.mcp.test.count\"] != nil and not IsInt(attributes[\"pharo.mcp.test.count\"])"
+          - "delete_key(attributes, \"pharo.mcp.test.count\") where IsInt(attributes[\"pharo.mcp.test.count\"]) and attributes[\"pharo.mcp.test.count\"] < 0"
+          - "set(attributes[\"pharo.mcp.test.count\"], 0) where IsInt(attributes[\"pharo.mcp.test.count\"]) and attributes[\"pharo.mcp.test.count\"] >= 0 and attributes[\"pharo.mcp.test.count\"] < 1"
+          - "set(attributes[\"pharo.mcp.test.count\"], 1) where IsInt(attributes[\"pharo.mcp.test.count\"]) and attributes[\"pharo.mcp.test.count\"] >= 1 and attributes[\"pharo.mcp.test.count\"] < 2"
+          - "set(attributes[\"pharo.mcp.test.count\"], 2) where IsInt(attributes[\"pharo.mcp.test.count\"]) and attributes[\"pharo.mcp.test.count\"] >= 2 and attributes[\"pharo.mcp.test.count\"] < 6"
+          - "set(attributes[\"pharo.mcp.test.count\"], 6) where IsInt(attributes[\"pharo.mcp.test.count\"]) and attributes[\"pharo.mcp.test.count\"] >= 6 and attributes[\"pharo.mcp.test.count\"] < 21"
+          - "set(attributes[\"pharo.mcp.test.count\"], 21) where IsInt(attributes[\"pharo.mcp.test.count\"]) and attributes[\"pharo.mcp.test.count\"] >= 21 and attributes[\"pharo.mcp.test.count\"] < 101"
+          - "set(attributes[\"pharo.mcp.test.count\"], 101) where IsInt(attributes[\"pharo.mcp.test.count\"]) and attributes[\"pharo.mcp.test.count\"] >= 101"
+          - "delete_key(attributes, \"pharo.mcp.tool.refs\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.tool.refs\") where attributes[\"pharo.mcp.tool.refs\"] != nil and not IsList(attributes[\"pharo.mcp.tool.refs\"])"
+          - "delete_key(attributes, \"pharo.mcp.tool.refs\") where IsList(attributes[\"pharo.mcp.tool.refs\"]) and IsMatch(String(attributes[\"pharo.mcp.tool.refs\"]), \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.tool.refs\") where IsList(attributes[\"pharo.mcp.tool.refs\"]) and IsMatch(String(attributes[\"pharo.mcp.tool.refs\"]), \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.tool.refs\") where IsList(attributes[\"pharo.mcp.tool.refs\"]) and IsMatch(String(attributes[\"pharo.mcp.tool.refs\"]), \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.tool.refs\") where IsList(attributes[\"pharo.mcp.tool.refs\"]) and IsMatch(String(attributes[\"pharo.mcp.tool.refs\"]), \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.tool.refs\") where IsList(attributes[\"pharo.mcp.tool.refs\"]) and Len(attributes[\"pharo.mcp.tool.refs\"]) > 16"
+          - "delete_key(attributes, \"pharo.mcp.tool.refs\") where IsList(attributes[\"pharo.mcp.tool.refs\"]) and not IsMatch(String(attributes[\"pharo.mcp.tool.refs\"]), \"^\\\\[(?:\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\"(?:,\\\"(?:(?:[A-Za-z_][A-Za-z0-9_-]{0,63}))\\\")*)?\\\\]$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.kind\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.error.kind\") where attributes[\"pharo.mcp.error.kind\"] != nil and not IsString(attributes[\"pharo.mcp.error.kind\"])"
+          - "set(attributes[\"pharo.mcp.error.kind\"], \"****\") where IsString(attributes[\"pharo.mcp.error.kind\"]) and IsMatch(attributes[\"pharo.mcp.error.kind\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"pharo.mcp.error.kind\"], \"****\") where IsString(attributes[\"pharo.mcp.error.kind\"]) and IsMatch(attributes[\"pharo.mcp.error.kind\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"pharo.mcp.error.kind\"], \"****\") where IsString(attributes[\"pharo.mcp.error.kind\"]) and IsMatch(attributes[\"pharo.mcp.error.kind\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"pharo.mcp.error.kind\"], \"****\") where IsString(attributes[\"pharo.mcp.error.kind\"]) and IsMatch(attributes[\"pharo.mcp.error.kind\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.kind\") where IsString(attributes[\"pharo.mcp.error.kind\"]) and not IsMatch(attributes[\"pharo.mcp.error.kind\"], \"^(?:input_schema|domain|tool_result|json_rpc|exception)$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.code\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.error.code\") where attributes[\"pharo.mcp.error.code\"] != nil and not IsString(attributes[\"pharo.mcp.error.code\"])"
+          - "set(attributes[\"pharo.mcp.error.code\"], \"****\") where IsString(attributes[\"pharo.mcp.error.code\"]) and IsMatch(attributes[\"pharo.mcp.error.code\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"pharo.mcp.error.code\"], \"****\") where IsString(attributes[\"pharo.mcp.error.code\"]) and IsMatch(attributes[\"pharo.mcp.error.code\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"pharo.mcp.error.code\"], \"****\") where IsString(attributes[\"pharo.mcp.error.code\"]) and IsMatch(attributes[\"pharo.mcp.error.code\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"pharo.mcp.error.code\"], \"****\") where IsString(attributes[\"pharo.mcp.error.code\"]) and IsMatch(attributes[\"pharo.mcp.error.code\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.code\") where IsString(attributes[\"pharo.mcp.error.code\"]) and not IsMatch(attributes[\"pharo.mcp.error.code\"], \"^(?:[A-Za-z_][A-Za-z0-9_-]{0,63})$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.violation_count\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.error.schema.violation_count\") where attributes[\"pharo.mcp.error.schema.violation_count\"] != nil and not IsInt(attributes[\"pharo.mcp.error.schema.violation_count\"])"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.violation_count\") where IsInt(attributes[\"pharo.mcp.error.schema.violation_count\"]) and attributes[\"pharo.mcp.error.schema.violation_count\"] < 0"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.keywords\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.error.schema.keywords\") where attributes[\"pharo.mcp.error.schema.keywords\"] != nil and not IsList(attributes[\"pharo.mcp.error.schema.keywords\"])"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.keywords\") where IsList(attributes[\"pharo.mcp.error.schema.keywords\"]) and IsMatch(String(attributes[\"pharo.mcp.error.schema.keywords\"]), \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.keywords\") where IsList(attributes[\"pharo.mcp.error.schema.keywords\"]) and IsMatch(String(attributes[\"pharo.mcp.error.schema.keywords\"]), \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.keywords\") where IsList(attributes[\"pharo.mcp.error.schema.keywords\"]) and IsMatch(String(attributes[\"pharo.mcp.error.schema.keywords\"]), \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.keywords\") where IsList(attributes[\"pharo.mcp.error.schema.keywords\"]) and IsMatch(String(attributes[\"pharo.mcp.error.schema.keywords\"]), \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.keywords\") where IsList(attributes[\"pharo.mcp.error.schema.keywords\"]) and Len(attributes[\"pharo.mcp.error.schema.keywords\"]) > 8"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.keywords\") where IsList(attributes[\"pharo.mcp.error.schema.keywords\"]) and not IsMatch(String(attributes[\"pharo.mcp.error.schema.keywords\"]), \"^\\\\[(?:\\\"(?:(?:type|enum|const|required|properties|additionalProperties|patternProperties|propertyNames|minProperties|maxProperties|dependentRequired|items|prefixItems|contains|minItems|maxItems|uniqueItems|minLength|maxLength|pattern|format|minimum|maximum|exclusiveMinimum|exclusiveMaximum|multipleOf|oneOf|anyOf|allOf|not|notBlank|notEmpty|methodReference|selectionRequired))\\\"(?:,\\\"(?:(?:type|enum|const|required|properties|additionalProperties|patternProperties|propertyNames|minProperties|maxProperties|dependentRequired|items|prefixItems|contains|minItems|maxItems|uniqueItems|minLength|maxLength|pattern|format|minimum|maximum|exclusiveMinimum|exclusiveMaximum|multipleOf|oneOf|anyOf|allOf|not|notBlank|notEmpty|methodReference|selectionRequired))\\\")*)?\\\\]$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.paths\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.error.schema.paths\") where attributes[\"pharo.mcp.error.schema.paths\"] != nil and not IsList(attributes[\"pharo.mcp.error.schema.paths\"])"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.paths\") where IsList(attributes[\"pharo.mcp.error.schema.paths\"]) and IsMatch(String(attributes[\"pharo.mcp.error.schema.paths\"]), \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.paths\") where IsList(attributes[\"pharo.mcp.error.schema.paths\"]) and IsMatch(String(attributes[\"pharo.mcp.error.schema.paths\"]), \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.paths\") where IsList(attributes[\"pharo.mcp.error.schema.paths\"]) and IsMatch(String(attributes[\"pharo.mcp.error.schema.paths\"]), \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.paths\") where IsList(attributes[\"pharo.mcp.error.schema.paths\"]) and IsMatch(String(attributes[\"pharo.mcp.error.schema.paths\"]), \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.paths\") where IsList(attributes[\"pharo.mcp.error.schema.paths\"]) and Len(attributes[\"pharo.mcp.error.schema.paths\"]) > 8"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.paths\") where IsList(attributes[\"pharo.mcp.error.schema.paths\"]) and not IsMatch(String(attributes[\"pharo.mcp.error.schema.paths\"]), \"^\\\\[(?:\\\"(?:(?:(?:/[A-Za-z0-9_-]{1,64}){0,8}))\\\"(?:,\\\"(?:(?:(?:/[A-Za-z0-9_-]{1,64}){0,8}))\\\")*)?\\\\]$\")"
+          - "delete_key(attributes, \"pharo.mcp.exception.type\") where not resource.attributes[\"service.name\"] == \"pharo-mcp\""
+          - "delete_key(attributes, \"pharo.mcp.exception.type\") where attributes[\"pharo.mcp.exception.type\"] != nil and not IsString(attributes[\"pharo.mcp.exception.type\"])"
+          - "set(attributes[\"pharo.mcp.exception.type\"], \"****\") where IsString(attributes[\"pharo.mcp.exception.type\"]) and IsMatch(attributes[\"pharo.mcp.exception.type\"], \"(?is)^.*(/Users/|/home/|[A-Z]:\\\\\\\\Users\\\\\\\\).*$\")"
+          - "set(attributes[\"pharo.mcp.exception.type\"], \"****\") where IsString(attributes[\"pharo.mcp.exception.type\"]) and IsMatch(attributes[\"pharo.mcp.exception.type\"], \"(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}.*$\")"
+          - "set(attributes[\"pharo.mcp.exception.type\"], \"****\") where IsString(attributes[\"pharo.mcp.exception.type\"]) and IsMatch(attributes[\"pharo.mcp.exception.type\"], \"(?s)^.*\\\\b(?:[0-9]{1,3}\\\\.){3}[0-9]{1,3}\\\\b.*$\")"
+          - "set(attributes[\"pharo.mcp.exception.type\"], \"****\") where IsString(attributes[\"pharo.mcp.exception.type\"]) and IsMatch(attributes[\"pharo.mcp.exception.type\"], \"(?is)^.*(?:::|\\\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\\\b).*$\")"
+          - "set(attributes[\"pharo.mcp.exception.type\"], \"_OTHER\") where IsString(attributes[\"pharo.mcp.exception.type\"]) and not IsMatch(attributes[\"pharo.mcp.exception.type\"], \"^(?:Abort|ArgumentsCountMismatch|ArithmeticError|AssertionFailure|BlockCannotReturn|CannotReturn|CollectionIsEmpty|ConfirmationRequest|ContextCannotReturn|DomainError|DuplicatedSlotName|DuplicatedVariableError|Error|Exception|ExtensionConflictError|IllegalResumeAttempt|IncompatibleLayoutConflict|InformativeNotification|InstanceVariableNotFound|InvalidSlotName|KeyNotFound|MessageNotUnderstood|ModificationForbidden|NewUndeclaredWarning|NonBooleanReceiver|NotFound|NotYetImplemented|Notification|OutOfMemory|PackageConflictError|PrimitiveFailed|ProcessAlreadyTerminating|SelectorException|ShouldBeImplemented|ShouldNotImplement|SimulationExceptionWrapper|SizeMismatch|SlotNotFound|SubclassResponsibility|SubscriptOutOfBounds|SystemNotification|TimedOut|UndeclaredVariableError|UndeclaredVariableRead|UndeclaredVariableWrite|UnhandledError|UnhandledException|UnwindError|ValueNotFound|Warning|ZeroDivide|MCPCommandError|MCPHeaderMismatch|MCPResourceNotFound|MCPSyntaxError|MCPUnsupportedProtocolVersion|AbortError|AggregateError|EvalError|RangeError|ReferenceError|SyntaxError|SystemError|TimeoutError|TypeError|URIError)$\")"
+          - "set(attributes[\"span.duration_ms\"], Double(attributes[\"span.duration_ms\"])) where IsInt(attributes[\"span.duration_ms\"])"
+          - "delete_key(attributes, \"span.duration_ms\") where attributes[\"span.duration_ms\"] != nil and not IsDouble(attributes[\"span.duration_ms\"])"
+          - "delete_key(attributes, \"span.duration_ms\") where IsDouble(attributes[\"span.duration_ms\"]) and attributes[\"span.duration_ms\"] < 0.0"
+          - "set(attributes[\"gen_ai.tool.name\"], \"_OTHER\") where resource.attributes[\"service.name\"] == \"pharo-mcp\" and attributes[\"pharo.mcp.tool.origin\"] == \"other\" and attributes[\"gen_ai.tool.name\"] != nil"
+          - "delete_key(attributes, \"plexus.argument.names\") where resource.attributes[\"service.name\"] == \"pharo-mcp\" and attributes[\"pharo.mcp.tool.origin\"] == \"other\""
+          - "delete_key(attributes, \"plexus.argument.unknown_names\") where resource.attributes[\"service.name\"] == \"pharo-mcp\" and attributes[\"pharo.mcp.tool.origin\"] == \"other\""
+          - "delete_key(attributes, \"pharo.mcp.argument.names\") where resource.attributes[\"service.name\"] == \"pharo-mcp\" and attributes[\"pharo.mcp.tool.origin\"] == \"other\""
+          - "delete_key(attributes, \"pharo.mcp.argument.unknown_names\") where resource.attributes[\"service.name\"] == \"pharo-mcp\" and attributes[\"pharo.mcp.tool.origin\"] == \"other\""
+          - "delete_key(attributes, \"pharo.mcp.argument.coerced\") where resource.attributes[\"service.name\"] == \"pharo-mcp\" and attributes[\"pharo.mcp.tool.origin\"] == \"other\""
+          - "delete_key(attributes, \"pharo.mcp.argument.options\") where resource.attributes[\"service.name\"] == \"pharo-mcp\" and attributes[\"pharo.mcp.tool.origin\"] == \"other\""
+          - "delete_key(attributes, \"pharo.mcp.tool.refs\") where resource.attributes[\"service.name\"] == \"pharo-mcp\" and attributes[\"pharo.mcp.tool.origin\"] == \"other\""
+          - "delete_key(attributes, \"pharo.mcp.error.schema.paths\") where resource.attributes[\"service.name\"] == \"pharo-mcp\" and attributes[\"pharo.mcp.tool.origin\"] == \"other\""
+          - "delete_key(attributes, \"plexus.argument.names\") where resource.attributes[\"service.name\"] == \"plexus\" and (attributes[\"plexus.call.forwarded\"] == true or kind == SPAN_KIND_CLIENT or (attributes[\"gen_ai.tool.name\"] != nil and not IsMatch(attributes[\"gen_ai.tool.name\"], \"^(?:image_templates|image_list|image_create|image_start|image_stop|image_delete)$\")))"
+          - "delete_key(attributes, \"plexus.argument.unknown_names\") where resource.attributes[\"service.name\"] == \"plexus\" and (attributes[\"plexus.call.forwarded\"] == true or kind == SPAN_KIND_CLIENT or (attributes[\"gen_ai.tool.name\"] != nil and not IsMatch(attributes[\"gen_ai.tool.name\"], \"^(?:image_templates|image_list|image_create|image_start|image_stop|image_delete)$\")))"
+          - "delete_key(attributes, \"pharo.mcp.argument.names\") where resource.attributes[\"service.name\"] == \"plexus\" and (attributes[\"plexus.call.forwarded\"] == true or kind == SPAN_KIND_CLIENT or (attributes[\"gen_ai.tool.name\"] != nil and not IsMatch(attributes[\"gen_ai.tool.name\"], \"^(?:image_templates|image_list|image_create|image_start|image_stop|image_delete)$\")))"
+          - "delete_key(attributes, \"pharo.mcp.argument.unknown_names\") where resource.attributes[\"service.name\"] == \"plexus\" and (attributes[\"plexus.call.forwarded\"] == true or kind == SPAN_KIND_CLIENT or (attributes[\"gen_ai.tool.name\"] != nil and not IsMatch(attributes[\"gen_ai.tool.name\"], \"^(?:image_templates|image_list|image_create|image_start|image_stop|image_delete)$\")))"
+          - "delete_key(attributes, \"pharo.mcp.argument.coerced\") where resource.attributes[\"service.name\"] == \"plexus\" and (attributes[\"plexus.call.forwarded\"] == true or kind == SPAN_KIND_CLIENT or (attributes[\"gen_ai.tool.name\"] != nil and not IsMatch(attributes[\"gen_ai.tool.name\"], \"^(?:image_templates|image_list|image_create|image_start|image_stop|image_delete)$\")))"
+          - "delete_key(attributes, \"pharo.mcp.argument.options\") where resource.attributes[\"service.name\"] == \"plexus\" and (attributes[\"plexus.call.forwarded\"] == true or kind == SPAN_KIND_CLIENT or (attributes[\"gen_ai.tool.name\"] != nil and not IsMatch(attributes[\"gen_ai.tool.name\"], \"^(?:image_templates|image_list|image_create|image_start|image_stop|image_delete)$\")))"
+          - "delete_key(attributes, \"pharo.mcp.tool.refs\") where resource.attributes[\"service.name\"] == \"plexus\" and (attributes[\"plexus.call.forwarded\"] == true or kind == SPAN_KIND_CLIENT or (attributes[\"gen_ai.tool.name\"] != nil and not IsMatch(attributes[\"gen_ai.tool.name\"], \"^(?:image_templates|image_list|image_create|image_start|image_stop|image_delete)$\")))"
+          - "delete_key(attributes, \"pharo.mcp.error.schema.paths\") where resource.attributes[\"service.name\"] == \"plexus\" and (attributes[\"plexus.call.forwarded\"] == true or kind == SPAN_KIND_CLIENT or (attributes[\"gen_ai.tool.name\"] != nil and not IsMatch(attributes[\"gen_ai.tool.name\"], \"^(?:image_templates|image_list|image_create|image_start|image_stop|image_delete)$\")))"
+          - "delete_key(attributes, \"gen_ai.tool.name\") where resource.attributes[\"service.name\"] == \"plexus\" and (attributes[\"plexus.call.forwarded\"] == true or kind == SPAN_KIND_CLIENT or (attributes[\"gen_ai.tool.name\"] != nil and not IsMatch(attributes[\"gen_ai.tool.name\"], \"^(?:image_templates|image_list|image_create|image_start|image_stop|image_delete)$\")))"
+          - "set(name, Concat([\"tools/call\", attributes[\"gen_ai.tool.name\"]], \" \")) where IsMatch(name, \"^tools/call(?: [\\\\s\\\\S]*)?$\") and IsString(attributes[\"gen_ai.tool.name\"])"
+          - "set(name, \"tools/call\") where IsMatch(name, \"^tools/call \") and attributes[\"gen_ai.tool.name\"] == nil"
+          - "set(attributes[\"span.duration_ms\"], Double(Microseconds(end_time - start_time)) / 1000.0) where end_time_unix_nano > start_time_unix_nano"
+          - "set(attributes[\"span.duration_ms\"], 0.0) where attributes[\"span.duration_ms\"] == nil"
+          - "set(start_time, TruncateTime(start_time, Duration(\"168h\")))"
+          - "set(end_time, start_time)"
+          - "set(trace_id.string, Substring(SHA256(Concat([\"${env:ID_HASH_KEY}\", \"trace\", trace_id.string], \":\")), 0, 32))"
+          - "set(span_id.string, Substring(SHA256(Concat([\"${env:ID_HASH_KEY}\", \"span\", span_id.string], \":\")), 0, 16))"
+          - "set(parent_span_id.string, Substring(SHA256(Concat([\"${env:ID_HASH_KEY}\", \"span\", parent_span_id.string], \":\")), 0, 16)) where not IsRootSpan()"
           - "set(trace_state, \"\")"
-          - "set(name, \"_OTHER\") where not IsMatch(name, \"^[A-Za-z0-9_.-]{1,64}(/[A-Za-z0-9_.-]{1,64})?( [A-Za-z0-9_-]{1,64})?$\")"
+          - "set(status.message, \"\")"
+          - "set(flags, 0)"
+          - "set(dropped_attributes_count, 0)"
+          - "set(dropped_events_count, 0)"
+          - "set(dropped_links_count, 0)"
 
   redaction:
     allow_all_keys: true
@@ -60,23 +371,26 @@ processors:
       - "(?is)^.*(/Users/|/home/|[A-Z]:\\\\Users\\\\).*$"
       - "(?s)^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}.*$"
       - "(?s)^.*\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b.*$"
+      - "(?is)^.*(?:::|\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\b).*$"
     summary: silent
 
   batch:
     timeout: 5s
 
 exporters:
+  # One file a day, traces-YYYY-MM-DD.jsonl, by the day each request arrived;
+  # a day over 10 MB goes on in a further file. None is ever deleted here:
+  # the import deletes each once Elasticsearch holds its spans, and guard.sh
+  # stops new spans should it fall behind.
   file/archive:
-    path: /archive/traces.jsonl
+    path: /archive/traces-*.jsonl
     format: json
     flush_interval: 1s
+    group_by:
+      enabled: true
+      resource_attribute: fileexporter.path_segment
     rotation:
-      # ARCHIVE_MAX_FILES rotated files at most, which start.sh sets from the
-      # disk's free space: should the import stop, the oldest files go rather
-      # than the disk filling.
       max_megabytes: 10
-      max_days: 400
-      max_backups: ${env:ARCHIVE_MAX_FILES}
 
 service:
   extensions: [bearertokenauth, health_check]
@@ -88,5 +402,5 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, probabilistic_sampler, filter/events, transform/allowlist, redaction, batch]
+      processors: [memory_limiter, filter/spans, probabilistic_sampler, filter/events, transform/rules, redaction, batch]
       exporters: [file/archive]

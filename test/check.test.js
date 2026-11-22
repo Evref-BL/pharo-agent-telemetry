@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { checkDeployment, checkRequest } from "../src/check.js";
+import { filter } from "../src/telemetry-transform.mjs";
+import { testKey } from "./support.js";
 
-test("the check's span is marked as one, and names no tool", () => {
-  const [resourceSpans] = JSON.parse(checkRequest(0)).resourceSpans;
-  assert.deepEqual(resourceSpans.resource.attributes.find((each) => each.key === "deployment.environment.name").value, { stringValue: "check" });
-  assert.equal(resourceSpans.scopeSpans[0].spans[0].name, "check");
+test("the check's span is of no service of ours, so the rules keep nothing of it", () => {
+  assert.equal(filter(testKey)("traces", JSON.parse(checkRequest(0))), null);
 });
 
 test("says which expectation a collector broke, and what it answered instead", async () => {

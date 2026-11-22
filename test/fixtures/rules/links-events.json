@@ -1,0 +1,208 @@
+{
+  "about": "A span with links is dropped whole; events, trace state, status message, flags, dropped counts, schema URLs and scope attributes are not kept.",
+  "request": {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "plexus"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "0.19.0"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "26.0.0"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "3.1.1"
+              }
+            },
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            }
+          ],
+          "droppedAttributesCount": 4
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "@evref-bl/plexus",
+              "version": "0.19.0",
+              "attributes": [
+                {
+                  "key": "user",
+                  "value": {
+                    "stringValue": "ada"
+                  }
+                }
+              ]
+            },
+            "spans": [
+              {
+                "traceId": "0600abababababababababababababab",
+                "spanId": "cccccccccccc0022",
+                "name": "tools/call image_list",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_list"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  }
+                ],
+                "links": [
+                  {
+                    "traceId": "5bf92f3577b34da6a3ce929d0e0e4736",
+                    "spanId": "10f067aa0ba902b7"
+                  }
+                ]
+              },
+              {
+                "traceId": "0600abababababababababababababab",
+                "spanId": "cccccccccccc0023",
+                "name": "tools/call image_start",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "image_start"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "error.type",
+                    "value": {
+                      "stringValue": "no-such-image"
+                    }
+                  }
+                ],
+                "traceState": "vendor=ada-laptop",
+                "flags": 769,
+                "droppedAttributesCount": 2,
+                "droppedEventsCount": 1,
+                "droppedLinksCount": 3,
+                "events": [
+                  {
+                    "name": "exception",
+                    "timeUnixNano": "1763630000000000100",
+                    "attributes": [
+                      {
+                        "key": "exception.message",
+                        "value": {
+                          "stringValue": "Secret not found in /Users/ada/project"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "status": {
+                  "code": 2,
+                  "message": "Secret not found"
+                }
+              }
+            ],
+            "schemaUrl": "https://example.org/ada"
+          }
+        ],
+        "schemaUrl": "https://opentelemetry.io/schemas/1.26.0"
+      }
+    ]
+  },
+  "expected": [
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/call image_start",
+      "kind": 2,
+      "trace": "0600abababababababababababababab",
+      "span": "cccccccccccc0023",
+      "start": "1763337600000000000",
+      "status": 2,
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "image_start",
+        "error.type": "no-such-image",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    }
+  ]
+}

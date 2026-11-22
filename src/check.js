@@ -1,7 +1,8 @@
 // What a deployed collector must do, asked from outside as a participant's
 // tools reach it: refuse a request without the token, serve nothing but
-// /v1/traces, and take a span with it. The span it sends says
-// deployment.environment.name=check, so a report leaves it out.
+// /v1/traces, and take a span with it. The span is of no service of ours, so
+// the collector takes it and keeps nothing of it: the archive never holds a
+// check.
 
 /** A span of no tool, as the check sends it. */
 export function checkRequest(now = Date.now()) {

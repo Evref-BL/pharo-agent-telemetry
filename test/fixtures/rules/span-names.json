@@ -1,0 +1,443 @@
+{
+  "about": "Only the operations PLexus and MCP record are kept, and a tool call's name is made again from the tool's name the rules keep.",
+  "request": {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "plexus"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "0.19.0"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "26.0.0"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "darwin"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "nodejs"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "3.1.1"
+              }
+            },
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "@evref-bl/plexus",
+              "version": "0.19.0"
+            },
+            "spans": [
+              {
+                "traceId": "0200abababababababababababababab",
+                "spanId": "cccccccccccc0009",
+                "name": "tools/list",
+                "kind": 3,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/list"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0200abababababababababababababab",
+                "spanId": "cccccccccccc000a",
+                "name": "plexus.image.create",
+                "kind": 1,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "plexus.image.from_base",
+                    "value": {
+                      "boolValue": true
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0200abababababababababababababab",
+                "spanId": "cccccccccccc000b",
+                "name": "plexus.image.rename",
+                "kind": 1,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": []
+              },
+              {
+                "traceId": "0200abababababababababababababab",
+                "spanId": "cccccccccccc000c",
+                "name": "initialize",
+                "kind": 3,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "pharo-mcp"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "4.1.3"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "opentelemetry"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "1.2.1"
+              }
+            },
+            {
+              "key": "process.runtime.name",
+              "value": {
+                "stringValue": "pharo"
+              }
+            },
+            {
+              "key": "process.runtime.version",
+              "value": {
+                "stringValue": "14.0.0+build.791"
+              }
+            },
+            {
+              "key": "process.runtime.description",
+              "value": {
+                "stringValue": "CoInterpreter\rStackToRegisterMappingCogit\rv12.0.6-beta+0.bebdbaca8 - Commit: bebdbaca8 - Date: 2026-10-23 12:06:15 +0200"
+              }
+            },
+            {
+              "key": "os.type",
+              "value": {
+                "stringValue": "linux"
+              }
+            },
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "stringValue": "field"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "mcp-pharo"
+            },
+            "spans": [
+              {
+                "traceId": "0200abababababababababababababab",
+                "spanId": "cccccccccccc000d",
+                "name": "tools/list",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/list"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0200abababababababababababababab",
+                "spanId": "cccccccccccc000e",
+                "name": "open /Users/ada/project/secret.st",
+                "kind": 1,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": []
+              },
+              {
+                "traceId": "0200abababababababababababababab",
+                "spanId": "cccccccccccc000f",
+                "name": "tools/call class_get",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "class_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0200abababababababababababababab",
+                "spanId": "cccccccccccc0010",
+                "name": "tools/call wrong name",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.tool.name",
+                    "value": {
+                      "stringValue": "method_get"
+                    }
+                  },
+                  {
+                    "key": "gen_ai.operation.name",
+                    "value": {
+                      "stringValue": "execute_tool"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  }
+                ]
+              },
+              {
+                "traceId": "0200abababababababababababababab",
+                "spanId": "cccccccccccc0011",
+                "name": "tools/call something",
+                "kind": 2,
+                "startTimeUnixNano": "1763630000000000000",
+                "endTimeUnixNano": "1763630000250500000",
+                "attributes": [
+                  {
+                    "key": "mcp.method.name",
+                    "value": {
+                      "stringValue": "tools/call"
+                    }
+                  },
+                  {
+                    "key": "pharo.mcp.tool.origin",
+                    "value": {
+                      "stringValue": "mcp"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "expected": [
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "telemetry.sdk.version": "1.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0.0",
+        "process.runtime.description": "12.0.6-beta",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call class_get",
+      "kind": 2,
+      "trace": "0200abababababababababababababab",
+      "span": "cccccccccccc000f",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "class_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "tools/list",
+      "kind": 3,
+      "trace": "0200abababababababababababababab",
+      "span": "cccccccccccc0009",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/list",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "plexus",
+        "service.version": "0.19.0",
+        "process.runtime.name": "nodejs",
+        "process.runtime.version": "26",
+        "os.type": "darwin",
+        "telemetry.sdk.version": "3.1.1",
+        "deployment.environment.name": "field"
+      },
+      "scope": "@evref-bl/plexus",
+      "scopeVersion": "0.19.0",
+      "name": "plexus.image.create",
+      "kind": 1,
+      "trace": "0200abababababababababababababab",
+      "span": "cccccccccccc000a",
+      "start": "1763337600000000000",
+      "attributes": {
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "telemetry.sdk.version": "1.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0.0",
+        "process.runtime.description": "12.0.6-beta",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call",
+      "kind": 2,
+      "trace": "0200abababababababababababababab",
+      "span": "cccccccccccc0011",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "pharo.mcp.tool.origin": "mcp",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    },
+    {
+      "resource": {
+        "service.name": "pharo-mcp",
+        "service.version": "4.1.3",
+        "telemetry.sdk.version": "1.2.1",
+        "process.runtime.name": "pharo",
+        "process.runtime.version": "14.0.0",
+        "process.runtime.description": "12.0.6-beta",
+        "os.type": "linux",
+        "deployment.environment.name": "field"
+      },
+      "scope": "mcp-pharo",
+      "name": "tools/call method_get",
+      "kind": 2,
+      "trace": "0200abababababababababababababab",
+      "span": "cccccccccccc0010",
+      "start": "1763337600000000000",
+      "attributes": {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "method_get",
+        "pharo.mcp.tool.origin": "mcp",
+        "span.duration_ms": {
+          "double": 250.5
+        }
+      }
+    }
+  ]
+}

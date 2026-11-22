@@ -1,66 +1,91 @@
 // Reads what the collector archived and says whether it holds only what the
-// allowlist allows: the check to run on a deployed collector's archive, as
-// the DPO may ask, and on any archive a change to the tools produced.
-import { longestValue, spanNamePattern } from "./generate.js";
+// rules keep: the check to run on a deployed collector's archive, as the DPO
+// may ask, and on any archive a change to the tools produced. It applies the
+// rules again, ids aside, and names whatever they would drop or change.
+import { compile, regExp, transformTraces } from "./rules.js";
 
 /** A blocked-value pattern of the allowlist, in Go's syntax, as a JavaScript RegExp. */
-export function blockedPattern(pattern) {
-  const flags = /^\(\?([a-z]+)\)/.exec(pattern);
-  return new RegExp(flags ? pattern.slice(flags[0].length) : pattern, flags ? flags[1] : "");
-}
+export const blockedPattern = regExp;
 
-const textOf = (value) =>
-  value.stringValue ??
-  (value.arrayValue ? (value.arrayValue.values ?? []).map(textOf).join(",") : String(value.intValue ?? value.doubleValue ?? value.boolValue ?? ""));
+/** The resource attribute the collector adds to name each day's file: the archive's own, never imported. */
+export const archiveAttribute = "fileexporter.path_segment";
+
+const valueText = (value) => JSON.stringify(value && "intValue" in value ? { intValue: String(value.intValue) } : value);
+const byKey = (attributes) => new Map((attributes ?? []).map(({ key, value }) => [key, valueText(value)]));
 
 /**
- * Every span of the archive's lines, and what in them the collector should
- * not have kept.
+ * Every span of the archive's lines, and what in them the rules would not
+ * have kept as it is.
  *
  * @param {string[]} lines OTLP JSON export requests, one per line
- * @param {{ resource: Record<string, string>, span: Record<string, string>, blockedValues: Record<string, string> }} allowlist
+ * @param {any} allowlist collector/allowlist.json
  */
 export function audit(lines, allowlist) {
-  const blocked = Object.entries(allowlist.blockedValues).map(([what, pattern]) => [what, blockedPattern(pattern)]);
-  const names = new RegExp(spanNamePattern);
+  const rules = compile(allowlist);
   /** @type {string[]} */
   const problems = [];
   /** @type {Map<string, number>} */
   const spans = new Map();
   /** @type {Set<string>} */
   const keys = new Set();
-  const check = (where, attributes, allowed) => {
-    for (const { key, value } of attributes ?? []) {
-      keys.add(key);
-      if (!(key in allowed)) problems.push(`${where}: ${key} is not in the allowlist`);
-      const text = textOf(value);
-      if (value.stringValue !== undefined && text.length > longestValue) problems.push(`${where}: ${key} is longer than ${longestValue}`);
-      for (const [what, pattern] of blocked) if (pattern.test(text)) problems.push(`${where}: ${key} holds ${what}`);
-    }
-  };
   lines.forEach((line, index) => {
     if (line.trim() === "") return;
+    const at = `line ${index + 1}`;
     let request;
     try {
       request = JSON.parse(line);
     } catch {
-      problems.push(`line ${index + 1} is not JSON`);
+      problems.push(`${at} is not JSON`);
       return;
     }
     for (const resourceSpans of request.resourceSpans ?? []) {
       const attributes = resourceSpans.resource?.attributes ?? [];
-      const service = attributes.find((each) => each.key === "service.name")?.value?.stringValue ?? "?";
-      check(`line ${index + 1} resource`, attributes, allowlist.resource);
+      for (const { key, value } of attributes) {
+        if (key === archiveAttribute) {
+          if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value?.stringValue ?? "")) problems.push(`${at} resource: ${archiveAttribute} is not a day`);
+        } else {
+          keys.add(key);
+        }
+      }
+      const resource = attributes.filter(({ key }) => key !== archiveAttribute);
+      const service = resource.find(({ key }) => key === "service.name")?.value?.stringValue ?? "?";
+      if (resourceSpans.schemaUrl) problems.push(`${at} resource: a schema URL is kept`);
+      /** @type {string[]} */
+      const reported = [];
+      const kept = transformTraces(rules, { resourceSpans: [{ ...resourceSpans, resource: { attributes: resource } }] }, { report: (problem) => reported.push(`${at} ${problem}`) });
+      problems.push(...reported);
+      const mentioned = (where, key) => reported.some((problem) => problem.startsWith(`${at} ${where}`) && problem.includes(`: ${key} `));
+      const differences = (where, before, after) => {
+        const was = byKey(before);
+        const is = byKey(after);
+        for (const [key, value] of was) {
+          if (mentioned(where, key)) continue;
+          if (!is.has(key)) problems.push(`${at} ${where}: ${key} would be dropped`);
+          else if (is.get(key) !== value) problems.push(`${at} ${where}: ${key} holds a value the rules would change`);
+        }
+        for (const key of is.keys()) if (!was.has(key)) problems.push(`${at} ${where}: ${key} is missing`);
+      };
+      const out = kept?.resourceSpans[0];
+      if (out) differences("resource", resource, out.resource.attributes);
+      const outSpans = new Map((out?.scopeSpans ?? []).flatMap(({ scope, spans: each }) => each.map((span) => [span.spanId, { scope, span }])));
       for (const scopeSpans of resourceSpans.scopeSpans ?? []) {
-        if ((scopeSpans.scope?.attributes ?? []).length > 0) problems.push(`line ${index + 1}: a scope keeps attributes`);
+        if (scopeSpans.schemaUrl) problems.push(`${at} scope: a schema URL is kept`);
         for (const span of scopeSpans.spans ?? []) {
-          const where = `line ${index + 1} span ${span.name}`;
+          const where = `span ${span.name}`;
           spans.set(`${service} ${span.name}`, (spans.get(`${service} ${span.name}`) ?? 0) + 1);
-          if (span.name !== "_OTHER" && !names.test(span.name)) problems.push(`${where}: the name is not an operation`);
-          if ((span.events ?? []).length > 0) problems.push(`${where}: events are kept`);
-          if (span.status?.message) problems.push(`${where}: a status message is kept`);
-          if (span.traceState) problems.push(`${where}: a trace state is kept`);
-          check(where, span.attributes, allowlist.span);
+          for (const { key } of span.attributes ?? []) keys.add(key);
+          if ((span.events ?? []).length > 0) problems.push(`${at} ${where}: events are kept`);
+          if (span.traceState) problems.push(`${at} ${where}: a trace state is kept`);
+          if (span.status?.message) problems.push(`${at} ${where}: a status message is kept`);
+          if (span.flags) problems.push(`${at} ${where}: flags are kept`);
+          const after = outSpans.get(String(span.spanId).toLowerCase());
+          if (after === undefined) continue;
+          if (after.scope.version !== scopeSpans.scope?.version) problems.push(`${at} ${where}: the scope's version is not a version`);
+          if (after.span.name !== span.name) problems.push(`${at} ${where}: the name is not what the rules make of it`);
+          if (after.span.startTimeUnixNano !== String(span.startTimeUnixNano) || after.span.endTimeUnixNano !== String(span.endTimeUnixNano)) {
+            problems.push(`${at} ${where}: its times are not its week's`);
+          }
+          differences(where, span.attributes, after.span.attributes);
         }
       }
     }

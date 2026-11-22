@@ -1,14 +1,18 @@
 #!/usr/bin/env node
-// Writes the collector's configuration and the participants page from
-// collector/allowlist.json, so the filter and the page that describes it
-// cannot disagree. `--check` writes nothing and fails when either is stale.
+// Writes, from collector/allowlist.json, the filter `join` installs on a
+// participant's machine, the collector's configuration and the participants
+// page, so the two filters and the page that describes them cannot disagree.
+// `--check` writes nothing and fails when any is stale.
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import { collectorConfig, participantsPage, readAllowlist } from "../src/generate.js";
+import { collectorConfig, participantsPage, readAllowlist, transformModule } from "../src/generate.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const allowlist = readAllowlist(root);
+const { version } = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+const engine = fs.readFileSync(new URL("../src/rules.js", import.meta.url), "utf8");
 const outputs = {
+  "src/telemetry-transform.mjs": transformModule(allowlist, version, engine),
   "collector/otelcol.yaml": collectorConfig(allowlist),
   "docs/participants.md": participantsPage(allowlist),
 };

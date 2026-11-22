@@ -11,7 +11,7 @@ import { keptCatalog, runAgent, stopAgent, whoListens } from "../src/agent.js";
 import { catalogPublicKey, catalogUrl, missingForJoin, publicEndpoint, publicToken } from "../src/collector.js";
 import { agentPorts, agentStatus, freePort, installAgent, packaged, readAgentConfig, readKey, removeAgent } from "../src/install.js";
 import { recoverPreview, startPreview } from "../src/preview.js";
-import { definedAgentDirectories, dryRun, installService, realServices, removeService, runCommand, serviceState, stableNode, startService } from "../src/service.js";
+import { RefusedCommand, definedAgentDirectories, dryRun, installService, realServices, removeService, runCommand, serviceState, stableNode, startService } from "../src/service.js";
 import {
   agentSettings, agentTool, backUp, backupSuffix, clearReachability, configDirectory, everyAgentDirectory, everySettingsFile, joinBackupSuffix, ownSettingNames,
   readSettings, removeSettings, restoreBackup, settingsBlock, settingsFiles, settingsTools, unwritable, writeSettings,
@@ -49,14 +49,41 @@ const { values, positionals } = parseArgs({
 const [command] = positionals;
 const files = settingsFiles();
 const agentDirectory = configDirectory(agentTool);
+function fail(message) {
+  console.error(message);
+  process.exit(1);
+}
+
 // A test sets PHARO_AGENT_TELEMETRY_DRY_RUN to a file: the service commands
 // are written there instead of run, and nothing is installed; or
 // PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS to a directory of fake commands,
-// run instead of the real ones. Either way no agent starts.
-// Otherwise this command, and nothing else, opts in to the real service manager.
+// run instead of the real ones. Either way no agent starts, and either only
+// under node --test. Otherwise this command, and nothing else, opts in to
+// the real service manager, which runCommand may still refuse: why is kept
+// for what the command says.
+if (process.env.PHARO_AGENT_TELEMETRY_DRY_RUN && !process.env.NODE_TEST_CONTEXT) fail("PHARO_AGENT_TELEMETRY_DRY_RUN is for this package's tests only.");
+/** @type {string[]} */
+const refusals = [];
 const run = process.env.PHARO_AGENT_TELEMETRY_DRY_RUN
   ? dryRun(process.env.PHARO_AGENT_TELEMETRY_DRY_RUN)
-  : (command, args) => runCommand(command, args, { ...process.env, ...realServices });
+  : (command, args) => {
+    try {
+      return runCommand(command, args, { ...process.env, ...realServices });
+    } catch (error) {
+      if (error instanceof RefusedCommand) refusals.push(error.message);
+      throw error;
+    }
+  };
+
+/** A service's state, or why the service manager was not asked. */
+function stateOf(each) {
+  try {
+    return serviceState(each);
+  } catch (error) {
+    if (error instanceof RefusedCommand) return `not asked (${error.message})`;
+    throw error;
+  }
+}
 const faked = Boolean(process.env.PHARO_AGENT_TELEMETRY_DRY_RUN || process.env.PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS);
 const serviceOf = (directory) => ({ agent: path.join(directory, "agent.mjs"), run });
 const service = serviceOf(agentDirectory);
@@ -84,11 +111,6 @@ async function previewRuns(current, key) {
 }
 const hostRestart = "Restart your agent host (Claude Code, Codex, OpenCode...) now: PLexus reads these settings when it starts, and images made before that restart send nothing until they are made again.";
 const mcpAlone = "Using MCP in an image of your own, without PLexus? Load MCP's Telemetry group from the repository MCP came from, evaluate `MCP useOpenTelemetryObservabilityByDefault` and save the image: the participants page says how.";
-
-function fail(message) {
-  console.error(message);
-  process.exit(1);
-}
 
 /** Whether the agent answers on its port, within `wait` milliseconds. */
 async function answers(port, key, wait) {
@@ -157,7 +179,10 @@ async function join() {
         removeAgent(agentDirectory);
         for (const backup of backups) fs.rmSync(backup, { force: true });
       }
-      fail(`Could not start the agent as a service: ${error instanceof Error ? error.message : error}. This account's service manager refused it, as it may in a session without a desktop (over SSH on macOS, or on Linux without a systemd user session). ${earlier === undefined ? "Nothing was installed, and nothing is sent." : "Nothing is sent until it starts."} To join without a service, run join --no-service, then keep \`npx @evref-bl/pharo-agent-telemetry agent\` running in a terminal while you work.`);
+      const why = error instanceof RefusedCommand
+        ? `${error.message}.`
+        : `${error instanceof Error ? error.message : error}. This account's service manager refused it, as it may in a session without a desktop (over SSH on macOS, or on Linux without a systemd user session).`;
+      fail(`Could not start the agent as a service: ${why} ${earlier === undefined ? "Nothing was installed, and nothing is sent." : "Nothing is sent until it starts."} To join without a service, run join --no-service, then keep \`npx @evref-bl/pharo-agent-telemetry agent\` running in a terminal while you work.`);
     }
   } else {
     removeService(service);
@@ -224,6 +249,7 @@ async function leave() {
     stopped ||= hadService || removed.length > 0;
   }
   if (stopped) console.log("Stopped and removed the agent, its files and its key.");
+  if (refusals.length > 0) console.log(`The service manager was not asked to stop the agent's service (${refusals[0]}): its definition is removed, so it does not start again at the next login.`);
   console.log("Left: sending stops at once. PLexus and the images now find the agent's port closed, and nothing else leaves this machine. Images keep running.");
 }
 
@@ -280,7 +306,7 @@ async function catalogLine(directory, state, config) {
 /** What status says of an agent directory: its version, its port, who answers there, and how it has sent. */
 async function agentLines(directory, version) {
   const agent = agentStatus(directory);
-  const state = serviceState(serviceOf(directory));
+  const state = stateOf(serviceOf(directory));
   const lines = [];
   const service = agent.config?.service === false ? "none: join --no-service, so it sends only while the agent command runs" : state;
   lines.push(state === "without its node" ? "Agent service: its Node is gone (upgraded or removed?), so nothing is sent. Run join again." : `Agent service: ${service}.`);
@@ -318,7 +344,7 @@ async function status() {
   const directories = allAgentDirectories().filter((directory) => directory === agentDirectory || agentStatus(directory).present);
   for (const directory of directories) {
     if (directory === agentDirectory && !agentStatus(directory).present) {
-      const state = serviceState(service);
+      const state = stateOf(service);
       console.log(state === "without its node" ? "Agent service: its Node is gone (upgraded or removed?), so nothing is sent. Run join again." : `Agent service: ${state}.`);
       if (joined && directories.length === 1) console.log("Agent: missing, so nothing is sent. Run join again.");
       continue;
@@ -338,6 +364,16 @@ async function status() {
   }
 }
 
+/** Starts this home's service again; false when it is gone, or the service manager was not asked. */
+function restart() {
+  try {
+    return startService(service);
+  } catch (error) {
+    if (error instanceof RefusedCommand) return false;
+    throw error;
+  }
+}
+
 async function preview() {
   const stop = new AbortController();
   for (const name of ["SIGINT", "SIGTERM", "SIGHUP"]) process.once(name, () => stop.abort());
@@ -348,7 +384,7 @@ async function preview() {
   const catalog = config ? keptCatalog(agentDirectory, config, transform) : undefined;
   const filter = (other, options) => transform.filter(other, { ...options, ...(catalog ? { catalog } : {}) });
   // Joined, the preview takes the agent's place on its port, so that what the tools already running send shows too, and nothing is sent meanwhile.
-  const joined = config !== undefined && key !== undefined && (config.service === false || serviceState(service) !== "not installed");
+  const joined = config !== undefined && key !== undefined && (config.service === false || stateOf(service) !== "not installed");
   if (joined) {
     const listener = await whoListens(config.port, key);
     if (listener === "preview") fail(`A preview already runs on 127.0.0.1:${config.port}, in the agent's place.`);
@@ -359,7 +395,7 @@ async function preview() {
   try {
     started = await startPreview({ files: joined ? [] : files, filter, key, print: (line) => console.log(line), signal: stop.signal, port: joined ? config.port : undefined });
   } catch (error) {
-    if (joined) startService(service);
+    if (joined) restart();
     throw error;
   }
   clearReachability([started.port]);
@@ -372,7 +408,7 @@ async function preview() {
   if (joined) {
     // Not when leave ran meanwhile: there is no service of this home's to start any more.
     if (config.service === false) console.log("The agent is not started again: no service runs it. Run the agent command to send.");
-    else console.log(startService(service) ? "The agent runs again." : "The agent is not started again: its service is gone.");
+    else console.log(restart() ? "The agent runs again." : refusals.length > 0 ? `The agent is not started again: ${refusals.at(-1)}.` : "The agent is not started again: its service is gone.");
     fs.rmSync(previewMark(agentDirectory), { force: true });
   }
 }
@@ -382,18 +418,16 @@ async function agent() {
   await runAgent(agentDirectory);
 }
 
+const commands = { join, leave, status, preview, agent };
 if (values.help || command === undefined) {
   console.log(usage);
-} else if (command === "join") {
-  await join();
-} else if (command === "leave") {
-  await leave();
-} else if (command === "status") {
-  await status();
-} else if (command === "preview") {
-  await preview();
-} else if (command === "agent") {
-  await agent();
+} else if (Object.hasOwn(commands, command)) {
+  try {
+    await commands[command]();
+  } catch (error) {
+    // What went wrong in one line, never a stack.
+    fail(`${command} failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
 } else {
   fail(usage);
 }

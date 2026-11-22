@@ -124,19 +124,27 @@ function realServicesRefused(env) {
   return undefined;
 }
 
+/** The file a directory of fake service commands holds, which a test writes there: no other directory's commands are run instead of the real ones. */
+export const fakesMarker = ".pharo-agent-telemetry-fakes";
+
+/** Why a service command is not run, real or fake: a guard, never a failure of the command. */
+export class RefusedCommand extends Error {}
+
 /**
- * Runs a command, quietly, and says how it ended. It runs the fake command
- * of the same name from PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS when that
- * names a directory; else the real one only as `realServicesRefused` allows:
- * a test or a harness that calls it, or runs the command line with a home of
- * its own, reaches no real service manager.
+ * Runs a command, quietly, and says how it ended. Under node --test, it runs
+ * the fake command of the same name from PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS,
+ * a directory that holds fakesMarker; else the real one only as
+ * `realServicesRefused` allows: a test or a harness that calls it, or runs
+ * the command line with a home of its own, reaches no real service manager.
+ * Refused, it throws a RefusedCommand.
  */
 export function runCommand(command, args, env = process.env) {
   const fakes = env.PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS;
-  const refused = fakes ? undefined : realServicesRefused(env);
-  if (refused) {
-    throw new Error(`${command} is not run: ${refused}. A test sets PHARO_AGENT_TELEMETRY_DRY_RUN, or PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS to a directory of fake commands.`);
+  if (fakes && !(env.NODE_TEST_CONTEXT && fs.existsSync(path.join(fakes, fakesMarker)))) {
+    throw new RefusedCommand(`${command} is not run: PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS is for this package's tests, naming a directory of fake commands`);
   }
+  const refused = fakes ? undefined : realServicesRefused(env);
+  if (refused) throw new RefusedCommand(`${command} is not run: ${refused}`);
   const result = spawnSync(fakes ? path.join(fakes, command) : command, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   return { status: result.status, stdout: result.stdout ?? "" };
 }
@@ -304,20 +312,33 @@ export function installedDefinitions(options) {
   });
 }
 
+/** Whether a directory is an agent's: named as join names it, and holding settings of ours. */
+function agentDirectory(directory) {
+  if (path.posix.basename(directory) !== "pharo-agent-telemetry") return false;
+  try {
+    const config = JSON.parse(fs.readFileSync(path.posix.join(directory, "agent.json"), "utf8"));
+    return Number.isInteger(config?.port) && typeof config?.endpoint === "string";
+  } catch {
+    return false;
+  }
+}
+
 /**
  * The agent directories this home's service definitions run, under `home`
  * only: a definition lives in the home (~/Library/LaunchAgents,
  * ~/.config/systemd/user) whatever XDG_CONFIG_HOME the join saw, so leave
  * and status find an agent a shell with another XDG_CONFIG_HOME installed. A
  * definition copied from another home names that home's agent, and is left
- * out. On Windows the task's definition is beside the agent: none is found
- * this way.
+ * out, and so is a directory that is not an agent's (named
+ * pharo-agent-telemetry, with an agent.json of ours). On Windows the task's
+ * definition is beside the agent: none is found this way.
  *
  * @param {{ platform?: NodeJS.Platform, home?: string }} [options]
  * @returns {string[]}
  */
-export function definedAgentDirectories({ platform = process.platform, home = os.homedir() } = {}) {
+export function definedAgentDirectories({ platform = process.platform, home: given = os.homedir() } = {}) {
   if (platform === "win32") return [];
+  const home = path.posix.resolve(given);
   const unxml = (text) => text.replace(/&quot;/g, '"').replace(/&gt;/g, ">").replace(/&lt;/g, "<").replace(/&amp;/g, "&");
   const [directory, name, agentOf] = platform === "darwin"
     ? [path.posix.join(home, "Library", "LaunchAgents"), /^org\.evref-bl\.pharo-agent-telemetry\.[0-9a-f]{12}\.plist$/,
@@ -332,7 +353,7 @@ export function definedAgentDirectories({ platform = process.platform, home = os
   }
   return [...new Set(names.flatMap((each) => {
     const agent = agentOf(definitionText(path.join(directory, each), platform) ?? "");
-    return agent && agent.startsWith(`${home}/`) && serviceNames(agent, platform)[platform === "darwin" ? "label" : "unit"] === each.replace(/\.plist$/, "") ? [path.posix.dirname(agent)] : [];
+    return agent && agent.startsWith(`${home}/`) && serviceNames(agent, platform)[platform === "darwin" ? "label" : "unit"] === each.replace(/\.plist$/, "") && agentDirectory(path.posix.dirname(agent)) ? [path.posix.dirname(agent)] : [];
   }))];
 }
 
@@ -376,8 +397,16 @@ export function installService(options) {
  * @param {ServiceOptions} options
  */
 export function removeService(options) {
-  const { platform = process.platform, uid = process.getuid?.() ?? 0, run = runCommand, agent } = options;
+  const { platform = process.platform, uid = process.getuid?.() ?? 0, agent } = options;
   if (installedDefinitions(options).length === 0) return false;
+  // The definitions go whatever the service manager answers, or whether it is asked at all: nothing starts at the next login.
+  const run = (command, args) => {
+    try {
+      return (options.run ?? runCommand)(command, args);
+    } catch {
+      return { status: 1, stdout: "" };
+    }
+  };
   const { label, unit, task } = serviceNames(agent, platform);
   const { file, extras = [] } = serviceDefinition(options);
   if (platform === "darwin") {

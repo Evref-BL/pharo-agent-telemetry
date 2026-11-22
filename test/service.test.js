@@ -7,7 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { definedAgentDirectories, installedDefinitions, installService, realServices, removeService, runCommand, serviceDefinition, serviceNames, serviceState, startService } from "../src/service.js";
+import { RefusedCommand, definedAgentDirectories, fakesMarker, installedDefinitions, installService, realServices, removeService, runCommand, serviceDefinition, serviceNames, serviceState, startService } from "../src/service.js";
 
 /** A runner that records each command, and answers as `answers` says. */
 function recorder(answers = () => ({ status: 0, stdout: "" })) {
@@ -52,6 +52,11 @@ test("the default runner reaches the real service manager only for the command l
   const fakes = path.join(home, "fakes");
   fs.mkdirSync(fakes);
   fs.writeFileSync(path.join(fakes, "launchctl"), "#!/bin/sh\necho \"fake $*\"\n", { mode: 0o755 });
+  // Only a directory of fakes, as a test writes one, and only under a test.
+  assert.throws(() => runCommand("launchctl", ["print", "x"], { ...process.env, PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS: fakes }), RefusedCommand);
+  assert.throws(() => runCommand("launchctl", ["print", "x"], { ...process.env, PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS: "/bin" }), /for this package's tests, naming a directory of fake commands/);
+  fs.writeFileSync(path.join(fakes, fakesMarker), "");
+  assert.throws(() => runCommand("launchctl", ["print", "x"], { ...process.env, NODE_TEST_CONTEXT: undefined, PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS: fakes }), RefusedCommand);
   assert.deepEqual(runCommand("launchctl", ["print", "x"], { ...process.env, PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS: fakes }), { status: 0, stdout: "fake print x\n" });
 }));
 
@@ -207,21 +212,41 @@ test("the service's state, as each system reports it", () => withHome((home, age
   removeService(gone);
 }));
 
-test("the agents this home's service definitions run are found from the home alone, and only those under it", () => withHome((home) => {
-  const other = path.join(home, "elsewhere", "pharo-agent-telemetry", "agent.mjs");
-  const mine = path.join(home, "xdg", "pharo-agent-telemetry", "agent.mjs");
+test("the agents this home's service definitions run are found from the home alone, however it is written, and only agent directories under it", () => withHome((home) => {
+  const agentIn = (directory, config = true) => {
+    fs.mkdirSync(directory, { recursive: true });
+    if (config) fs.writeFileSync(path.join(directory, "agent.json"), JSON.stringify({ port: 4321, endpoint: "https://c.test" }));
+    return path.join(directory, "agent.mjs");
+  };
+  const other = agentIn(path.join(home, "elsewhere", "pharo-agent-telemetry"));
+  const mine = agentIn(path.join(home, "xdg", "pharo-agent-telemetry"));
+  // Named by a definition, yet no agent's directory: not named as join names it, or without settings of ours.
+  const documents = agentIn(path.join(home, "Documents"));
+  const empty = agentIn(path.join(home, "empty", "pharo-agent-telemetry"), false);
   const foreign = path.join(path.dirname(home), "another-home", ".config", "pharo-agent-telemetry", "agent.mjs");
   const run = recorder().run;
+  const agents = [other, mine, documents, empty];
   for (const platform of ["darwin", "linux"]) {
-    for (const agent of [other, mine]) installService({ platform, home, env: {}, uid: 501, agent, node: process.execPath, run });
+    for (const agent of agents) installService({ platform, home, env: {}, uid: 501, agent, node: process.execPath, run });
     // A definition copied from another home names that home's agent.
     const { file, content } = serviceDefinition({ platform, home: path.join(path.dirname(home), "another-home"), env: {}, node: process.execPath, agent: foreign });
     const copied = path.join(path.dirname(serviceDefinition({ platform, home, env: {}, node: process.execPath, agent: mine }).file), path.basename(file));
     fs.writeFileSync(copied, content);
-    assert.deepEqual(definedAgentDirectories({ platform, home }).sort(), [path.dirname(other), path.dirname(mine)].sort(), platform);
-    for (const agent of [other, mine]) removeService({ platform, home, env: {}, uid: 501, agent, run });
+    const expected = [path.dirname(other), path.dirname(mine)].sort();
+    assert.deepEqual(definedAgentDirectories({ platform, home }).sort(), expected, platform);
+    assert.deepEqual(definedAgentDirectories({ platform, home: `${home}/` }).sort(), expected, `${platform}, with a trailing slash`);
+    assert.deepEqual(definedAgentDirectories({ platform, home: `${home}//` }).sort(), expected, `${platform}, with two`);
+    for (const agent of agents) removeService({ platform, home, env: {}, uid: 501, agent, run });
     fs.rmSync(copied);
     assert.deepEqual(definedAgentDirectories({ platform, home }), [], platform);
   }
   assert.deepEqual(definedAgentDirectories({ platform: "win32", home }), []);
+}));
+
+test("removing a service deletes its definitions even when the service manager cannot be asked", () => withHome((home, agent) => {
+  const options = { platform: "darwin", home, env: {}, uid: 501, agent, node: process.execPath, run: recorder().run };
+  installService(options);
+  assert.equal(installedDefinitions(options).length, 1);
+  assert.equal(removeService({ ...options, run: () => { throw new RefusedCommand("launchctl is not run: refused"); } }), true);
+  assert.deepEqual(installedDefinitions(options), []);
 }));

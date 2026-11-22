@@ -88,10 +88,15 @@ Only the command line reaches the real service manager: `runCommand` runs a
 service command only when its environment opts in as the command line does,
 outside `node --test`, and when `HOME` is the account's own home (a service
 defined under any other home would still run in this account's service
-manager). Tests give the command `PHARO_AGENT_TELEMETRY_DRY_RUN`, a file the
-service commands are written to instead of run, or
-`PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS`, a directory of fake commands run
-instead of the real ones.
+manager). Where it refuses, each command says why in one line, and a join
+removes what it installed. Tests give the command
+`PHARO_AGENT_TELEMETRY_DRY_RUN`, a file the service commands are written to
+instead of run, or `PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS`, a directory of
+fake commands run instead of the real ones, which holds
+`.pharo-agent-telemetry-fakes`; both are obeyed under `node --test` only.
+`leave` and `status` take a directory a service definition names for an
+agent's only when it is named `pharo-agent-telemetry` and holds an
+`agent.json` of ours.
 
 ### Known limits
 

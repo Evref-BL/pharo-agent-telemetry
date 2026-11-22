@@ -11,7 +11,7 @@ import test from "node:test";
 import { missingForJoin } from "../src/collector.js";
 import { dpoPlaceholder, participantsPage, readAllowlist } from "../src/generate.js";
 import { describeRequest, recoverPreview, startPreview } from "../src/preview.js";
-import { installedDefinitions, serviceDefinition, serviceNames, stableNode } from "../src/service.js";
+import { fakesMarker, installedDefinitions, serviceDefinition, serviceNames, stableNode } from "../src/service.js";
 import { everySettingsFile, readSettings, settingsBlock, settingsFiles, agentSettings } from "../src/settings.js";
 import { catalog as builtIn, filter } from "../src/telemetry-transform.mjs";
 import { comparable, expectedSpans, ruleFixtures, testKey } from "./support.js";
@@ -282,6 +282,7 @@ function fakeServiceCommands(home) {
   for (const name of ["launchctl", "systemctl", "schtasks"]) {
     fs.writeFileSync(path.join(fakes, name), `#!/bin/sh\necho "${name} $*" >> "$PAT_FAKE_LOG"\ncase "$1 $2" in bootstrap*|*" enable") [ -n "$PAT_FAKE_FAIL" ] && exit 5;; esac\nexit 0\n`, { mode: 0o755 });
   }
+  fs.writeFileSync(path.join(fakes, fakesMarker), "");
   return { fakes, log, calls: () => fs.readFileSync(log, "utf8").split("\n").filter(Boolean), clear: () => fs.writeFileSync(log, "") };
 }
 
@@ -594,4 +595,44 @@ test("join refuses while a preview answers, and puts back what one that was kill
   assert.equal(fs.existsSync(path.join(agent, "preview.json")), false);
   assert.equal(cli("leave").status, 0);
   assert.equal(fs.readFileSync(settings.mcp, "utf8"), "# my notes\n");
+}));
+
+test("where the service manager may not be asked, each command says so in one line, and a refused join leaves nothing behind", { skip: process.platform === "win32" }, () => withHome(({ home, env }) => {
+  const { fakes, log } = fakeServiceCommands(home);
+  const root = path.join(home, "guarded");
+  const faked = fakedHome(env, root, fakes, log);
+  const guarded = { ...faked };
+  delete guarded.PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS;
+  const agentFile = path.join(root, "config", "pharo-agent-telemetry", "agent.mjs");
+  const oneLine = (result) => {
+    assert.doesNotMatch(result.stderr, /\n\s+at /);
+    assert.ok(result.stderr.trim().split("\n").length <= 1, result.stderr);
+  };
+  const refused = run(guarded, "join", "--endpoint", "https://c.test");
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /^Could not start the agent as a service: (launchctl|systemctl) is not run: service commands are not run under a test\. Nothing was installed, and nothing is sent\. To join without a service, run join --no-service/);
+  oneLine(refused);
+  assert.equal(fs.existsSync(path.dirname(agentFile)), false);
+  assert.deepEqual(installedDefinitions({ home: root, env: guarded, agent: agentFile }), []);
+  // Joined with the fakes, then asked from where the service manager may not be.
+  assert.equal(run(faked, "join", "--endpoint", "https://c.test").status, 0);
+  const status = run(guarded, "status");
+  assert.equal(status.status, 0, status.stderr);
+  assert.match(status.stdout, /^Agent service: not asked \((launchctl|systemctl) is not run: service commands are not run under a test\)\.$/m);
+  oneLine(status);
+  const left = run(guarded, "leave");
+  assert.equal(left.status, 0, left.stderr);
+  assert.match(left.stdout, /The service manager was not asked to stop the agent's service \((launchctl|systemctl) is not run: .*\): its definition is removed, so it does not start again at the next login\./);
+  assert.deepEqual(installedDefinitions({ home: root, env: guarded, agent: agentFile }), []);
+  assert.equal(fs.existsSync(path.dirname(agentFile)), false);
+  // No other directory's commands run instead of the real ones, and no dry run outside a test.
+  const other = run({ ...faked, PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS: "/bin" }, "join", "--endpoint", "https://c.test");
+  assert.equal(other.status, 1);
+  assert.match(other.stderr, /PHARO_AGENT_TELEMETRY_SERVICE_COMMANDS is for this package's tests, naming a directory of fake commands/);
+  oneLine(other);
+  const outside = { ...env };
+  delete outside.NODE_TEST_CONTEXT;
+  const dry = run(outside, "status");
+  assert.equal(dry.status, 1);
+  assert.equal(dry.stderr.trim(), "PHARO_AGENT_TELEMETRY_DRY_RUN is for this package's tests only.");
 }));

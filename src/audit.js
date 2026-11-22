@@ -80,7 +80,11 @@ export function audit(lines, allowlist) {
       };
       const out = kept?.resourceSpans[0];
       if (out) differences("resource", resource, out.resource.attributes);
-      const outSpans = new Map((out?.scopeSpans ?? []).flatMap(({ scope, spans: each }) => each.map((span) => [span.spanId, { scope, span }])));
+      // Each span is set beside what the rules make of it alone: two spans of a line may share an id.
+      const alone = (scopeSpans, span) => {
+        const each = transformTraces(rules, { resourceSpans: [{ resource: { attributes: resource }, scopeSpans: [{ ...scopeSpans, spans: [span] }] }] })?.resourceSpans[0]?.scopeSpans[0];
+        return each && { scope: each.scope, span: each.spans[0] };
+      };
       for (const scopeSpans of resourceSpans.scopeSpans ?? []) {
         if (scopeSpans.schemaUrl) problems.push(`${at} scope: a schema URL is kept`);
         for (const key of [...unknown(scopeSpans, "scopeSpans"), ...unknown(scopeSpans.scope, "scope")]) problems.push(`${at} scope: ${key} is kept`);
@@ -93,7 +97,7 @@ export function audit(lines, allowlist) {
           if (span.status?.message) problems.push(`${at} ${where}: a status message is kept`);
           if (span.flags) problems.push(`${at} ${where}: flags are kept`);
           for (const key of [...unknown(span, "span"), ...unknown(span.status, "status")]) problems.push(`${at} ${where}: ${key} is kept`);
-          const after = outSpans.get(String(span.spanId).toLowerCase());
+          const after = alone(scopeSpans, span);
           if (after === undefined) continue;
           if (after.scope.version !== scopeSpans.scope?.version) problems.push(`${at} ${where}: the scope's version is not a version`);
           if (after.span.name !== span.name) problems.push(`${at} ${where}: the name is not what the rules make of it`);

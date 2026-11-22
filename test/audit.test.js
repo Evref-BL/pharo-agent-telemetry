@@ -60,3 +60,14 @@ test("says nothing of an archive that holds only what the rules keep, and counts
   assert.ok(keys.has("span.duration_ms"));
   assert.ok(!keys.has("fileexporter.path_segment"));
 });
+
+test("two spans of a line that share an id are each set beside what the rules make of it", () => {
+  const transform = filter(testKey);
+  const fixture = ruleFixtures().find(({ name }) => name === "vocabulary");
+  const kept = transform("traces", fixture.request);
+  const [scopeSpans] = kept.resourceSpans[0].scopeSpans;
+  const [first, second] = scopeSpans.spans.filter((span) => span.name !== scopeSpans.spans[0].name || span === scopeSpans.spans[0]);
+  assert.notEqual(first.name, second.name);
+  scopeSpans.spans = [first, { ...second, spanId: first.spanId }];
+  assert.deepEqual(audit([JSON.stringify(kept)], allowlist).problems, []);
+});

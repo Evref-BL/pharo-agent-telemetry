@@ -173,9 +173,10 @@ dependency. What only people can decide comes first:
 1. The controller and the address participants write to, and the DPO's
    reading of the study's `docs/participants.md` and allowlist, which make
    the GDPR notice for the connection.
-2. A VM in the EU with Docker, a DNS name pointing at it, ports 80 and 443
-   open, and SSH for the import job. Its provider is the processor the
-   notice names.
+2. A VM in the EU, Ubuntu 24.04, with a DNS name pointing at it and SSH
+   for its administrators and the import job. Its provider is the processor
+   the notice names. 2 vCPU, 2 GB of memory and 20 GB of disk take a study's
+   volume many times over.
 3. The Elasticsearch keys and the GitLab project of
    `pharo-agent-telemetry-import`, whose README lists them.
 
@@ -184,10 +185,16 @@ Then, on the VM:
 ```sh
 git clone <the study's repository> /srv/pharo-agent-telemetry
 cd /srv/pharo-agent-telemetry/collector
+sudo sh setup-vm.sh '<the import job's SSH public key>'
 cp .env.example .env            # set SITE_ADDRESS and COLLECTOR_TOKEN
-install -d -o 10001 -g 10001 -m 0770 archive
-./start.sh
+sudo ./start.sh
 ```
+
+`setup-vm.sh` installs Docker from Docker's repository and the security
+updates, lets in SSH, HTTP and HTTPS only, makes `archive/`, owned by the
+collector's user (10001), and the user `importer`, in its group, whose key
+may only rsync the archive (`rrsync`): no shell, nothing outside it, so the
+import job's `COLLECTOR_ARCHIVE` is `.`. Running it again changes nothing.
 
 `start.sh` caps the archive at half the free space of its disk
 (`ARCHIVE_MAX_MB`), so it never fills the disk should the import stop: past

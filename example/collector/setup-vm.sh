@@ -18,6 +18,13 @@ set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 archive="$here/archive"
 import_key="${1:-}"
+# The import job's user reaches the archive through every directory above it,
+# which a home directory, closed to others, would not let it.
+d="$here"
+while [ "$d" != / ]; do
+  [ -n "$(find "$d" -maxdepth 0 -perm -o=x)" ] || { echo "setup-vm.sh: $d is closed to other users, so the import job could not reach the archive: put the collector in /srv/pharo-agent-telemetry/collector, as the README says" >&2; exit 1; }
+  d=$(dirname "$d")
+done
 
 export DEBIAN_FRONTEND=noninteractive
 # Oracle Cloud's Ubuntu images keep iptables rules that reject all but SSH,

@@ -201,7 +201,9 @@ import job's `COLLECTOR_ARCHIVE` is `.`. Running it again changes nothing.
 the cap, the guard container marks the archive full and Caddy refuses new
 spans (507) until the import has made room; nothing is lost that was taken.
 It also makes `ID_HASH_KEY` at each start unless `.env` sets one: the key is
-in the collector's environment only, never in the archive.
+in the collector's environment only, never in the archive. So `docker compose`
+refuses any other command without them: `docker ps` and `docker logs
+pharo-agent-telemetry-caddy-1` show the stack, and `sudo ./start.sh` restarts it.
 `SAMPLING_PERCENTAGE` in `.env` keeps only that share of the traces, a call's
 spans all together; it stays at 100 unless the volume outgrows the import.
 

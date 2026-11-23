@@ -22,7 +22,7 @@ function recorder(answers = () => ({ status: 0, stdout: "" })) {
 function withHome(run) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "pat-service-"));
   try {
-    return run(home, path.join(home, "config", "pharo-agent-telemetry", "agent.mjs"));
+    return run(home, path.join(home, ".config", "pharo-agent-telemetry", "agent.mjs"));
   } finally {
     fs.rmSync(home, { recursive: true, force: true });
   }

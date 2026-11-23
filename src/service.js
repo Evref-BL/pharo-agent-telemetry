@@ -258,9 +258,11 @@ export function serviceDefinition({ platform = process.platform, home = os.homed
       extras: [{ file: launcher, content: utf16(script) }],
     };
   }
-  // The user's systemd reads its own XDG_CONFIG_HOME, which need not be this shell's: the unit goes under both when they differ.
+  // The user's systemd reads its own XDG_CONFIG_HOME, which need not be this shell's: the unit goes under the home's and under
+  // the one the agent was joined in, read from where the agent is, so that leave from a shell with another one removes both.
   const xdg = env.XDG_CONFIG_HOME && path.posix.isAbsolute(env.XDG_CONFIG_HOME) ? env.XDG_CONFIG_HOME : undefined;
-  const directories = [...new Set([path.posix.join(home, ".config"), ...(xdg ? [xdg] : [])])].map((directory) => path.posix.join(directory, "systemd", "user", unit));
+  const joinedIn = path.posix.basename(path.posix.dirname(agent)) === "pharo-agent-telemetry" ? path.posix.dirname(path.posix.dirname(agent)) : undefined;
+  const directories = [...new Set([path.posix.join(home, ".config"), ...(joinedIn ? [joinedIn] : []), ...(xdg ? [xdg] : [])])].map((directory) => path.posix.join(directory, "systemd", "user", unit));
   const content = `[Unit]
 Description=${description}
 

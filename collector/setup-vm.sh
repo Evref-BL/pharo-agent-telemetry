@@ -1,5 +1,6 @@
 #!/bin/sh
-# Prepares a fresh Ubuntu 24.04 VM to run the collector, as root, once:
+# Prepares a fresh Ubuntu 24.04 VM (Oracle Cloud's among others) to run the
+# collector, as root, once:
 #
 #   sudo sh setup-vm.sh '<the import job's SSH public key>'
 #
@@ -19,6 +20,14 @@ archive="$here/archive"
 import_key="${1:-}"
 
 export DEBIAN_FRONTEND=noninteractive
+# Oracle Cloud's Ubuntu images keep iptables rules that reject all but SSH,
+# ahead of any rule ufw adds after them: they go, and ufw holds the rules.
+# Done before Docker, which adds its own rules when it starts.
+if [ -f /etc/iptables/rules.v4 ] && grep -q -- "--reject-with icmp-host-prohibited" /etc/iptables/rules.v4; then
+  apt-get purge -y -q netfilter-persistent iptables-persistent >/dev/null 2>&1 || true
+  rm -f /etc/iptables/rules.v4 /etc/iptables/rules.v6
+  iptables -P INPUT ACCEPT && iptables -P FORWARD ACCEPT && iptables -F INPUT && iptables -F FORWARD
+fi
 apt-get update -q
 apt-get install -y -q ca-certificates curl rsync ufw unattended-upgrades
 

@@ -31,6 +31,12 @@ fi
 apt-get update -q
 apt-get install -y -q ca-certificates curl rsync ufw unattended-upgrades
 
+# Swap on a small VM (a 1 GB free tier one): the collector alone may take 400 MB.
+if [ "$(awk '/^MemTotal/ { print $2 }' /proc/meminfo)" -lt 2000000 ] && [ "$(awk '/^SwapTotal/ { print $2 }' /proc/meminfo)" -eq 0 ]; then
+  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile
+  grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
+
 # Docker Engine and its Compose plugin, from Docker's repository.
 if ! command -v docker >/dev/null 2>&1; then
   install -m 0755 -d /etc/apt/keyrings

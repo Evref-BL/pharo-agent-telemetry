@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "Run a study of how agents use the Pharo tools: the agent participants join, its filter, the collector, and the participants page, generated from the study's own data.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Evref-BL/pharo-agent-telemetry.git"
+  },
   "type": "module",
   "bin": {
     "pharo-agent-telemetry": "bin/pharo-agent-telemetry.js"

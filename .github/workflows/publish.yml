@@ -1,0 +1,33 @@
+# Publishes the package to npm when a release is published, by npm's trusted
+# publishing (this workflow, in the npm-publish environment): no token.
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm-publish
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@^11.5.1
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - name: Verify the release's version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: test "v$(node -p "require('./package.json').version")" = "$RELEASE_TAG"
+      - run: npm publish --access public

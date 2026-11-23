@@ -399,6 +399,9 @@ const sessionKey = "session.id";
 /** The attribute the agent adds: where a span comes in its session, which times kept to the week lose. */
 const offsetKey = "pharo_agent_telemetry.session.offset_ms";
 
+/** The resource attribute the agent adds when its allowlist lists it: the version of the study's filter that kept the span. */
+const filterVersionKey = "pharo_agent_telemetry.filter.version";
+
 /**
  * A name as the vocabulary check reads it: each camelCase word boundary
  * (`className`, `HTTPServer`) made a `_`, in lower case. Written as the two
@@ -812,12 +815,15 @@ function keepSpan(rules, span, service, options) {
  *   hash?: (tag: string, value: string, length?: number) => string,
  *   report?: (problem: string) => void,
  *   sessionOffset?: (session: string, start: bigint) => bigint,
+ *   filterVersion?: string,
  * }} [options]
  *   without `hash`, ids and session ids are kept as they are, as `pharo-agent-telemetry audit` reads an archive;
- *   with `sessionOffset`, each span with a session gets its offset in it, as the agent adds it
+ *   with `sessionOffset`, each span with a session gets its offset in it, as the agent adds it;
+ *   with `filterVersion`, each resource the version of the filter, in place of any a tool sent, when the allowlist lists it
  */
 function transformTraces(rules, request, options = {}) {
   const settings = { hash: options.hash, report: options.report ?? (() => {}), sessionOffset: options.sessionOffset };
+  const stamp = typeof options.filterVersion === "string" && rules.resource.some((spec) => spec.key === filterVersionKey) ? options.filterVersion : undefined;
   if (request === null || typeof request !== "object" || !Array.isArray(request.resourceSpans)) return null;
   const resourceSpans = [];
   for (const each of request.resourceSpans) {
@@ -832,6 +838,7 @@ function transformTraces(rules, request, options = {}) {
       settings.report("resource: gives an attribute twice");
       continue;
     }
+    if (stamp !== undefined) resource.set(filterVersionKey, { type: "string", value: stamp });
     const scopeSpans = [];
     for (const scoped of Array.isArray(each.scopeSpans) ? each.scopeSpans : []) {
       if (scoped?.scope?.name !== rules.services[service].scope) {
@@ -990,9 +997,9 @@ function withCatalogSets(allowlist, catalog) {
  *
  * @param {any} allowlist
  * @param {string | undefined} key
- * @param {{ offsets?: boolean, sessions?: Map<string, { first: bigint, seen: number }>, catalog?: any }} [options] `offsets: false` leaves out the places, as the collector, which cannot know them; `sessions`, the first span of each session the agent saw, which it keeps across its restarts; `catalog`, a newer catalog the agent accepted (catalogProblem finds nothing in it), whose additions the sets take
+ * @param {{ offsets?: boolean, sessions?: Map<string, { first: bigint, seen: number }>, catalog?: any, filterVersion?: string }} [options] `offsets: false` leaves out the places, as the collector, which cannot know them; `sessions`, the first span of each session the agent saw, which it keeps across its restarts; `catalog`, a newer catalog the agent accepted (catalogProblem finds nothing in it), whose additions the sets take; `filterVersion`, the study's version, stamped on each resource
  */
-function createTransform(allowlist, key, { offsets = true, sessions, catalog } = {}) {
+function createTransform(allowlist, key, { offsets = true, sessions, catalog, filterVersion } = {}) {
   if (catalog !== undefined && catalogProblem(catalog)) throw new Error(`The catalog is refused: ${catalogProblem(catalog)}.`);
   const rules = compile(catalog === undefined ? allowlist : withCatalogSets(allowlist, catalog));
   const hash = typeof key === "string" && /^[0-9a-f]{32,128}$/.test(key) ? keyedHash(key) : undefined;
@@ -1000,7 +1007,7 @@ function createTransform(allowlist, key, { offsets = true, sessions, catalog } =
   return (signal, request) => {
     if (signal !== "traces" || hash === undefined) return null;
     try {
-      return transformTraces(rules, request, { hash, sessionOffset });
+      return transformTraces(rules, request, { hash, sessionOffset, filterVersion });
     } catch {
       return null;
     }
@@ -1014,10 +1021,10 @@ try {
   key = undefined;
 }
 
-export default createTransform(allowlist, key);
+export default createTransform(allowlist, key, { filterVersion: version });
 
-/** The same filter with another key, as `preview` runs it; without the places in sessions with `{ offsets: false }`; with a newer catalog's sets with `{ catalog }`. */
-export const filter = (other, options) => createTransform(allowlist, other, options);
+/** The same filter with another key, as `preview` runs it; without the places in sessions with `{ offsets: false }`; without its version on each span with `{ filterVersion: undefined }`; with a newer catalog's sets with `{ catalog }`. */
+export const filter = (other, options) => createTransform(allowlist, other, { filterVersion: version, ...options });
 
 /** The catalog this filter was generated with: its form, its date, and the releases it was read from. */
 export const catalog = { schema: catalogSchema, published: allowlist.catalogPublished, releases: allowlist.releases };

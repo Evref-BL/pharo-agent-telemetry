@@ -537,23 +537,37 @@ export function acceptCatalog(payload, inUse, refusal, now = Date.now()) {
 
 const counted = ["plexus", "pharo-mcp"];
 
+/** The service a resource names. */
+const serviceOf = (each) => each?.resource?.attributes?.find?.((attribute) => attribute?.key === "service.name")?.value?.stringValue;
+
+/** How many spans a request holds of a service. */
+function spanCount(request, service) {
+  if (!Array.isArray(request?.resourceSpans)) return 0;
+  return request.resourceSpans.filter((each) => serviceOf(each) === service)
+    .reduce((sum, each) => sum + (Array.isArray(each?.scopeSpans) ? each.scopeSpans : []).reduce((spans, scoped) => spans + (Array.isArray(scoped?.spans) ? scoped.spans.length : 0), 0), 0);
+}
+
 /**
- * What the agent says in its state file: when it started, the requests it
- * received of each tool and when the last came, and what it sent. It stays
- * on this machine, for `status`.
+ * What the agent says in its state file: when it started, the requests and
+ * spans it received of each tool, how many spans the filter kept, when the
+ * last request came, and what it sent. It stays on this machine, for `status`.
  */
 function agentState(forwarder, now = Date.now, catalog = () => undefined) {
   const started = new Date(now()).toISOString();
-  /** @type {Record<string, { requests: number, kept: number, last: string }>} */
+  /** @type {Record<string, { requests: number, kept: number, spans: number, keptSpans: number, last: string }>} */
   const received = {};
   return {
     observe(signal, request, kept) {
-      const services = new Set((request?.resourceSpans ?? []).map((each) => each?.resource?.attributes?.find?.((attribute) => attribute?.key === "service.name")?.value?.stringValue));
+      const services = new Set((request?.resourceSpans ?? []).map(serviceOf));
       for (const service of services.size === 0 ? [undefined] : services) {
         const name = counted.includes(service) ? service : "other";
-        const entry = (received[name] ??= { requests: 0, kept: 0, last: started });
+        const entry = (received[name] ??= { requests: 0, kept: 0, spans: 0, keptSpans: 0, last: started });
         entry.requests += 1;
         if (kept && signal === "traces") entry.kept += 1;
+        if (signal === "traces") {
+          entry.spans += spanCount(request, service);
+          entry.keptSpans += spanCount(kept, service);
+        }
         entry.last = new Date(now()).toISOString();
       }
     },

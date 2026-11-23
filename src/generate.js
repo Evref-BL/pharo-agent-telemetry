@@ -665,8 +665,8 @@ masked, whole, and the mask has no attribute's shape.
 A name an agent or another package chooses (${checkedKeys}) is kept only
 when it is the name of a tool a project publishes, or when every word of it
 (split at \`_\`, \`-\` and capitals) is in the vocabulary: the
-${vocabularySize} words of the names in the code of MCP, PLexus and
-pharo-image-fs (their tools, arguments, errors and the rest), read from
+${vocabularySize} words of the names in the code of MCP and PLexus (their
+tools, arguments, errors and the rest), read from
 their source (${releases}), and of a list of words agents guess. Any
 other name is dropped, or becomes \`_OTHER\`. A name is kept only when it is
 made of words the tools use, so a name of your own made only of such words

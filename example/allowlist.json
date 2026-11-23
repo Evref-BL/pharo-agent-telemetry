@@ -14,9 +14,9 @@
       "requires": ["session.id"]
     }
   },
-  "published": ["MCP tools", "PLexus tools", "pharo-image-fs tools"],
+  "published": ["MCP tools", "PLexus tools"],
   "vocabulary": ["project words", "guessed words"],
-  "grows": {"MCP tools": "tool", "PLexus tools": "tool", "pharo-image-fs tools": "tool", "project words": "word", "guessed words": "word", "PLexus error codes": "code", "Node exception classes": "class", "MCP exception classes": "class"},
+  "grows": {"MCP tools": "tool", "PLexus tools": "tool", "project words": "word", "guessed words": "word", "PLexus error codes": "code", "Node exception classes": "class", "MCP exception classes": "class"},
   "patterns": {
     "identifier": "^[A-Za-z_][A-Za-z0-9_-]{0,63}$",
     "version": "^[0-9]{1,4}(?:\\.[0-9]{1,4}){0,2}(?:-(?:alpha|beta|rc)(?:\\.[0-9]{1,4})?)?$",

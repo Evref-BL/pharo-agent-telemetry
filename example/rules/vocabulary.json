@@ -1,5 +1,5 @@
 {
-  "about": "Error codes are kept when made of the vocabulary's words, one-letter words among them (NotATestClass), else _OTHER (foo__bar, acme_a, AcmeSecret); for a tool another package added, only when a project publishes it (pharo-image-fs's ProjectionNotFound, DaemonExitedBeforeMounting); a schema path's index has no leading zero; the compile notices MCP names are exception classes.",
+  "about": "Error codes are kept when made of the vocabulary's words, one-letter words among them (NotATestClass), else _OTHER (foo__bar, acme_a, AcmeSecret); for a tool another package added, such as pharo-image-fs's, never: the tool becomes _OTHER and its error codes go (ProjectionNotFound, DaemonExitedBeforeMounting); a schema path's index has no leading zero; the compile notices MCP names are exception classes.",
   "request": {
     "resourceSpans": [
       {
@@ -871,18 +871,17 @@
         "service.version": "4.3.0"
       },
       "scope": "mcp-pharo",
-      "name": "tools/call pifs_list",
+      "name": "tools/call _OTHER",
       "kind": 2,
       "trace": "1b00abababababababababababababab",
       "span": "cccccccccccc0067",
       "start": "1763337600000000000",
       "status": 2,
       "attributes": {
-        "gen_ai.tool.name": "pifs_list",
+        "gen_ai.tool.name": "_OTHER",
         "pharo.mcp.tool.origin": "other",
         "session.id": "v",
         "error.type": "tool_error",
-        "pharo.mcp.error.code": "ProjectionNotFound",
         "span.duration_ms": {
           "double": 250
         }
@@ -894,18 +893,17 @@
         "service.version": "4.3.0"
       },
       "scope": "mcp-pharo",
-      "name": "tools/call pifs_start",
+      "name": "tools/call _OTHER",
       "kind": 2,
       "trace": "1b00abababababababababababababab",
       "span": "cccccccccccc0068",
       "start": "1763337600000000000",
       "status": 2,
       "attributes": {
-        "gen_ai.tool.name": "pifs_start",
+        "gen_ai.tool.name": "_OTHER",
         "pharo.mcp.tool.origin": "other",
         "session.id": "v",
         "error.type": "tool_error",
-        "pharo.mcp.error.code": "DaemonExitedBeforeMounting",
         "span.duration_ms": {
           "double": 250
         }
@@ -917,18 +915,17 @@
         "service.version": "4.3.0"
       },
       "scope": "mcp-pharo",
-      "name": "tools/call pifs_start",
+      "name": "tools/call _OTHER",
       "kind": 2,
       "trace": "1b00abababababababababababababab",
       "span": "cccccccccccc0069",
       "start": "1763337600000000000",
       "status": 2,
       "attributes": {
-        "gen_ai.tool.name": "pifs_start",
+        "gen_ai.tool.name": "_OTHER",
         "pharo.mcp.tool.origin": "other",
         "session.id": "v",
         "error.type": "tool_error",
-        "pharo.mcp.error.code": "MountPathOrPortRequired",
         "span.duration_ms": {
           "double": 250
         }

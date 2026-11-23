@@ -1,6 +1,6 @@
 // What scripts/catalog.js reads in the projects' source and in the files
 // scripts/exception-names.js writes, and how the allowlist takes in what it
-// wrote: a study's catalog.json, the tools MCP, PLexus and pharo-image-fs
+// wrote: a study's catalog.json, the tools MCP and PLexus
 // publish, the words of their own names, and the classes MCP names
 // exceptions by.
 import { createPrivateKey, createPublicKey, sign } from "node:crypto";

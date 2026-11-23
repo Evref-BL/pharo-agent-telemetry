@@ -1,5 +1,5 @@
 {
-  "about": "From real runs: names a caller chose (argument names, an invented tool's, schema paths under an unknown property, another package's error code, a client's name) are kept only when made of vocabulary words or from a closed set, so keys like ghp_… or AcmeSecretProject never leave; a discovery call and a forwarded call keep only the tools a project publishes, pharo-image-fs's included.",
+  "about": "From real runs: names a caller chose (argument names, an invented tool's, schema paths under an unknown property, another package's error code, a client's name) are kept only when made of vocabulary words or from a closed set, so keys like ghp_… or AcmeSecretProject never leave; a discovery call and a forwarded call keep only the tools MCP and PLexus publish: another package's, such as pharo-image-fs's, become _OTHER.",
   "request": {
     "resourceSpans": [
       {
@@ -2465,7 +2465,7 @@
       },
       "scope": "@evref-bl/plexus",
       "scopeVersion": "0.20.0",
-      "name": "tools/call pifs_list",
+      "name": "tools/call _OTHER",
       "kind": 3,
       "trace": "166d34d6c6db1ec0b35103f51fec7dc6",
       "span": "7b890962ef950ce7",
@@ -2473,7 +2473,7 @@
       "start": "1794787200000000000",
       "attributes": {
         "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "pifs_list",
+        "gen_ai.tool.name": "_OTHER",
         "session.id": "names-session",
         "span.duration_ms": {
           "double": 1
@@ -2490,7 +2490,7 @@
         "os.type": "darwin"
       },
       "scope": "mcp-pharo",
-      "name": "tools/call pifs_list",
+      "name": "tools/call _OTHER",
       "kind": 2,
       "trace": "166d34d6c6db1ec0b35103f51fec7dc6",
       "span": "bc6e6ba377997941",
@@ -2498,7 +2498,7 @@
       "start": "1794787200000000000",
       "attributes": {
         "mcp.method.name": "tools/call",
-        "gen_ai.tool.name": "pifs_list",
+        "gen_ai.tool.name": "_OTHER",
         "pharo.mcp.dispatch_path": "direct",
         "pharo.mcp.tool.origin": "other",
         "session.id": "e84ac428-a9b6-4833-8faa-4f10048b10a1",
@@ -2542,7 +2542,7 @@
         "pharo.mcp.output.bytes": 512,
         "pharo.mcp.output_budget.exceeded": false,
         "pharo.mcp.tool.refs": [
-          "pifs_list"
+          "_OTHER"
         ],
         "span.duration_ms": {
           "double": 2

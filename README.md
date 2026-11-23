@@ -33,7 +33,7 @@ participants run with npx:
   its `purpose`, `why`, `retention` and supervisory `authority`, and, when
   anyone besides its hosts may receive the data, `publication`;
 - `allowlist.json`, what is kept, with the sets of `catalog.json`: the tools
-  MCP, PLexus and pharo-image-fs publish, the words of their own names, and
+  MCP and PLexus publish, the words of their own names, and
   the classes MCP names an exception by;
 - `rules/`: a fixture per rule, a request and the spans the rules keep of it;
 - what `generate` makes of them: `telemetry-transform.mjs`, the filter;
@@ -272,12 +272,12 @@ allowlist's own `guessed words`. An exception's class is kept only when it
 is one MCP can name: MCP names it by its nearest class in Pharo's own
 packages or MCP's, which only an image of each Pharo version knows. The
 catalog is read from the projects' source, and from such images; for each
-release of MCP, PLexus or pharo-image-fs, run, from checkouts of the
+release of MCP or PLexus, run, from checkouts of the
 releases in use and with the PLexus release in use (its `dist/cli.js`),
 
 ```sh
 npx @evref-bl/pharo-agent-telemetry exception-names --mcp <MCP> --cli <PLexus CLI> --out <directory>
-npx @evref-bl/pharo-agent-telemetry catalog --mcp <MCP> --plexus <PLexus> --pharo-image-fs <pharo-image-fs> --exceptions <directory>
+npx @evref-bl/pharo-agent-telemetry catalog --mcp <MCP> --plexus <PLexus> --exceptions <directory>
 npx @evref-bl/pharo-agent-telemetry generate
 ```
 

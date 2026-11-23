@@ -363,11 +363,11 @@ const allowlist = {
     "an IPv4 address": "(?s)^.*\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b.*$",
     "an IPv6 address": "(?is)^.*(?:::|\\b[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}\\b).*$"
   },
-  "catalogPublished": "2026-11-22T23:44:07.672Z",
+  "catalogPublished": "2026-11-23T00:47:39.103Z",
   "releases": {
-    "MCP": "v4.3.0",
-    "PLexus": "v0.21.0",
-    "pharo-image-fs": "v0.14.0"
+    "MCP": "v4.3.1",
+    "PLexus": "v0.21.1",
+    "pharo-image-fs": "v0.14.1"
   }
 };
 const kindNames = ["SPAN_KIND_UNSPECIFIED", "SPAN_KIND_INTERNAL", "SPAN_KIND_SERVER", "SPAN_KIND_CLIENT", "SPAN_KIND_PRODUCER", "SPAN_KIND_CONSUMER"];

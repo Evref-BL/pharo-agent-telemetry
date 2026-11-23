@@ -78,7 +78,7 @@ when it is the name of a tool a project publishes, or when every word of it
 (split at `_`, `-` and capitals) is in the vocabulary: the
 1172 words of the names in the code of MCP, PLexus and
 pharo-image-fs (their tools, arguments, errors and the rest), read from
-their source (MCP v4.3.0, PLexus v0.21.0, pharo-image-fs v0.14.0), and of a list of words agents guess. Any
+their source (MCP v4.3.1, PLexus v0.21.1, pharo-image-fs v0.14.1), and of a list of words agents guess. Any
 other name is dropped, or becomes `_OTHER`. A name is kept only when it is
 made of words our tools use, so a name of your own made only of such words
 can pass, such as a class `ClassName` or an argument `class_name`; a name

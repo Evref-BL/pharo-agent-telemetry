@@ -472,9 +472,20 @@ function wordPatterns(words) {
  * (RE2 and JavaScript alike) its value, or each element of its list, must
  * match, and what else the allowlist says of it.
  *
- * @param {any} allowlist collector/allowlist.json with the catalog's sets
+ * @param {any} allowlist a study's allowlist.json with its catalog's sets
  */
 function compile(allowlist) {
+  // What the rules know: PLexus's and MCP's spans, and numbers given as numbers, which the collector's OTTL takes as they are written.
+  const listed = Object.keys(allowlist.services ?? {});
+  if (listed.length === 0 || listed.some((name) => !["plexus", "pharo-mcp"].includes(name))) throw new Error(`The allowlist's services are plexus or pharo-mcp, not ${listed.join(", ") || "none"}.`);
+  for (const [name, spec] of [...Object.entries(allowlist.resource ?? {}), ...Object.entries(allowlist.span ?? {})]) {
+    for (const bound of ["min", "max"]) {
+      if (spec[bound] !== undefined && !Number.isFinite(spec[bound])) throw new Error(`${name}: ${bound} is not a number.`);
+    }
+    if (spec.buckets !== undefined && !(Array.isArray(spec.buckets) && spec.buckets.length > 0 && spec.buckets.every((bound, index) => Number.isSafeInteger(bound) && (index === 0 || bound > spec.buckets[index - 1])))) {
+      throw new Error(`${name}: buckets are not whole numbers in increasing order.`);
+    }
+  }
   const sets = allowlist.sets ?? {};
   const named = allowlist.patterns ?? {};
   const members = (names) => [].concat(names ?? []).flatMap((name) => {

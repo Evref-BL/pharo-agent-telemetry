@@ -16,7 +16,8 @@ import {
   agentSettings, agentTool, backUp, backupSuffix, clearReachability, configDirectory, everyAgentDirectory, everySettingsFile, joinBackupSuffix, ownSettingNames,
   readSettings, removeSettings, restoreBackup, settingsBlock, settingsFiles, settingsTools, unwritable, writeSettings,
 } from "./settings.js";
-import { isStudyCollector, missingForJoin, readStudy, studyCommand, studyPath } from "./study.js";
+import { shippedFilterProblem } from "./generate.js";
+import { endpointProblem, isStudyCollector, missingForJoin, readStudy, studyCommand, studyPath } from "./study.js";
 
 /** The participants' commands, as a study's package or `--study` runs them. */
 export const participantCommands = ["preview", "join", "status", "leave", "agent"];
@@ -54,6 +55,21 @@ function fail(message) {
 function needStudy() {
   if (study === undefined) fail("Name the study: run its package (npx <its package> <command>), or give --study <its directory>.");
   return study;
+}
+
+/**
+ * Refuses a study whose shipped filter is not what its data makes, and,
+ * since the tools read one block of settings, a study other than the one
+ * an agent of this home was joined to, wherever that agent is.
+ */
+function refuseOtherStudy(/** @type {"join" | "preview"} */ doing) {
+  const { id } = needStudy();
+  const problem = shippedFilterProblem(needStudy());
+  if (problem) fail(`${problem}.`);
+  for (const directory of allAgentDirectories()) {
+    const joinedTo = readAgentConfig(directory)?.study;
+    if (joinedTo !== undefined && joinedTo !== id) fail(`You joined the study ${joinedTo} (${directory}): run leave first${doing === "preview" ? ", or preview with its package" : ", then join this one"}.`);
+  }
 }
 
 // A test sets PHARO_AGENT_TELEMETRY_DRY_RUN to a file: the service commands
@@ -133,9 +149,9 @@ async function join() {
   const withService = !values["no-service"];
   const missing = ours ? missingForJoin(collector) : [];
   if (missing.length > 0) fail(`The study's collector is not ready: its ${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} not set yet. Give --endpoint to send to another one.`);
-  // The tools have one settings block, so a home joins one study at a time.
-  const joinedTo = readAgentConfig(agentDirectory)?.study;
-  if (joinedTo !== undefined && joinedTo !== id) fail(`You joined the study ${joinedTo}: run its leave first, then join this one.`);
+  const wrong = ours ? undefined : endpointProblem(/** @type {string} */ (endpoint));
+  if (wrong) fail(`--endpoint: ${wrong}.`);
+  refuseOtherStudy("join");
   // What a preview that was killed left in a settings file is put back first.
   for (const file of files) {
     const current = readSettings(file);
@@ -199,6 +215,7 @@ async function join() {
   // PLexus stops sending for hours to an endpoint it could not reach, as the agent's while it was down.
   clearReachability([port, ...(earlier && earlier.port !== port ? [earlier.port] : [])]);
   console.log(`Joined: the Pharo tools send their traces to the agent on 127.0.0.1:${port}, which keeps only what the participants page lists and sends it to ${endpoint}.`);
+  if (token === undefined) console.log("No --token given: a collector that requires one, as this package's does, refuses every send, and status says the sends failed.");
   if (!withService) {
     console.log(`No service runs the agent: it sends only while \`${studyCommand(needStudy())} agent\` runs. Keep it running in a terminal while you work.`);
   } else if (!faked && !(await answers(port, readKey(agentDirectory), 5_000))) {
@@ -214,6 +231,7 @@ async function join() {
 }
 
 async function leave() {
+  let found = false;
   for (const file of allSettingsFiles()) {
     recoverPreview(file);
     fs.rmSync(`${file}${backupSuffix}`, { force: true });
@@ -234,6 +252,7 @@ async function leave() {
       if (kept) console.log(`${file} holds no block of ours: left as it is. What it held before join is in ${before}.`);
       continue;
     }
+    found = true;
     if (kept && !current.others) {
       restoreBackup(file, before);
       console.log(`Put back ${file} as it was before join.`);
@@ -258,6 +277,10 @@ async function leave() {
   }
   if (stopped) console.log("Stopped and removed the agent, its files and its key.");
   if (refusals.length > 0) console.log(`The service manager was not asked to stop the agent's service (${refusals[0]}): its definition is removed, so it does not start again at the next login.`);
+  if (!found && !stopped) {
+    console.log("Not joined: no agent and no block of settings of ours were found, so nothing was removed.");
+    return;
+  }
   console.log("Left: sending stops at once. PLexus and the images now find the agent's port closed, and nothing else leaves this machine. Images keep running.");
 }
 
@@ -323,8 +346,10 @@ async function agentLines(directory) {
   lines.push(state === "without its node" ? "Agent service: its Node is gone (upgraded or removed?), so nothing is sent. Run join again." : `Agent service: ${service}.`);
   const port = agent.config ? ` on 127.0.0.1:${agent.config.port}, sending to ${agent.config.endpoint}` : ", without its settings";
   const of = config?.study ? `, of the study ${config.study}` : "";
-  const against = same ? `${study?.name} ${study?.version}` : `pharo-agent-telemetry ${ownVersion}`;
-  const fresh = agent.current ? `up to date with ${against}` : `its filter of version ${agent.version ?? "unknown"}, not up to date with ${against}: run join again to update it`;
+  const against = same ? `${study?.name} ${study?.version} and pharo-agent-telemetry ${ownVersion}` : `pharo-agent-telemetry ${ownVersion}`;
+  const fresh = agent.current
+    ? `up to date with ${against}`
+    : `${agent.version === undefined ? "" : `its filter of version ${agent.version}, `}not up to date with ${against}: run join again${same || config?.study === undefined ? "" : ` with the package of ${config.study}`} to update it`;
   lines.push(`Agent: ${directory}${of}${port}; ${fresh}${agent.key ? "" : "; its key is missing, so it sends nothing"}.`);
   if (agent.config) {
     const key = readKey(directory);
@@ -389,6 +414,8 @@ function restart() {
 async function preview() {
   const stop = new AbortController();
   for (const name of ["SIGINT", "SIGTERM", "SIGHUP"]) process.once(name, () => stop.abort());
+  refuseOtherStudy("preview");
+  // The study's filter, checked above to be what its data makes.
   const transform = await import(pathToFileURL(studyPath(needStudy(), "filter")).href);
   const config = readAgentConfig(agentDirectory);
   const key = readKey(agentDirectory);
@@ -478,6 +505,6 @@ export async function main(args, options = {}) {
       fail(`${command} failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   } else {
-    fail(usage(program, study));
+    fail(`Unknown command ${command}.\n\n${usage(program, study)}`);
   }
 }

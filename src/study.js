@@ -64,6 +64,14 @@ const readJson = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const set = (object) => Object.fromEntries(Object.entries(object ?? {}).filter(([, value]) => value !== null && value !== undefined));
 
 /**
+ * Refuses text the participants page would render as anything but text: a
+ * tag, a comment or a code fence could hide what follows it.
+ */
+function unmarked(name, text) {
+  if (/[<>]|```|~~~/.test(text)) throw new Error(`${studyFiles.study}: ${name} holds <, > or a code fence, which the participants page would not show as written.`);
+}
+
+/**
  * A study, read from its directory.
  *
  * @param {string} directory
@@ -80,13 +88,24 @@ export function readStudy(directory) {
     throw new Error(`${absolute} is not a study: it needs a package.json and a ${studyFiles.study} (${error instanceof Error ? error.message : error}).`);
   }
   if (typeof study.id !== "string" || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(study.id)) throw new Error(`${studyFiles.study} needs an id of lowercase letters, digits and dashes.`);
+  // The name goes into the tools' settings files and the commands the page gives, the version into the filter: npm's own shapes only.
+  if (typeof pkg.name !== "string" || !/^(?:@[a-z0-9][a-z0-9._~-]{0,63}\/)?[a-z0-9][a-z0-9._~-]{0,127}$/.test(pkg.name)) throw new Error("package.json needs a name npm takes, lowercase and on one line.");
+  if (typeof pkg.version !== "string" || !/^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/.test(pkg.version)) throw new Error("package.json needs a version of the form 1.2.3.");
+  if (study.page !== null && study.page !== undefined && !/^https:\/\/[^\s<>()[\]`]+$/.test(study.page)) throw new Error(`${studyFiles.study}: page is an https:// URL.`);
   const text = study.text ?? {};
   for (const name of ["purpose", "why", "retention", "authority"]) {
     if (typeof text[name] !== "string" || text[name].trim() === "") throw new Error(`${studyFiles.study} needs text.${name}, which the participants page says.`);
+    unmarked(`text.${name}`, text[name]);
   }
   const collector = set(study.collector);
   for (const name of Object.keys(collector)) {
     if (!collectorFacts.includes(name)) throw new Error(`${studyFiles.study}: collector.${name} is no collector fact (${collectorFacts.join(", ")}).`);
+  }
+  for (const [name, value] of Object.entries(collector)) {
+    for (const [part, each] of typeof value === "object" ? Object.entries(value) : [["", value]]) {
+      if (typeof each !== "string" || each.trim() === "" || /[\r\n]/.test(each)) throw new Error(`${studyFiles.study}: collector.${name}${part ? `.${part}` : ""} is text on one line.`);
+      unmarked(`collector.${name}${part ? `.${part}` : ""}`, each);
+    }
   }
   return { directory: absolute, id: study.id, name: pkg.name, version: pkg.version, page: study.page ?? undefined, collector, text };
 }
@@ -139,9 +158,31 @@ export function isStudyCollector(endpoint, ours) {
 }
 
 /**
- * What `join` lacks before it may send to the study's collector, by name: a
- * catalog URL on another host than the collector's is lacking too, and so is
- * a public key anyone could sign for.
+ * Why an endpoint is no collector's, or undefined when it is one: a URL,
+ * over HTTPS (or HTTP when `https` is not required), without credentials,
+ * naming the collector's base rather than its /v1/traces.
+ *
+ * @param {string} endpoint
+ * @param {{ https?: boolean }} [options]
+ */
+export function endpointProblem(endpoint, { https = false } = {}) {
+  let url;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    return `${endpoint} is not a URL`;
+  }
+  if (url.protocol !== "https:" && (https || url.protocol !== "http:")) return `${endpoint} is not ${https ? "an https" : "an http or https"} URL`;
+  if (url.username || url.password) return `${endpoint} holds credentials: give the token with --token`;
+  if (/\/v1\/traces\/?$/.test(url.pathname)) return `${endpoint} names /v1/traces: give the collector's base URL, to which the agent adds it`;
+  return undefined;
+}
+
+/**
+ * What `join` lacks before it may send to the study's collector, by name: an
+ * endpoint that is no HTTPS collector's is lacking too, and so is a catalog
+ * URL on another host than the collector's, and a public key anyone could
+ * sign for.
  *
  * @param {Collector} collector
  */
@@ -149,6 +190,8 @@ export function missingForJoin(collector) {
   return collectorFacts.filter((name) => {
     const value = collector[name];
     if (value === undefined) return true;
+    // The agent sends over verified TLS, to a collector reached by name.
+    if (name === "endpoint") return endpointProblem(value, { https: true }) !== undefined;
     if (name === "catalogUrl") return collector.endpoint !== undefined && !onHostOf(value, collector.endpoint);
     if (name === "catalogPublicKey") return weakPublicKey(value);
     return false;

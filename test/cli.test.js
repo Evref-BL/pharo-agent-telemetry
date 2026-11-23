@@ -94,7 +94,7 @@ test("join installs the agent and points both tools at it without the token; lea
 
   const status = cli("status").stdout;
   assert.match(status, /^Joined\./);
-  assert.match(status, new RegExp(`on 127\\.0\\.0\\.1:${port}, sending to https://c\\.test/; up to date with @example/pharo-agent-study 0\\.1\\.0`));
+  assert.match(status, new RegExp(`on 127\\.0\\.0\\.1:${port}, sending to https://c\\.test/; up to date with @example/pharo-agent-study 0\\.1\\.0 and pharo-agent-telemetry`));
   for (const file of Object.values(settings)) assert.ok(status.includes(`${file} (joined)`), status);
 
   // A preview killed meanwhile left its backup.
@@ -151,7 +151,7 @@ test("status says when the agent is older than the package, has lost its key, or
   fs.rmSync(path.join(agent, "telemetry-transform.key"));
   fs.rmSync(settings.mcp);
   const status = cli("status").stdout;
-  assert.match(status, /its filter of version 0\.0\.1, not up to date with @example\/pharo-agent-study 0\.1\.0: run join again to update it/);
+  assert.match(status, /its filter of version 0\.0\.1, not up to date with @example\/pharo-agent-study 0\.1\.0 and pharo-agent-telemetry [0-9.]+: run join again to update it/);
   assert.match(status, /its key is missing, so it sends nothing/);
   assert.ok(status.includes(`${settings.mcp}: no block of ours, so the tool that reads it sends nothing. Run join again.`), status);
   // Something on the agent's port, which status cannot tell from the agent without its key.
@@ -446,6 +446,26 @@ test("joined, the preview takes the agent's port while it runs, and starts the a
   assert.doesNotMatch(second.output.text, /ENOENT/);
 }));
 
+test("another study's join and preview are refused while this home's service runs an agent joined from a shell with another XDG_CONFIG_HOME", { skip: process.platform === "win32" }, () => withHome(({ home, env }) => {
+  const { fakes, log } = fakeServiceCommands(home);
+  const root = path.join(home, "participant");
+  const joining = { ...fakedHome(env, root, fakes, log), XDG_CONFIG_HOME: path.join(root, "xdg") };
+  assert.equal(run(joining, "join", "--endpoint", "https://c.test").status, 0);
+  const other = path.join(home, "other-study");
+  fs.cpSync(study.directory, other, { recursive: true });
+  fs.writeFileSync(path.join(other, "study.json"), JSON.stringify({ ...JSON.parse(fs.readFileSync(path.join(other, "study.json"), "utf8")), id: "other" }));
+  const shell = { ...joining };
+  delete shell.XDG_CONFIG_HOME;
+  for (const command of ["join", "preview"]) {
+    const refused = spawnSync(process.execPath, [binary, "--study", other, command, "--endpoint", "https://c.test"], { env: shell, encoding: "utf8" });
+    assert.equal(refused.status, 1, command);
+    assert.match(refused.stderr, /You joined the study example \(.*xdg.*\): run leave first/, command);
+  }
+  // Nothing of the other study was written: the agent still sends for the one joined.
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, "xdg", "pharo-agent-telemetry", "agent.json"), "utf8")).study, "example");
+  assert.equal(run(shell, "leave").status, 0);
+}));
+
 test("leave and status from a shell without join's XDG_CONFIG_HOME find the agent from this home's service definitions, and the settings beside it", { skip: process.platform === "win32" }, () => withHome(({ home, env }) => {
   const { fakes, log } = fakeServiceCommands(home);
   const root = path.join(home, "participant");
@@ -645,4 +665,16 @@ test("where the service manager may not be asked, each command says so in one li
   const dry = run(outside, "status");
   assert.equal(dry.status, 1);
   assert.equal(dry.stderr.trim(), "PHARO_AGENT_TELEMETRY_DRY_RUN is for this package's tests only.");
+}));
+
+test("join refuses an --endpoint that is no collector's, says when no --token is given, and an unknown command is named", () => withHome(({ cli, agent }) => {
+  const refused = cli("join", "--endpoint", "not-a-url");
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /--endpoint: not-a-url is not a URL\./);
+  assert.equal(fs.existsSync(agent), false);
+  const joined = cli("join", "--endpoint", "https://c.test");
+  assert.equal(joined.status, 0, joined.stderr);
+  assert.match(joined.stdout, /No --token given: a collector that requires one/);
+  assert.doesNotMatch(cli("join", "--endpoint", "https://c.test", "--token", "t").stdout, /No --token given/);
+  assert.match(cli("bogus").stderr, /^Unknown command bogus\./);
 }));

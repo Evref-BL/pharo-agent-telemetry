@@ -69,7 +69,7 @@ export async function checkDeployment(endpoint, token, fetcher = fetch, { public
   if (publicKey !== undefined) {
     const fetched = await fetchCatalog(url ?? `${base}/pharo-agent-telemetry/catalog.json`);
     const verified = "text" in fetched ? verifyCatalog(fetched.text, publicKey) : { refused: fetched.failure };
-    results.push({ expectation: "the catalog is served, signed by the project's key", held: "payload" in verified, saw: "payload" in verified ? `the catalog of ${verified.payload?.published}` : verified.refused });
+    results.push({ expectation: "the catalog is served, signed by the study's key", held: "payload" in verified, saw: "payload" in verified ? `the catalog of ${verified.payload?.published}` : verified.refused });
     if ("payload" in verified) {
       const problem = catalogProblem(verified.payload) ?? (Date.parse(verified.payload.published) > now + 300_000 ? `it is dated ${verified.payload.published}, in the future` : undefined);
       results.push({ expectation: "the agents can read the catalog, and it is dated no later than now", held: problem === undefined, saw: problem ?? `form ${verified.payload.schema}, of ${verified.payload.published}` });

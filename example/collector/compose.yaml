@@ -3,7 +3,7 @@
 # OpenTelemetry Collector keeps what the allowlist allows and writes it to
 # ./archive, one file a day, where the import job collects it; the guard
 # makes Caddy refuse new spans while the archive is over its cap.
-name: pharo-agent-telemetry
+name: ${COMPOSE_PROJECT_NAME:-pharo-agent-telemetry}
 
 services:
   caddy:

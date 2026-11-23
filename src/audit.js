@@ -29,7 +29,7 @@ const byKey = (attributes) => new Map((attributes ?? []).map(({ key, value }) =>
  * have kept as it is.
  *
  * @param {string[]} lines OTLP JSON export requests, one per line
- * @param {any} allowlist collector/allowlist.json
+ * @param {any} allowlist a study's allowlist.json, with its catalog's sets
  */
 export function audit(lines, allowlist) {
   const rules = compile(allowlist);

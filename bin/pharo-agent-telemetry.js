@@ -30,7 +30,8 @@ package runs them: npx <the study's package> <command>, or here with --study.`;
 const [command, ...rest] = process.argv.slice(2);
 if (command !== undefined && Object.hasOwn(operatorCommands, command)) {
   const script = fileURLToPath(new URL(`../scripts/${command}.js`, import.meta.url));
-  const { status } = spawnSync(process.execPath, [script, ...rest], { stdio: "inherit" });
+  const oneLine = new URL("../scripts/one-line-errors.js", import.meta.url).href;
+  const { status } = spawnSync(process.execPath, ["--import", oneLine, script, ...rest], { stdio: "inherit" });
   process.exit(status ?? 1);
 } else if (command === undefined || command === "--help" || command === "-h") {
   console.log(usage);

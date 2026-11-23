@@ -69,9 +69,10 @@ const mergeable = (body) => body.startsWith(requestStart) && body.endsWith("]}")
  * tried once more on a fresh connection first, as a collector that restarted
  * leaves the pooled one dead.
  *
- * @param {{ endpoint: string, token?: string, now?: () => number, send?: (body: string, options: { fresh: boolean }) => Promise<boolean | "refused"> }} options
+ * @param {{ endpoint: string, token?: string, now?: () => number, send?: (body: string, options: { fresh: boolean }) => Promise<boolean | "refused">, settled?: () => void }} options
+ *   `settled` is told after each send, so that the agent's state says how it went
  */
-export function createForwarder({ endpoint, token, now = Date.now, send }) {
+export function createForwarder({ endpoint, token, now = Date.now, send, settled = () => {} }) {
   const target = new URL(`${endpoint.replace(/\/+$/, "")}/v1/traces`);
   const post = send ?? ((body, { fresh }) => postOnce(target, token, body, fresh));
   /** @type {{ body: string, size: number }[]} */
@@ -119,6 +120,7 @@ export function createForwarder({ endpoint, token, now = Date.now, send }) {
         counts.failed += count;
         closedUntil = now() + Math.min(backoff.first * 2 ** (failures - 1), backoff.last);
         last = { at: now(), outcome: "failed" };
+        settled();
       };
       const outcome = await attempt(body);
       if (outcome === "refused" && parts.length > 1) {
@@ -143,16 +145,19 @@ export function createForwarder({ endpoint, token, now = Date.now, send }) {
         counts.refused += refused;
         if (sent > 0) failures = 0;
         last = { at: now(), outcome: sent > 0 ? "sent" : "refused" };
+        settled();
         continue;
       }
       if (outcome === true) {
         failures = 0;
         counts.sent += requests;
         last = { at: now(), outcome: "sent" };
+        settled();
       } else if (outcome === "refused") {
         // The collector refused this request, not every request: no reason to stop sending.
         counts.refused += requests;
         last = { at: now(), outcome: "refused" };
+        settled();
       } else {
         fail(requests);
       }
@@ -475,7 +480,7 @@ export function weakPublicKey(publicKey) {
 
 /**
  * A signed catalog's payload, when its Ed25519 signature holds by the
- * project's public key; or why it is refused. The signature is of the
+ * study's public key; or why it is refused. The signature is of the
  * payload's text, as it came. A key anyone could sign for proves nothing.
  *
  * @param {string} text `{ "payload": "<the catalog, as JSON text>", "signature": "<base64>" }`
@@ -596,7 +601,7 @@ export function keptCatalog(directory, config, transform, now = Date.now()) {
 /**
  * The agent as its service runs it, until a signal or a stop request ends
  * it: the settings, filter and key in its directory, where `join` put them.
- * Sending to the project's collector, it asks the collector's host for a
+ * Sending to its study's collector, it asks the collector's host for a
  * newer catalog at most once a day (`catalog` in agent.json), and filters
  * with the sets of one whose signature holds from then on, without a restart.
  *
@@ -616,7 +621,7 @@ export async function runAgent(directory, { catalogEvery: every = catalogEvery, 
   // A key anyone could sign for takes no catalog: the filter's own stays.
   const weak = source !== undefined && weakPublicKey(source.publicKey);
   const updates = typeof source?.url === "string" && !weak && builtIn !== undefined;
-  // The catalog in use: the filter's own, until one the project signed and that is newer replaces it.
+  // The catalog in use: the filter's own, until one the study signed and that is newer replaces it.
   let inUse = { published: builtIn?.published, releases: builtIn?.releases, from: "package" };
   let { signed, checked } = updates ? readSignedCatalog(directory) : {};
   let outcome = weak ? "none asked for: the public key is one anyone can sign for" : undefined;
@@ -632,7 +637,8 @@ export async function runAgent(directory, { catalogEvery: every = catalogEvery, 
     return undefined;
   };
   if (updates && signed !== undefined && take(signed) !== undefined) signed = undefined;
-  const forwarder = createForwarder({ endpoint, token });
+  // A send's outcome is saved as a request's is, so status shows the last one whatever comes after.
+  const forwarder = createForwarder({ endpoint, token, settled: () => changed() });
   const state = agentState(forwarder, now, () => ({ ...inUse, ...(checked ? { checked } : {}), ...(outcome ? { outcome } : {}) }));
   let pending;
   const write = (name, text) => {

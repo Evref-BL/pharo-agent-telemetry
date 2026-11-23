@@ -8,7 +8,7 @@ import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { studyPath } from "./study.js";
+import { studyFilter } from "./generate.js";
 
 /** The agent, as this package ships it. */
 export const agentSource = fileURLToPath(new URL("./agent.js", import.meta.url));
@@ -18,14 +18,15 @@ const packagedNames = ["agent.mjs", "telemetry-transform.mjs"];
 
 /**
  * The files the agent of a study runs, by the name they get in its
- * directory: this package's agent and the study's filter. Without a study,
- * the agent alone.
+ * directory, and their text: this package's agent, and the filter the
+ * study's data makes with this package's rules. Without a study, the agent
+ * alone.
  *
  * @param {import("./study.js").Study} [study]
  * @returns {Record<string, string>}
  */
 export function packagedFiles(study) {
-  return { "agent.mjs": agentSource, ...(study ? { "telemetry-transform.mjs": studyPath(study, "filter") } : {}) };
+  return { "agent.mjs": fs.readFileSync(agentSource, "utf8"), ...(study ? { "telemetry-transform.mjs": studyFilter(study) } : {}) };
 }
 export const configFile = "agent.json";
 export const keyFile = "telemetry-transform.key";
@@ -105,12 +106,12 @@ export function readKey(directory) {
  *
  * @param {string} directory
  * @param {{ study?: string, endpoint: string, token?: string, port: number }} config
- * @param {Record<string, string>} files packagedFiles of the study
+ * @param {Record<string, string>} files packagedFiles of the study: names and texts
  */
 export function installAgent(directory, config, files) {
   fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
   fs.chmodSync(directory, 0o700);
-  for (const [name, source] of Object.entries(files)) write(path.join(directory, name), fs.readFileSync(source, "utf8"), 0o644);
+  for (const [name, text] of Object.entries(files)) write(path.join(directory, name), text, 0o644);
   write(path.join(directory, configFile), `${JSON.stringify(config, null, 2)}\n`, 0o600);
   if (readKey(directory) === undefined) write(path.join(directory, keyFile), `${crypto.randomBytes(32).toString("hex")}\n`, 0o600);
   return { agent: path.join(directory, "agent.mjs") };
@@ -163,7 +164,7 @@ export function agentStatus(directory, files = packagedFiles()) {
   return {
     present: Object.values(texts).some((text) => text !== undefined),
     version: filterVersion(texts["telemetry-transform.mjs"]),
-    current: Object.entries(files).every(([name, source]) => texts[name] === fs.readFileSync(source, "utf8")),
+    current: Object.entries(files).every(([name, text]) => texts[name] === text),
     key: readKey(directory) !== undefined,
     config: readAgentConfig(directory),
     state: readAgentState(directory),

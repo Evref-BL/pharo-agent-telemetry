@@ -21,7 +21,8 @@ const composeFile = path.join(studyPath(study, "collector"), "compose.yaml");
 const forbidden = fs.readFileSync(new URL("../fixtures/forbidden.json", import.meta.url), "utf8");
 const token = "test-token";
 const project = `pat-collector-test-${process.pid}`;
-const dockerRuns = spawnSync("docker", ["info"], { stdio: "ignore" }).status === 0;
+// Docker, and its Compose plugin, which the collector runs with.
+const dockerRuns = spawnSync("docker", ["info"], { stdio: "ignore" }).status === 0 && spawnSync("docker", ["compose", "version"], { stdio: "ignore" }).status === 0;
 
 /** @type {string} */
 let archive;
@@ -108,14 +109,14 @@ test("a request without the token is refused and archives nothing", { skip: !doc
   assert.equal((await send(forbidden, { authorization: "Bearer wrong" })).status, 401);
 });
 
-test("npm run check-deployment finds everything a participant relies on", { skip: !dockerRuns }, async () => {
+test("check-deployment finds everything a participant relies on", { skip: !dockerRuns }, async () => {
   const results = await checkDeployment(endpoint, token, fetch, { publicKey: publicKeyOf(catalogKey), allowlist, sets: catalogPayload(allowlist, "").sets });
   assert.deepEqual(results.filter((result) => !result.held), []);
   assert.equal(results.length, 8);
   // Where the agents ask for it, should catalogUrl name another path.
   const elsewhere = await checkDeployment(endpoint, token, fetch, { publicKey: publicKeyOf(catalogKey), url: `${endpoint}/pharo-agent-telemetry/other.json` });
   assert.deepEqual(elsewhere.filter((result) => !result.held).map((result) => result.saw), ["HTTP 404"]);
-  // Signed by another key, the catalog is said not to be the project's.
+  // Signed by another key, the catalog is said not to be the study's.
   const other = await checkDeployment(endpoint, token, fetch, { publicKey: publicKeyOf(/** @type {string} */ (generateKeyPairSync("ed25519").privateKey.export({ type: "pkcs8", format: "pem" }))) });
   assert.deepEqual(other.filter((result) => !result.held).map((result) => result.saw), ["its signature does not hold"]);
 });
@@ -154,7 +155,7 @@ test("the collector keeps of each rule fixture exactly what the agent's filter k
   }
 });
 
-test("nothing forbidden reaches the archive, and npm run audit finds nothing in it", { skip: !dockerRuns }, async () => {
+test("nothing forbidden reaches the archive, and audit finds nothing in it", { skip: !dockerRuns }, async () => {
   assert.equal((await send(forbidden, { authorization: `Bearer ${token}` })).status, 200);
   const sent = JSON.parse(forbidden).resourceSpans.flatMap((each) => each.scopeSpans.flatMap((scoped) => scoped.spans));
   const kept = new Set(sent.map((span) => hashedTrace(span.traceId, span.startTimeUnixNano, span.attributes?.find(({ key }) => key === "session.id")?.value.stringValue)));

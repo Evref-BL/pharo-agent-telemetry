@@ -23,7 +23,7 @@ processors:
     limit_mib: 400
     spike_limit_mib: 100
 
-  # Only PLexus's and MCP's spans, of the operations they record: any other
+  # Only the listed services' spans, of the operations they record: any other
   # is dropped whole, as is one with links (OTTL cannot remove them), one that
   # gives an attribute twice (a rule reads only the first), or a malformed one.
   filter/spans:

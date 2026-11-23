@@ -241,11 +241,13 @@ test("sends to the collector's /v1/traces with the token, and follows no redirec
 
 test("run from the files join copies, the agent sends what it keeps to the collector, and stops on a signal", () => withCollector(async ({ endpoint, received }) => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "pat-agent-"));
+  /** @type {import("node:child_process").ChildProcess | undefined} */
+  let child;
   try {
     const port = await freePort();
     installAgent(directory, { port, endpoint, token: "t0ken" }, packagedFiles(study));
     fs.writeFileSync(path.join(directory, "telemetry-transform.key"), `${testKey}\n`);
-    const child = spawn(process.execPath, [path.join(directory, "agent.mjs")], { stdio: "ignore" });
+    child = spawn(process.execPath, [path.join(directory, "agent.mjs")], { stdio: "ignore" });
     const exited = new Promise((resolve) => child.once("exit", (code) => resolve(code)));
     let status;
     for (let attempt = 0; attempt < 100 && status !== 200; attempt += 1) {
@@ -253,7 +255,17 @@ test("run from the files join copies, the agent sends what it keeps to the colle
       if (status !== 200) await new Promise((resolve) => setTimeout(resolve, 50));
     }
     assert.equal(status, 200);
-    await eventually(() => received.length === 1);
+    for (let waited = 0; waited < 3_000 && received.length === 0; waited += 50) await new Promise((resolve) => setTimeout(resolve, 50));
+    // The collector answers after the 2 s in which the request is saved: the send's outcome is saved too, without another request coming.
+    const saved = () => {
+      try {
+        return JSON.parse(fs.readFileSync(path.join(directory, "state.json"), "utf8")).forwarded?.sent === 1;
+      } catch {
+        return false;
+      }
+    };
+    for (let waited = 0; waited < 6_000 && !saved(); waited += 50) await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.ok(saved(), "the send is in state.json while the agent runs");
     assert.equal(await whoListens(port, testKey), "agent");
     // Asked to stop by whoever proves its key, it ends as on a signal.
     assert.equal(await stopAgent(port, testKey), true);
@@ -280,9 +292,11 @@ test("run from the files join copies, the agent sends what it keeps to the colle
     assert.deepEqual(sent, expectedSpans(fixture));
     assert.equal(received[0].body.includes("4bf92f3577b34da6a3ce929d0e0e4736"), false);
   } finally {
+    // A failed assertion leaves no agent running.
+    child?.kill();
     fs.rmSync(directory, { recursive: true, force: true });
   }
-}));
+}, (request, response) => setTimeout(() => response.writeHead(200).end("{}"), 2_500)));
 
 test("the agent proves it holds its key without giving it away, and stops only for whoever proves it too", async () => {
   const stopped = new AbortController();

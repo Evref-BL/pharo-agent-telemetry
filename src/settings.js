@@ -117,6 +117,7 @@ export function agentSettings({ port, environment = "field" }) {
  * @param {string} command how the participant runs the study's package, which says how to leave
  */
 export function settingsBlock(purpose, settings, command) {
+  if (/[\r\n`]/.test(command)) throw new Error("A study's command is one line.");
   const lines = Object.entries(settings).map(([key, value]) => `${key}=${value}`);
   return `${marker}${purpose}. Run \`${command} leave\`, or delete these lines down to the end line, to stop.\n${lines.join("\n")}\n${endLine}\n`;
 }

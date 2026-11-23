@@ -424,10 +424,10 @@ try {
   key = undefined;
 }
 
-export default createTransform(allowlist, key);
+export default createTransform(allowlist, key, { filterVersion: version });
 
-/** The same filter with another key, as \`preview\` runs it; without the places in sessions with \`{ offsets: false }\`; with a newer catalog's sets with \`{ catalog }\`. */
-export const filter = (other, options) => createTransform(allowlist, other, options);
+/** The same filter with another key, as \`preview\` runs it; without the places in sessions with \`{ offsets: false }\`; without its version on each span with \`{ filterVersion: undefined }\`; with a newer catalog's sets with \`{ catalog }\`. */
+export const filter = (other, options) => createTransform(allowlist, other, { filterVersion: version, ...options });
 
 /** The catalog this filter was generated with: its form, its date, and the releases it was read from. */
 export const catalog = { schema: catalogSchema, published: allowlist.catalogPublished, releases: allowlist.releases };

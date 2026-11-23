@@ -115,7 +115,9 @@ nothing. The agent answers `/pharo-agent-telemetry/health` with an HMAC of a
 challenge by its key, so `status` tells the agent from another program on its
 port, and stops on a request that proves the key, as `preview`, `join` and
 `leave` ask (on Windows, ending its task leaves node running). It writes what
-it received and sent to `state.json`, which `status` shows.
+it received, how many spans of each tool its filter kept, and what it sent
+to `state.json`, which `status` shows: a tool whose spans the filter drops
+shows there.
 
 `join --no-service` installs no service: the agent runs only while
 `npx <the study's package> agent` does, as where the service manager
@@ -262,7 +264,10 @@ which rewrites `telemetry-transform.mjs`, `collector/` and
 stale. Each rule has a fixture in `rules/`, a request and the spans it keeps:
 `check` requires the agent's filter to keep exactly those, and the
 collector, run in Docker, too, which also gets a span carrying everything the
-allowlist forbids. A tool that starts sending an attribute needs it here
+allowlist forbids. An allowlist that lists the resource attribute
+`pharo_agent_telemetry.filter.version` has the agent stamp each span with
+the study's version, in place of any a tool sent, so a span without it was
+kept by an older filter. A tool that starts sending an attribute needs it here
 too, or both drop it: run a session with `preview`, or against a local
 collector and `audit` its archive, to see what arrives.
 

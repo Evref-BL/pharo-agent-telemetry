@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
-import { compile, createTransform, offsetKey, sessionMemory, sessionOffsets, transformTraces } from "../src/rules.js";
+import { compile, createTransform, filterVersionKey, offsetKey, sessionMemory, sessionOffsets, transformTraces } from "../src/rules.js";
 import { allowlist, comparable, expectedSpans, filterFile, ruleFixtures, testKey, transformModule } from "./support.js";
 
 const { filter } = transformModule;
@@ -147,4 +147,17 @@ test("offsets go on across the agent's restarts, and a new session among twenty 
   clock += sessionMemory.idle + 1;
   place("late", 0n);
   assert.deepEqual([...memory.keys()], ["late"]);
+});
+
+test("the agent stamps its filter's version on each resource it keeps, over any a tool sent, when the allowlist lists it", () => {
+  const [fixture] = ruleFixtures();
+  const listed = { ...allowlist, resource: { ...allowlist.resource, [filterVersionKey]: { about: "The filter's version.", type: "string", pattern: "version" } } };
+  const request = structuredClone(fixture.request);
+  for (const each of request.resourceSpans) each.resource.attributes.push({ key: filterVersionKey, value: { stringValue: "9.9.9" } });
+  const versions = (kept) => kept.resourceSpans.map((each) => each.resource.attributes.find(({ key }) => key === filterVersionKey)?.value.stringValue);
+  const stamped = versions(createTransform(listed, testKey, { offsets: false, filterVersion: "1.2.3" })("traces", request));
+  assert.ok(stamped.length > 0);
+  assert.deepEqual(new Set(stamped), new Set(["1.2.3"]));
+  // An allowlist that does not list it keeps none, the tool's included.
+  assert.deepEqual(new Set(versions(createTransform(allowlist, testKey, { offsets: false, filterVersion: "1.2.3" })("traces", request))), new Set([undefined]));
 });

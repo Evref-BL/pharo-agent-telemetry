@@ -291,6 +291,12 @@ test("run from the files join copies, the agent sends what it keeps to the colle
     }
     assert.deepEqual(sent, expectedSpans(fixture));
     assert.equal(received[0].body.includes("4bf92f3577b34da6a3ce929d0e0e4736"), false);
+    // It counts, of each tool, the spans it received and those its filter kept, so a tool whose spans are dropped shows in status.
+    const spansOf = (service) => fixture.request.resourceSpans
+      .filter((each) => each.resource.attributes.some(({ key, value }) => key === "service.name" && value.stringValue === service))
+      .flatMap((each) => each.scopeSpans.flatMap((scoped) => scoped.spans)).length;
+    for (const service of ["plexus", "pharo-mcp"]) assert.equal(state.received[service].spans, spansOf(service), service);
+    assert.equal(state.received.plexus.keptSpans + state.received["pharo-mcp"].keptSpans, sent.length);
   } finally {
     // A failed assertion leaves no agent running.
     child?.kill();

@@ -6,8 +6,8 @@ import test from "node:test";
 import { compile, transformTraces } from "../../src/rules.js";
 import { allowlist, comparable, expectedSpans, ruleFixtures, testKey, transformModule } from "../support.js";
 
-// The places in sessions are the agent's alone, which the collector cannot know: a test of their own checks them.
-const transform = transformModule.filter(testKey, { offsets: false });
+// The places in sessions and the filter's version are the agent's alone, which the collector cannot know: tests of their own check them.
+const transform = transformModule.filter(testKey, { offsets: false, filterVersion: undefined });
 
 for (const fixture of ruleFixtures()) {
   test(`the agent's filter: ${fixture.name}: ${fixture.about}`, () => {

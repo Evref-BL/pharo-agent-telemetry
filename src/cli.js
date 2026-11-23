@@ -300,7 +300,7 @@ function stateLines(state, port) {
   const received = Object.entries(state.received ?? {});
   const lines = [received.length === 0
     ? `Received: nothing since the agent started, ${ago(state.started)}: no tool sends to 127.0.0.1:${port} yet.`
-    : `Received since the agent started (${ago(state.started)}): ${received.map(([name, each]) => `${name} ${each.requests} request(s), the last ${ago(each.last)}`).join("; ")}.`];
+    : `Received since the agent started (${ago(state.started)}): ${received.map(([name, each]) => `${name} ${each.requests} request(s)${typeof each.spans === "number" ? `, ${each.keptSpans} of ${each.spans} span(s) kept` : ""}, the last ${ago(each.last)}`).join("; ")}.`];
   const forwarded = state.forwarded ?? {};
   if (forwarded.last) {
     lines.push(`Sent to the collector: ${forwarded.sent ?? 0} request(s), ${forwarded.failed ?? 0} failed, ${forwarded.refused ?? 0} refused, ${forwarded.dropped ?? 0} dropped; the last send ${ago(forwarded.last.at)}: ${forwarded.last.outcome}.`);

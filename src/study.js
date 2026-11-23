@@ -32,7 +32,7 @@ import { withCatalog } from "./catalog.js";
  * @property {string} version its package's version
  * @property {string | undefined} page where participants read its participants page
  * @property {Collector} collector
- * @property {{ purpose: string, why: string, retention: string, authority: string }} text what the participants page says of it alone
+ * @property {{ purpose: string, why: string, retention: string, authority: string, publication?: string }} text what the participants page says of it alone; publication, when set, says who else may receive the data, in place of "Nobody else receives it."
  *
  * @typedef {object} Collector
  * @property {string} [endpoint] the collector's public URL
@@ -96,6 +96,10 @@ export function readStudy(directory) {
   for (const name of ["purpose", "why", "retention", "authority"]) {
     if (typeof text[name] !== "string" || text[name].trim() === "") throw new Error(`${studyFiles.study} needs text.${name}, which the participants page says.`);
     unmarked(`text.${name}`, text[name]);
+  }
+  if (text.publication !== undefined && text.publication !== null) {
+    if (typeof text.publication !== "string" || text.publication.trim() === "") throw new Error(`${studyFiles.study}: text.publication, when set, is text.`);
+    unmarked("text.publication", text.publication);
   }
   const collector = set(study.collector);
   for (const name of Object.keys(collector)) {

@@ -136,6 +136,8 @@ test("a study's name, version, page and texts are refused when they could write 
   }
   assert.throws(() => readStudy(fresh(() => copyOf(directory, (each) => ({ ...each, collector: { ...each.collector, controller: { name: "A\nB", contact: "c" } } })))), /collector\.controller\.name is text on one line/);
   assert.throws(() => readStudy(fresh(() => copyOf(directory, (each) => ({ ...each, collector: { ...each.collector, dpo: "<img src=x onerror=alert(1)>" } })))), /holds <, >/);
+  assert.throws(() => readStudy(fresh(() => copyOf(directory, (each) => ({ ...each, text: { ...each.text, publication: "<!-- hidden" } })))), /text\.publication holds <, >/);
+  assert.throws(() => readStudy(fresh(() => copyOf(directory, (each) => ({ ...each, text: { ...each.text, publication: " " } })))), /text\.publication, when set, is text/);
 }));
 
 test("--endpoint is a collector's base URL, without credentials; the study's own is HTTPS", async () => {

@@ -748,7 +748,7 @@ ${who} ${officer}
 
 ${where}
 
-Nobody else receives it.
+${text.publication?.trim() ?? "Nobody else receives it."}
 
 ## Why, and on what basis
 

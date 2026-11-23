@@ -30,7 +30,8 @@ participants run with npx:
   (`endpoint`, `token`, `controller`, `dpo`, `host`, `catalogUrl`,
   `catalogPublicKey`, each `null` until set; [src/study.js](src/study.js)
   says what each is), and the `text` its participants page says of it alone:
-  its `purpose`, `why`, `retention` and supervisory `authority`;
+  its `purpose`, `why`, `retention` and supervisory `authority`, and, when
+  anyone besides its hosts may receive the data, `publication`;
 - `allowlist.json`, what is kept, with the sets of `catalog.json`: the tools
   MCP, PLexus and pharo-image-fs publish, the words of their own names, and
   the classes MCP names an exception by;

@@ -259,6 +259,10 @@ test("the page names who answers for the data, its officer and where it is once 
   assert.match(set, /Example's Elasticsearch, in France keeps it/);
   assert.match(set, /consent/);
   assert.match(set, /CNIL/);
+  assert.match(set, /Nobody else receives it\./);
+  const published = participantsPage(allowlist, { ...study, text: { ...study.text, publication: "The spans may be published as an open dataset." } });
+  assert.match(published, /The spans may be published as an open dataset\./);
+  assert.doesNotMatch(published, /Nobody else receives it/);
 });
 
 test("join --endpoint naming the study's collector, however written, joins it as the study's", () => {

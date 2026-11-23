@@ -1,0 +1,4 @@
+node_modules/
+collector/.env
+collector/archive/
+collector/published/

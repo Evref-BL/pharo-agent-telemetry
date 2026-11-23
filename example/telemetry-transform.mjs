@@ -1,6 +1,6 @@
-// Generated from collector/allowlist.json and src/rules.js by `npm run generate`. Do not edit.
+// Generated from allowlist.json, catalog.json and pharo-agent-telemetry's rules by `pharo-agent-telemetry generate`. Do not edit.
 //
-// pharo-agent-telemetry's filter. The agent passes every request the tools
+// The study's filter. The agent passes every request the tools
 // send it through this module, and sends the collector only what it returns:
 // PLexus's and MCP's spans, each attribute in the shape the participants
 // page gives, times to the week, ids replaced by a keyed hash. The key is
@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
 export const version = "0.1.0";
 
 const allowlist = {
-  "$comment": "What is kept, and in what shape. `npm run generate` writes, from this file and collector/catalog.json (the tools and words `npm run catalog` reads in the projects' source, and the classes MCP names an exception by in an image of each Pharo version), the filter `join` installs on a participant's machine (src/telemetry-transform.mjs), the collector's configuration (collector/otelcol.yaml), which applies the same rules again, and docs/participants.md; a test fails when any is out of date. A span is kept only from the services listed, with their scope, one of their span names, and the kinds and attributes a service `requires`. Every attribute not listed is dropped; a listed one is kept only from the services in `from` (both when absent), with the type given, and only when its value has the shape given (and, with `words`, is made of `vocabulary` words in that form: a name, or a JSON pointer of names), else it is dropped, or replaced by `otherwise`; a list with an element of another shape is dropped, but for `published`, whose elements not in a `published` set become `otherwise`. `extract` keeps the first group of a pattern, per service; `when` keeps a resource attribute only beside another's value; `beside` keeps an attribute only beside another that holds a value of its set, not its `otherwise`. `name` marks a name of the tool called: dropped (or replaced by `nameOther`) on a pharo-mcp span whose origin is other for a tool no project publishes, and on a plexus span unless it is for one of PLexus's own tools it did not forward. `own` marks what MCP says only of its own answer: dropped on a pharo-mcp span whose origin is other, for a tool no project publishes. `tool` marks the tool's name: kept when a project publishes it; else, on a pharo-mcp span whose origin is mcp or unknown, when it is made of vocabulary words; else `otherwise`. `grows` names the sets that grow with the projects' releases, by the shape of their members (a tool's name, a word, a code, a class): the only sets a signed catalog the agents fetch may add to.",
+  "$comment": "What the study keeps, and in what shape. `pharo-agent-telemetry generate` writes, from this file and catalog.json (the tools and words `pharo-agent-telemetry catalog` reads in the projects' source, and the classes MCP names an exception by in an image of each Pharo version), the filter `join` installs on a participant's machine (telemetry-transform.mjs), the collector's configuration (collector/otelcol.yaml), which applies the same rules again, and docs/participants.md; `pharo-agent-telemetry check` fails when any is out of date. A span is kept only from the services listed, with their scope, one of their span names, and the kinds and attributes a service `requires`. Every attribute not listed is dropped; a listed one is kept only from the services in `from` (both when absent), with the type given, and only when its value has the shape given (and, with `words`, is made of `vocabulary` words in that form: a name, or a JSON pointer of names), else it is dropped, or replaced by `otherwise`; a list with an element of another shape is dropped, but for `published`, whose elements not in a `published` set become `otherwise`. `extract` keeps the first group of a pattern, per service; `when` keeps a resource attribute only beside another's value; `beside` keeps an attribute only beside another that holds a value of its set, not its `otherwise`. `name` marks a name of the tool called: dropped (or replaced by `nameOther`) on a pharo-mcp span whose origin is other for a tool no project publishes, and on a plexus span unless it is for one of PLexus's own tools it did not forward. `own` marks what MCP says only of its own answer: dropped on a pharo-mcp span whose origin is other, for a tool no project publishes. `tool` marks the tool's name: kept when a project publishes it; else, on a pharo-mcp span whose origin is mcp or unknown, when it is made of vocabulary words; else `otherwise`. `grows` names the sets that grow with the projects' releases, by the shape of their members (a tool's name, a word, a code, a class): the only sets a signed catalog the agents fetch may add to.",
   "services": {
     "plexus": {
       "scope": "@evref-bl/plexus",
@@ -94,7 +94,7 @@ const allowlist = {
       "pattern": "version"
     },
     "deployment.environment.name": {
-      "about": "field for participants, eval for our own evaluation runs, preview while previewing, check for npm run check-deployment.",
+      "about": "field for participants, eval for evaluation runs, preview while previewing, check for pharo-agent-telemetry check-deployment.",
       "type": "string",
       "values": ["field", "eval", "preview", "check"]
     },
@@ -805,7 +805,7 @@ function keepSpan(rules, span, service, options) {
  *   report?: (problem: string) => void,
  *   sessionOffset?: (session: string, start: bigint) => bigint,
  * }} [options]
- *   without `hash`, ids and session ids are kept as they are, as `npm run audit` reads an archive;
+ *   without `hash`, ids and session ids are kept as they are, as `pharo-agent-telemetry audit` reads an archive;
  *   with `sessionOffset`, each span with a session gets its offset in it, as the agent adds it
  */
 function transformTraces(rules, request, options = {}) {

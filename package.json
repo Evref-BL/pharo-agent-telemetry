@@ -1,7 +1,7 @@
 {
   "name": "@evref-bl/pharo-agent-telemetry",
   "version": "0.1.0",
-  "description": "Join, preview or leave the Pharo agent tools' field telemetry, and the collector that receives it.",
+  "description": "Run a study of how agents use the Pharo tools: the agent participants join, its filter, the collector, and the participants page, generated from the study's own data.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -10,23 +10,23 @@
   "files": [
     "bin",
     "src",
-    "docs",
-    "collector/allowlist.json",
-    "collector/catalog.json",
+    "scripts",
+    "collector",
+    "example",
+    "test/study",
+    "test/support.js",
+    "test/fixtures",
     "README.md"
   ],
   "engines": {
     "node": ">=22.15.0"
   },
   "scripts": {
-    "generate": "node scripts/generate.js",
-    "catalog": "node scripts/catalog.js",
-    "exception-names": "node scripts/exception-names.js",
-    "sign-catalog": "node scripts/sign-catalog.js",
-    "test": "node scripts/generate.js --check && node --test --test-concurrency=1 test/*.test.js",
-    "audit": "node scripts/audit-archive.js",
-    "check-deployment": "node scripts/check-deployment.js",
-    "check-release": "node scripts/check-release.js",
-    "prepublishOnly": "node scripts/generate.js --check && node scripts/check-release.js"
+    "generate": "node bin/pharo-agent-telemetry.js generate --study example",
+    "test": "node bin/pharo-agent-telemetry.js generate --study example --check && node --test --test-concurrency=1 test/*.test.js test/study/*.test.js"
+  },
+  "exports": {
+    "./cli": "./src/cli.js",
+    "./package.json": "./package.json"
   }
 }

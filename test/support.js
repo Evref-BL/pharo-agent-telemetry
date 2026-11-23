@@ -1,8 +1,22 @@
-// What the rule fixtures share: the key both filters hash with in the tests,
-// and one form of a span to compare what the agent's filter and the
-// collector keep with what each fixture expects.
+// What the tests share: the study they run on (PHARO_AGENT_TELEMETRY_STUDY,
+// as `pharo-agent-telemetry check` sets it, else the example study), the key
+// both filters hash with in the tests, and one form of a span to compare what
+// the agent's filter and the collector keep with what each fixture expects.
 import { createHash } from "node:crypto";
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { readAllowlist, readStudy, studyPath } from "../src/study.js";
+
+/** The study the tests run on. */
+export const study = readStudy(process.env.PHARO_AGENT_TELEMETRY_STUDY ?? fileURLToPath(new URL("../example/", import.meta.url)));
+
+/** Its allowlist, with its catalog's sets. */
+export const allowlist = readAllowlist(study);
+
+/** Its filter, as generated. */
+export const filterFile = studyPath(study, "filter");
+export const transformModule = await import(pathToFileURL(filterFile).href);
 
 /** The key the tests give the agent's filter and the collector alike. */
 export const testKey = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
@@ -10,13 +24,12 @@ export const testKey = "00112233445566778899aabbccddeeff00112233445566778899aabb
 /** The keyed hash, written again here so that the tests check it. */
 export const hash = (tag, value, length = 32) => createHash("sha256").update(`${testKey}:${tag}:${value}`).digest("hex").slice(0, length);
 
-const fixtures = new URL("./fixtures/rules/", import.meta.url);
-
-/** Every rule fixture: what it shows, the request, and the spans the rules keep of it. */
+/** Every rule fixture of the study: what it shows, the request, and the spans the rules keep of it. */
 export function ruleFixtures() {
+  const fixtures = studyPath(study, "rules");
   return fs.readdirSync(fixtures).filter((name) => name.endsWith(".json")).sort().map((name) => ({
     name: name.replace(/\.json$/, ""),
-    ...JSON.parse(fs.readFileSync(new URL(name, fixtures), "utf8")),
+    ...JSON.parse(fs.readFileSync(path.join(fixtures, name), "utf8")),
   }));
 }
 

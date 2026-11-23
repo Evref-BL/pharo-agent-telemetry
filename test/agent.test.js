@@ -15,11 +15,12 @@ import {
   startAgent, stopAgent, stopPath, verifyCatalog, whoListens,
 } from "../src/agent.js";
 import { catalogPayload, publicKeyOf, signCatalog } from "../src/catalog.js";
-import { readAllowlist } from "../src/generate.js";
-import { freePort, installAgent } from "../src/install.js";
+import { freePort, installAgent, packagedFiles } from "../src/install.js";
 import { offsetKey } from "../src/rules.js";
-import { catalog as builtIn, catalogRefusal, filter } from "../src/telemetry-transform.mjs";
+import { allowlist, study, transformModule } from "./support.js";
 import { comparable, expectedSpans, ruleFixtures, testKey } from "./support.js";
+
+const { catalog: builtIn, catalogRefusal, filter } = transformModule;
 
 const [fixture] = ruleFixtures().filter(({ name }) => name === "kept-and-dropped");
 const body = JSON.stringify(fixture.request);
@@ -242,7 +243,7 @@ test("run from the files join copies, the agent sends what it keeps to the colle
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "pat-agent-"));
   try {
     const port = await freePort();
-    installAgent(directory, { port, endpoint, token: "t0ken" });
+    installAgent(directory, { port, endpoint, token: "t0ken" }, packagedFiles(study));
     fs.writeFileSync(path.join(directory, "telemetry-transform.key"), `${testKey}\n`);
     const child = spawn(process.execPath, [path.join(directory, "agent.mjs")], { stdio: "ignore" });
     const exited = new Promise((resolve) => child.once("exit", (code) => resolve(code)));
@@ -425,7 +426,6 @@ async function withServer(run) {
 }
 
 const throwawayKey = () => /** @type {string} */ (generateKeyPairSync("ed25519").privateKey.export({ type: "pkcs8", format: "pem" }));
-const allowlist = readAllowlist(new URL("..", import.meta.url).pathname);
 
 test("a catalog is read whole only under its cap, from its URL alone: an unreachable host, a status, a redirect or too large a body give none", () => withServer(async ({ url, served }) => {
   assert.deepEqual(await fetchCatalog(url), { failure: "HTTP 404" });
@@ -481,7 +481,7 @@ test("the agent asks for a newer catalog, takes one the project signed without a
   const agents = [];
   const run = async (options, publicKey = publicKeyOf(key)) => {
     const port = await freePort();
-    installAgent(directory, { port, endpoint, token: "t0ken", catalog: { url, publicKey } });
+    installAgent(directory, { port, endpoint, token: "t0ken", catalog: { url, publicKey } }, packagedFiles(study));
     fs.writeFileSync(path.join(directory, "telemetry-transform.key"), `${testKey}\n`);
     const running = runAgent(directory, options);
     agents.push({ port, running });

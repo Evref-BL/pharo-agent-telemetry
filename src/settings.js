@@ -114,10 +114,11 @@ export function agentSettings({ port, environment = "field" }) {
  *
  * @param {string} purpose joined or preview
  * @param {Record<string, string>} settings
+ * @param {string} command how the participant runs the study's package, which says how to leave
  */
-export function settingsBlock(purpose, settings) {
+export function settingsBlock(purpose, settings, command) {
   const lines = Object.entries(settings).map(([key, value]) => `${key}=${value}`);
-  return `${marker}${purpose}. Run \`npx @evref-bl/pharo-agent-telemetry leave\`, or delete these lines down to the end line, to stop.\n${lines.join("\n")}\n${endLine}\n`;
+  return `${marker}${purpose}. Run \`${command} leave\`, or delete these lines down to the end line, to stop.\n${lines.join("\n")}\n${endLine}\n`;
 }
 
 const isSetting = (line) => /^\s*(?:export\s+)?[A-Za-z_][A-Za-z0-9_]*\s*=/.test(line);

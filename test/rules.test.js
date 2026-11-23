@@ -1,36 +1,17 @@
-// The agent's filter against the rule fixtures. collector.test.js sends the
-// same fixtures through the collector and requires the same spans, so the
-// two filters agree.
+// The rules, on the example study's allowlist and filter; test/study/ runs
+// the study's own rule fixtures through both filters.
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
-import { filter } from "../src/telemetry-transform.mjs";
 import { compile, createTransform, offsetKey, sessionMemory, sessionOffsets, transformTraces } from "../src/rules.js";
-import { readAllowlist } from "../src/generate.js";
-import { comparable, expectedSpans, ruleFixtures, testKey } from "./support.js";
+import { allowlist, comparable, expectedSpans, filterFile, ruleFixtures, testKey, transformModule } from "./support.js";
 
-const root = new URL("..", import.meta.url).pathname;
-const allowlist = readAllowlist(root);
+const { filter } = transformModule;
 // The places in sessions are the agent's alone, which the collector cannot know: a test of their own checks them.
 const transform = filter(testKey, { offsets: false });
-
-for (const fixture of ruleFixtures()) {
-  test(`the agent's filter: ${fixture.name}: ${fixture.about}`, () => {
-    assert.deepEqual(comparable([transform("traces", fixture.request)]), expectedSpans(fixture));
-  });
-}
-
-test("applying the rules again, ids aside, changes nothing", () => {
-  const rules = compile(allowlist);
-  for (const fixture of ruleFixtures()) {
-    const once = transformTraces(rules, fixture.request, {});
-    const twice = transformTraces(rules, once, {});
-    assert.deepEqual(twice, once, fixture.name);
-  }
-});
 
 test("metrics and logs are dropped, and so is everything without a key or that is not a request", () => {
   const [fixture] = ruleFixtures();
@@ -47,12 +28,12 @@ test("the filter as the agent installs it reads its key from beside it, and send
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "pat-filter-"));
   try {
     const [fixture] = ruleFixtures();
-    fs.copyFileSync(new URL("../src/telemetry-transform.mjs", import.meta.url), path.join(directory, "without-key.mjs"));
+    fs.copyFileSync(filterFile, path.join(directory, "without-key.mjs"));
     const { default: keyless } = await import(pathToFileURL(path.join(directory, "without-key.mjs")).href);
     assert.equal(keyless("traces", fixture.request), null);
     const keyed = path.join(directory, "keyed");
     fs.mkdirSync(keyed);
-    fs.copyFileSync(new URL("../src/telemetry-transform.mjs", import.meta.url), path.join(keyed, "telemetry-transform.mjs"));
+    fs.copyFileSync(filterFile, path.join(keyed, "telemetry-transform.mjs"));
     fs.writeFileSync(path.join(keyed, "telemetry-transform.key"), `${testKey}\n`);
     const { default: installed } = await import(pathToFileURL(path.join(keyed, "telemetry-transform.mjs")).href);
     const kept = comparable([installed("traces", fixture.request)]);

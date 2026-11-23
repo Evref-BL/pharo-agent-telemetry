@@ -1,28 +1,15 @@
-// What `npm run generate` writes from collector/allowlist.json and the
-// catalog beside it: the filter `join` installs on a participant's machine,
-// the collector's configuration, which applies the same rules again in OTTL,
-// and the participants page.
-import fs from "node:fs";
-import path from "node:path";
-import { catalogFile, withCatalog } from "./catalog.js";
-import { controller, dpo, host, publicEndpoint, publicToken } from "./collector.js";
+// What `pharo-agent-telemetry generate` writes from a study's allowlist and
+// the catalog beside it: the filter `join` installs on a participant's
+// machine, the collector's configuration, which applies the same rules again
+// in OTTL, and the participants page.
 import {
   compile, forwardedKey, kinds, longestMilliseconds, masked, offsetKey, originKey, sessionKey, toolCall, toolKey, wordBoundaries,
 } from "./rules.js";
 import { keyFile } from "./install.js";
 import { agentSettings, settingsBlock } from "./settings.js";
+import { studyCommand } from "./study.js";
 
-/** @typedef {any} Allowlist collector/allowlist.json, with the sets of collector/catalog.json */
-
-/**
- * @param {string} root the repository
- * @returns {Allowlist}
- */
-export function readAllowlist(root) {
-  const allowlist = JSON.parse(fs.readFileSync(path.join(root, "collector", "allowlist.json"), "utf8"));
-  const catalog = JSON.parse(fs.readFileSync(path.join(root, catalogFile), "utf8"));
-  return withCatalog(allowlist, catalog);
-}
+/** @typedef {any} Allowlist a study's allowlist.json, with the sets of its catalog.json */
 
 /** A YAML double-quoted string, which takes JSON's escapes; an OTTL string literal too. */
 const quoted = (text) => JSON.stringify(text);
@@ -283,9 +270,9 @@ export function collectorConfig(allowlist) {
   const rules = compile(allowlist);
   const statements = ruleStatements(allowlist);
   const ottl = (statement) => `          - ${quoted(statement)}`;
-  return `# Generated from allowlist.json by \`npm run generate\`. Do not edit.
+  return `# Generated from the study's allowlist.json by \`pharo-agent-telemetry generate\`. Do not edit.
 # The same rules as the filter \`join\` installs on a participant's machine
-# (src/telemetry-transform.mjs), applied again to whatever arrives.
+# (telemetry-transform.mjs), applied again to whatever arrives.
 extensions:
   bearertokenauth:
     token: \${env:COLLECTOR_TOKEN}
@@ -405,7 +392,7 @@ function compactJson(value, indent = "") {
  * key read from beside it.
  *
  * @param {Allowlist} allowlist
- * @param {string} version this package's
+ * @param {string} version the study's
  * @param {string} engine src/rules.js
  */
 export function transformModule(allowlist, version, engine) {
@@ -415,9 +402,9 @@ export function transformModule(allowlist, version, engine) {
     .join("\n")
     .replace(/^export /gm, "")
     .replace(/^\/\/ The rules that decide[\s\S]*?\n\n/, "");
-  return `// Generated from collector/allowlist.json and src/rules.js by \`npm run generate\`. Do not edit.
+  return `// Generated from allowlist.json, catalog.json and pharo-agent-telemetry's rules by \`pharo-agent-telemetry generate\`. Do not edit.
 //
-// pharo-agent-telemetry's filter. The agent passes every request the tools
+// The study's filter. The agent passes every request the tools
 // send it through this module, and sends the collector only what it returns:
 // PLexus's and MCP's spans, each attribute in the shape the participants
 // page gives, times to the week, ids replaced by a keyed hash. The key is
@@ -521,7 +508,7 @@ export function keptAs(allowlist, spec) {
 const unsettled = (what) => `*${what}: not set yet. Nobody can join until it is.*`;
 
 /** The placeholder for the DPO's contact, which scripts/check-release.js refuses to publish. */
-export const dpoPlaceholder = "**[DPO CONTACT: TO BE FILLED IN src/collector.js BEFORE PUBLISHING]**";
+export const dpoPlaceholder = "**[DPO CONTACT: TO BE FILLED IN study.json BEFORE PUBLISHING]**";
 
 /**
  * What a participant reads before joining: what is kept, what never is, who
@@ -531,7 +518,13 @@ export const dpoPlaceholder = "**[DPO CONTACT: TO BE FILLED IN src/collector.js 
  *
  * @param {Allowlist} allowlist
  */
-export function participantsPage(allowlist, collector = { endpoint: publicEndpoint, token: publicToken, controller, dpo, host }) {
+/**
+ * @param {Allowlist} allowlist
+ * @param {import("./study.js").Study} study
+ */
+export function participantsPage(allowlist, study) {
+  const { collector, text } = study;
+  const npx = studyCommand(study);
   const from = (spec) => (spec.from ?? Object.keys(allowlist.services)).join(", ");
   const rows = (attributes) => Object.entries(attributes)
     .map(([name, spec]) => `| ${code(name)} | ${from(spec)} | ${spec.about} | ${keptAs(allowlist, spec)} |`).join("\n");
@@ -545,7 +538,7 @@ export function participantsPage(allowlist, collector = { endpoint: publicEndpoi
     return `- from ${code(service)}, with its scope ${code(scope)}: ${operations}, ${kept}.`;
   }).join("\n");
   const checkedKeys = Object.entries(allowlist.span).filter(([, spec]) => spec.words || spec.published || spec.tool).map(([name]) => code(name)).join(", ");
-  const example = settingsBlock("joined", agentSettings({ port: 4319 })).trimEnd().replace("4319", "<its port>");
+  const example = settingsBlock("joined", agentSettings({ port: 4319 }), npx).trimEnd().replace("4319", "<its port>");
   const setLines = Object.entries(allowlist.sets)
     .filter(([name]) => !allowlist.vocabulary.includes(name))
     .map(([name, values]) => `- ${name}: ${values.map(code).join(", ")}.`).join("\n");
@@ -562,14 +555,12 @@ export function participantsPage(allowlist, collector = { endpoint: publicEndpoi
 - Once a day, a scheduled job in ${collector.host.importer} copies what the collector received, loads it into ${collector.host.archive}, and deletes it from the machine and from the job's own workspace.
 - ${collector.host.archive} keeps it, as "How long" says.`
     : unsettled("Where the collector runs, the GitLab that copies its archive, and where the archive is kept");
-  return `<!-- Generated from collector/allowlist.json, collector/catalog.json and src/collector.js by \`npm run generate\`. Do not edit. -->
+  return `<!-- Generated from study.json, allowlist.json and catalog.json by \`pharo-agent-telemetry generate\`. Do not edit. -->
 # What the Pharo tools send when you join
 
 The Pharo agent tools (the pharo-agent plugin, PLexus and Pharo MCP) can
-record how agents use them, so the tools can change to fit that use: tools
-nobody reaches, arguments agents expect but the tools do not take, answers
-that are too long, mistakes agents repair. Joining is opt-in, and nothing is
-sent until you join. The tools never ask you to.
+record how agents use them. ${text.purpose.trim()} Joining is opt-in, and
+nothing is sent until you join. The tools never ask you to.
 
 ## How it leaves your machine
 
@@ -584,12 +575,13 @@ says, all send to the agent.
 The collector applies the same rules again to whatever arrives, and drops
 what they do not keep. Both are made from one list, and so is this page.
 
-The agent updates its lists of our tools' names and words, and nothing else,
-from the project's server: at most once a day it asks the collector's server
-for a newer catalog, and takes it only when the project's key signed it. A
-catalog can only add, and only to the lists that grow with our releases
-(${growing}): it never removes a name, adds an agent host or any other value,
-or changes which attributes are kept or in what shape. The project's key can
+The agent updates its lists of the Pharo tools' names and words, and nothing
+else, from the study's server: at most once a day it asks the collector's
+server for a newer catalog, and takes it only when the study's key signed it.
+A catalog can only add, and only to the lists that grow with the tools'
+releases (${growing}): it never removes a name, adds an agent host or any
+other value, or changes which attributes are kept or in what shape. The
+study's key can
 thus add names and words to those lists, which would let names made of such
 words through; \`status\` shows what the catalog in use added. Were that key
 compromised, it would be replaced only by joining again with a package that
@@ -643,11 +635,11 @@ ${vocabularySize} words of the names in the code of MCP, PLexus and
 pharo-image-fs (their tools, arguments, errors and the rest), read from
 their source (${releases}), and of a list of words agents guess. Any
 other name is dropped, or becomes \`_OTHER\`. A name is kept only when it is
-made of words our tools use, so a name of your own made only of such words
+made of words the tools use, so a name of your own made only of such words
 can pass, such as a class \`ClassName\` or an argument \`class_name\`; a name
 with any other word in it cannot. Both lists are in
-[collector/catalog.json](../collector/catalog.json) and
-[collector/allowlist.json](../collector/allowlist.json).
+[catalog.json](../catalog.json) and
+[allowlist.json](../allowlist.json).
 
 The names of a tool another package added to an image (\`pharo.mcp.tool.origin\`
 \`other\`, or no origin) are not kept: its tool's name becomes \`_OTHER\` and
@@ -689,9 +681,9 @@ ${setLines}
 ## Is it anonymous?
 
 The archive is. A session's spans share a \`session.id\`: PLexus makes one at
-random for the calls of an agent host, and MCP makes one when a call comes
-without one (MCP's part ships in its next release; until then a call to MCP
-alone carries no session, and is not kept). The agent hashes it within its
+random for the calls of an agent host, and MCP, from 4.3, makes one when a
+call comes without one (a call to an earlier MCP alone carries no session,
+and is not kept). The agent hashes it within its
 week, and the collector again, so the calls of one session can be studied
 together, and in order, but no id links a session to another session, to a
 machine or to a person.
@@ -726,8 +718,7 @@ Nobody else receives it.
 
 ## Why, and on what basis
 
-To change the tools from how agents use them, rather than from our own
-sessions alone. The basis is your consent: running \`join\` after reading this
+${text.why.trim()} The basis is your consent: running \`join\` after reading this
 page gives it, and \`leave\` withdraws it, at any time and with no effect on
 what the tools do for you.
 
@@ -738,10 +729,7 @@ it arrived, a day the file's spans also carry; the import keeps neither. The
 collector never deletes a file the daily import has not loaded, and the
 import deletes each file once Elasticsearch holds its spans. Should the
 import stop, the collector refuses new spans once its archive takes half its
-disk's free space, rather than delete any. Elasticsearch keeps the spans in
-one index a month, under the lifecycle policy as the import repository ships
-it, which deletes each index twelve months after it was made. Reports
-derived from them hold counts, never spans, and are kept.
+disk's free space, rather than delete any. ${text.retention.trim()}
 
 ## Your rights
 
@@ -750,17 +738,17 @@ Access, correction and erasure apply to data about a person; since nothing in
 the archive is about one, or can be traced back to one, there is nothing to
 look up, correct or delete for you (GDPR Art. 11), and what was sent before
 you left stays in the archive, as anonymous as it arrived. You can complain to
-your data protection authority; in France, the CNIL (cnil.fr).
+your data protection authority: ${text.authority.trim()}
 
 ## Joining and leaving
 
 With Node 22.15 or later:
 
 \`\`\`sh
-npx @evref-bl/pharo-agent-telemetry preview   # see what would be sent, sending nothing
-npx @evref-bl/pharo-agent-telemetry join
-npx @evref-bl/pharo-agent-telemetry status
-npx @evref-bl/pharo-agent-telemetry leave
+${npx} preview   # see what would be sent, sending nothing
+${npx} join
+${npx} status
+${npx} leave
 \`\`\`
 
 \`join\` copies the agent into \`pharo-agent-telemetry/\` under
@@ -787,10 +775,10 @@ spans but those "What is kept" says it cannot tell from MCP's.
 Where your system will not run a service of your account (over SSH on macOS,
 or on Linux without a systemd user session), \`join --no-service\` installs
 none: the agent then sends only while
-\`npx @evref-bl/pharo-agent-telemetry agent\` runs.
+\`${npx} agent\` runs.
 
 PLexus reads its file at start, and passes it on to the images it starts; an
-image reads MCP's at every start. From PLexus's and MCP's next releases, a
+image reads MCP's at every start. From PLexus 0.21 and MCP 4.3, a
 tool's file replaces any OpenTelemetry settings (\`OTEL_*\`) it inherits from
 the agent host; before, an agent host that passes such settings sends the
 tools' spans where they say instead. Restart your agent host after joining:
@@ -813,8 +801,8 @@ tools never slow down or fail a call because of it.
 
 ### With MCP alone
 
-Using Pharo MCP in your own image, without PLexus? It records calls from
-MCP's next release, which makes a session of its own. Join as above, then,
+Using Pharo MCP in your own image, without PLexus? From MCP 4.3, it records
+calls, in a session of its own. Join as above, then,
 in the image:
 
 1. Load MCP's \`Telemetry\` group from the repository you loaded MCP from:

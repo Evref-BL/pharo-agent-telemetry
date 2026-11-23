@@ -3,12 +3,9 @@ import fs from "node:fs";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { audit, blockedPattern } from "../src/audit.js";
-import { readAllowlist } from "../src/generate.js";
-import { ruleFixtures, testKey } from "./support.js";
-import { filter } from "../src/telemetry-transform.mjs";
+import { allowlist, ruleFixtures, study, testKey, transformModule } from "./support.js";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
-const allowlist = readAllowlist(root);
+const { filter } = transformModule;
 
 test("reads the allowlist's blocked patterns, inline flags included", () => {
   assert.ok(blockedPattern(allowlist.blockedValues["a home directory path"]).test("at /USERS/ada/x"));
@@ -72,7 +69,7 @@ test("two spans of a line that share an id are each set beside what the rules ma
   assert.deepEqual(audit([JSON.stringify(kept)], allowlist).problems, []);
 });
 
-test("npm run audit takes a directory for the archive files in it", async () => {
+test("audit takes a directory for the archive files in it", async () => {
   const { spawnSync } = await import("node:child_process");
   const os = await import("node:os");
   const path = await import("node:path");
@@ -82,12 +79,12 @@ test("npm run audit takes a directory for the archive files in it", async () => 
     const kept = transform("traces", ruleFixtures().find(({ name }) => name === "vocabulary").request);
     fs.writeFileSync(path.join(directory, "traces-2026-11-22.jsonl"), `${JSON.stringify(kept)}\n`);
     fs.writeFileSync(path.join(directory, "notes.txt"), "not an archive");
-    const script = fileURLToPath(new URL("../scripts/audit-archive.js", import.meta.url));
-    const audited = spawnSync(process.execPath, [script, directory], { encoding: "utf8" });
+    const script = fileURLToPath(new URL("../scripts/audit.js", import.meta.url));
+    const audited = spawnSync(process.execPath, [script, "--study", study.directory, directory], { encoding: "utf8" });
     assert.equal(audited.status, 0, audited.stderr);
     assert.match(audited.stdout, /Nothing the allowlist does not allow\./);
     assert.match(audited.stdout, /pharo-mcp tools\/call tests_run/);
-    const missing = spawnSync(process.execPath, [script, path.join(directory, "gone")], { encoding: "utf8" });
+    const missing = spawnSync(process.execPath, [script, "--study", study.directory, path.join(directory, "gone")], { encoding: "utf8" });
     assert.equal(missing.status, 2);
     assert.match(missing.stderr, /no such file or directory/);
   } finally {

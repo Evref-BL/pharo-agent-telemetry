@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Writes the names MCP can give the class of a failure, in an image of each
-// Pharo version its CI runs, for `npm run catalog -- --exceptions`:
+// Pharo version its CI runs, for `pharo-agent-telemetry catalog --exceptions`:
 //
-//   npm run exception-names -- --mcp <MCP> --cli <PLexus CLI> --out <directory>
+//   pharo-agent-telemetry exception-names --mcp <MCP> --cli <PLexus CLI> --out <directory>
 //
 // <MCP> is a checkout of the MCP release in use, whose CI workflow names the
 // versions; <PLexus CLI> is the dist/cli.js of the PLexus release in use,
@@ -21,7 +21,7 @@ import { ciPharoVersions, pharoTemplate } from "../src/catalog.js";
 
 const { values } = parseArgs({ options: { mcp: { type: "string" }, cli: { type: "string" }, out: { type: "string" } } });
 if (!values.mcp || !values.cli || !values.out) {
-  console.error("Usage: npm run exception-names -- --mcp <MCP checkout> --cli <PLexus's dist/cli.js> --out <directory>");
+  console.error("Usage: pharo-agent-telemetry exception-names --mcp <MCP checkout> --cli <PLexus's dist/cli.js> --out <directory>");
   process.exit(1);
 }
 const cli = path.resolve(values.cli);

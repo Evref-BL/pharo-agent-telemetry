@@ -8,17 +8,18 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { isProjectCollector, missingForJoin } from "../src/collector.js";
-import { dpoPlaceholder, participantsPage, readAllowlist } from "../src/generate.js";
+import { dpoPlaceholder, participantsPage } from "../src/generate.js";
 import { describeRequest, recoverPreview, startPreview } from "../src/preview.js";
 import { fakesMarker, installedDefinitions, serviceDefinition, serviceNames, stableNode } from "../src/service.js";
 import { everySettingsFile, readSettings, settingsBlock, settingsFiles, agentSettings } from "../src/settings.js";
-import { catalog as builtIn, filter } from "../src/telemetry-transform.mjs";
-import { comparable, expectedSpans, ruleFixtures, testKey } from "./support.js";
+import { isStudyCollector, missingForJoin, studyCommand } from "../src/study.js";
+import { allowlist, comparable, expectedSpans, filterFile, ruleFixtures, study, testKey, transformModule } from "./support.js";
 
+const { catalog: builtIn, filter } = transformModule;
+// The participants' commands, as the example study's package runs them.
 const binary = new URL("../bin/pharo-agent-telemetry.js", import.meta.url).pathname;
-const root = new URL("..", import.meta.url).pathname;
-const allowlist = readAllowlist(root);
+const program = [binary, "--study", study.directory];
+const command = studyCommand(study);
 const forbidden = fs.readFileSync(new URL("./fixtures/forbidden.json", import.meta.url), "utf8");
 const leaveText = "Left: sending stops at once. PLexus and the images now find the agent's port closed, and nothing else leaves this machine. Images keep running.";
 
@@ -30,7 +31,7 @@ async function withHome(run) {
   const home = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "pat-home-")));
   const config = path.join(home, "config");
   const env = { ...process.env, HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: config, APPDATA: "", PHARO_AGENT_TELEMETRY_DRY_RUN: path.join(home, "commands.jsonl") };
-  const cli = (...args) => spawnSync(process.execPath, [binary, ...args], { env, encoding: "utf8" });
+  const cli = (...args) => spawnSync(process.execPath, [...program, ...args], { env, encoding: "utf8" });
   const settings = { plexus: path.join(config, "plexus", "otel.env"), mcp: path.join(config, "pharo-mcp", "otel.env") };
   const agent = path.join(config, "pharo-agent-telemetry");
   try {
@@ -72,8 +73,8 @@ test("join installs the agent and points both tools at it without the token; lea
     assert.equal(readSettings(file)?.writer, "joined");
   }
   assert.equal(fs.readFileSync(path.join(agent, "agent.mjs"), "utf8"), fs.readFileSync(new URL("../src/agent.js", import.meta.url), "utf8"));
-  assert.equal(fs.readFileSync(path.join(agent, "telemetry-transform.mjs"), "utf8"), fs.readFileSync(new URL("../src/telemetry-transform.mjs", import.meta.url), "utf8"));
-  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(agent, "agent.json"), "utf8")), { port, endpoint: "https://c.test/", token: "secret-token" });
+  assert.equal(fs.readFileSync(path.join(agent, "telemetry-transform.mjs"), "utf8"), fs.readFileSync(filterFile, "utf8"));
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(agent, "agent.json"), "utf8")), { study: "example", port, endpoint: "https://c.test/", token: "secret-token" });
   assert.equal(mode(path.join(agent, "agent.json")), 0o600);
   const key = fs.readFileSync(path.join(agent, "telemetry-transform.key"), "utf8");
   assert.match(key, /^[0-9a-f]{64}\n$/);
@@ -93,7 +94,7 @@ test("join installs the agent and points both tools at it without the token; lea
 
   const status = cli("status").stdout;
   assert.match(status, /^Joined\./);
-  assert.match(status, new RegExp(`on 127\\.0\\.0\\.1:${port}, sending to https://c\\.test/; up to date with this package`));
+  assert.match(status, new RegExp(`on 127\\.0\\.0\\.1:${port}, sending to https://c\\.test/; up to date with @example/pharo-agent-study 0\\.1\\.0`));
   for (const file of Object.values(settings)) assert.ok(status.includes(`${file} (joined)`), status);
 
   // A preview killed meanwhile left its backup.
@@ -126,7 +127,7 @@ test("join refuses before the collector exists, and never replaces settings it d
 }));
 
 test("leave finds a block wherever a tool may have read it, and keeps the settings of your own beside it", () => withHome(({ home, cli, settings, config }) => {
-  const block = settingsBlock("joined", agentSettings({ port: 4321 }));
+  const block = settingsBlock("joined", agentSettings({ port: 4321 }), command);
   const elsewhere = path.join(home, ".config", "plexus", "otel.env");
   const earlier = path.join(config, "pharo-agent", "otel.env");
   const yours = path.join(home, ".config", "pharo-mcp", "otel.env");
@@ -150,7 +151,7 @@ test("status says when the agent is older than the package, has lost its key, or
   fs.rmSync(path.join(agent, "telemetry-transform.key"));
   fs.rmSync(settings.mcp);
   const status = cli("status").stdout;
-  assert.match(status, /version 0\.0\.1, this package is [^:]+: run join again to update it/);
+  assert.match(status, /its filter of version 0\.0\.1, not up to date with @example\/pharo-agent-study 0\.1\.0: run join again to update it/);
   assert.match(status, /its key is missing, so it sends nothing/);
   assert.ok(status.includes(`${settings.mcp}: no block of ours, so the tool that reads it sends nothing. Run join again.`), status);
   // Something on the agent's port, which status cannot tell from the agent without its key.
@@ -158,7 +159,7 @@ test("status says when the agent is older than the package, has lost its key, or
   const listener = http.createServer((request, response) => response.writeHead(404).end());
   await new Promise((resolve) => listener.listen(port, "127.0.0.1", () => resolve(undefined)));
   try {
-    const seen = await new Promise((resolve) => execFile(process.execPath, [binary, "status"], { env }, (error, stdout) => resolve(stdout)));
+    const seen = await new Promise((resolve) => execFile(process.execPath, [...program, "status"], { env }, (error, stdout) => resolve(stdout)));
     assert.match(seen, new RegExp(`^Something listens on 127\\.0\\.0\\.1:${port}; without the agent's key`, "m"));
   } finally {
     await new Promise((resolve) => listener.close(() => resolve(undefined)));
@@ -167,11 +168,11 @@ test("status says when the agent is older than the package, has lost its key, or
 
 test("a preview prints what the agent would send, sends nothing, and puts the settings back", () => withHome(async ({ settings }) => {
   fs.mkdirSync(path.dirname(settings.plexus), { recursive: true });
-  const joined = settingsBlock("joined", agentSettings({ port: 4321 }));
+  const joined = settingsBlock("joined", agentSettings({ port: 4321 }), command);
   fs.writeFileSync(settings.plexus, joined);
   const printed = [];
   const stop = new AbortController();
-  const { port, done } = await startPreview({ files: Object.values(settings), filter, key: testKey, print: (line) => printed.push(line), signal: stop.signal });
+  const { port, done } = await startPreview({ files: Object.values(settings), filter, key: testKey, print: (line) => printed.push(line), signal: stop.signal, command });
   for (const file of Object.values(settings)) {
     assert.equal(readSettings(file)?.writer, "preview");
     assert.match(fs.readFileSync(file, "utf8"), new RegExp(`^OTEL_EXPORTER_OTLP_ENDPOINT=http://127\\.0\\.0\\.1:${port}$`, "m"));
@@ -194,7 +195,7 @@ for (const signal of ["SIGHUP", "SIGINT"]) {
   test(`the preview command puts the settings back on ${signal}`, () => withHome(async ({ env, settings }) => {
     fs.mkdirSync(path.dirname(settings.plexus), { recursive: true });
     fs.writeFileSync(settings.plexus, "OTEL_SERVICE_NAME=mine\n");
-    const child = spawn(process.execPath, [binary, "preview"], { env, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(process.execPath, [...program, "preview"], { env, stdio: ["ignore", "pipe", "pipe"] });
     let output = "";
     child.stdout.on("data", (chunk) => { output += chunk; });
     child.stderr.on("data", (chunk) => { output += chunk; });
@@ -213,7 +214,7 @@ for (const signal of ["SIGHUP", "SIGINT"]) {
 
 test("a preview that was killed is put back as it was, or removed when there was nothing", () => withHome(({ settings }) => {
   fs.mkdirSync(path.dirname(settings.plexus), { recursive: true });
-  const preview = settingsBlock("preview", agentSettings({ port: 4321, environment: "preview" }));
+  const preview = settingsBlock("preview", agentSettings({ port: 4321, environment: "preview" }), command);
   fs.writeFileSync(settings.plexus, preview);
   fs.writeFileSync(`${settings.plexus}.before-preview`, "OTEL_SERVICE_NAME=mine\n");
   recoverPreview(settings.plexus);
@@ -237,17 +238,17 @@ test("a span is described with its week, ids, attributes and where it ran", () =
 });
 
 test("the page names who answers for the data, its officer and where it is once they are set, and says so while they are not", () => {
-  const unset = participantsPage(allowlist, {});
+  const unset = participantsPage(allowlist, { ...study, collector: {} });
   assert.match(unset, /The controller and how to reach them: not set yet/);
   assert.match(unset, /Where the collector runs, the GitLab that copies its archive, and where the archive is kept: not set yet/);
   assert.ok(unset.includes(dpoPlaceholder));
-  const set = participantsPage(allowlist, {
+  const set = participantsPage(allowlist, { ...study, collector: {
     endpoint: "https://c.test",
     token: "t",
     controller: { name: "Example SA", contact: "privacy@example.test" },
     dpo: "dpo@example.test",
     host: { provider: "Example Cloud", region: "Paris", importer: "Example's GitLab", archive: "Example's Elasticsearch, in France" },
-  });
+  } });
   assert.doesNotMatch(set, /not set yet/);
   assert.equal(set.includes(dpoPlaceholder), false);
   assert.match(set, /Example SA decides why and how/);
@@ -260,16 +261,16 @@ test("the page names who answers for the data, its officer and where it is once 
   assert.match(set, /CNIL/);
 });
 
-test("join --endpoint naming the project's collector, however written, joins it as the project's", () => {
+test("join --endpoint naming the study's collector, however written, joins it as the study's", () => {
   const ours = "https://telemetry.example.org";
-  for (const given of [undefined, ours, `${ours}/`, "https://TELEMETRY.example.org", "https://telemetry.example.org:443/"]) assert.equal(isProjectCollector(given, ours), true, String(given));
-  for (const given of ["https://other.example.org", "http://telemetry.example.org", "https://telemetry.example.org/elsewhere", "not a url"]) assert.equal(isProjectCollector(given, ours), false, given);
-  // Before the project's collector exists, any --endpoint is another's.
-  assert.equal(isProjectCollector("https://c.test", undefined), false);
-  assert.equal(isProjectCollector(undefined, undefined), true);
+  for (const given of [undefined, ours, `${ours}/`, "https://TELEMETRY.example.org", "https://telemetry.example.org:443/"]) assert.equal(isStudyCollector(given, ours), true, String(given));
+  for (const given of ["https://other.example.org", "http://telemetry.example.org", "https://telemetry.example.org/elsewhere", "not a url"]) assert.equal(isStudyCollector(given, ours), false, given);
+  // Before the study's collector exists, any --endpoint is another's.
+  assert.equal(isStudyCollector("https://c.test", undefined), false);
+  assert.equal(isStudyCollector(undefined, undefined), true);
 });
 
-test("join refuses the project's collector while anything about it is missing", () => {
+test("join refuses the study's collector while anything about it is missing", () => {
   assert.deepEqual(missingForJoin({}), ["endpoint", "token", "controller", "dpo", "host", "catalogUrl", "catalogPublicKey"]);
   const ready = { endpoint: "https://c.test", token: "t", controller: { name: "n", contact: "c" }, dpo: "d", host: { provider: "p", region: "r", importer: "i", archive: "a" }, catalogUrl: "https://c.test/pharo-agent-telemetry/catalog.json", catalogPublicKey: "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo" };
   assert.deepEqual(missingForJoin(ready), []);
@@ -302,7 +303,7 @@ function fakedHome(env, root, fakes, log) {
   return faked;
 }
 
-const run = (environment, ...args) => spawnSync(process.execPath, [binary, ...args], { env: environment, encoding: "utf8" });
+const run = (environment, ...args) => spawnSync(process.execPath, [...program, ...args], { env: environment, encoding: "utf8" });
 
 test("leave, status and join in a scratch home act on no other home's service, even with its definition copied in", { skip: process.platform === "win32" }, () => withHome(({ home, env }) => {
   const { fakes, log, calls, clear } = fakeServiceCommands(home);
@@ -355,7 +356,7 @@ test("a join the service manager refuses leaves nothing behind, and says why", {
   assert.equal(refused.status, 1);
   assert.match(refused.stderr, /service manager refused it/);
   assert.match(refused.stderr, /Nothing was installed, and nothing is sent\./);
-  assert.match(refused.stderr, /run join --no-service, then keep `npx @evref-bl\/pharo-agent-telemetry agent` running/);
+  assert.match(refused.stderr, /run join --no-service, then keep `npx @example\/pharo-agent-study agent` running/);
   assert.equal(fs.existsSync(path.join(root, "config", "pharo-agent-telemetry")), false);
   assert.deepEqual(installedDefinitions({ home: root, env: refusing, agent: path.join(root, "config", "pharo-agent-telemetry", "agent.mjs") }), []);
   assert.equal(fs.readFileSync(mine, "utf8"), "# my notes\n");
@@ -410,7 +411,7 @@ test("settings of your own are put back as they were on leave, and status never 
 
 /** Runs the preview command until `until` holds of what it printed. */
 async function startedPreview(env, until) {
-  const child = spawn(process.execPath, [binary, "preview"], { env, stdio: ["ignore", "pipe", "pipe"] });
+  const child = spawn(process.execPath, [...program, "preview"], { env, stdio: ["ignore", "pipe", "pipe"] });
   const output = { text: "" };
   child.stdout.on("data", (chunk) => { output.text += chunk; });
   child.stderr.on("data", (chunk) => { output.text += chunk; });
@@ -456,7 +457,7 @@ test("leave and status from a shell without join's XDG_CONFIG_HOME find the agen
   const shell = { ...joining };
   delete shell.XDG_CONFIG_HOME;
   const status = run(shell, "status").stdout;
-  assert.ok(status.includes(`Agent: ${directory} on 127.0.0.1:`), status);
+  assert.ok(status.includes(`Agent: ${directory}, of the study example on 127.0.0.1:`), status);
   const left = run(shell, "leave");
   assert.equal(left.status, 0, left.stderr);
   for (const file of beside) assert.equal(fs.existsSync(file), false, file);
@@ -538,7 +539,7 @@ test("leave says where a backup it does not put back is", () => withHome(({ cli,
 test("join --no-service installs no service, and says the agent sends only while the agent command runs", () => withHome(({ home, env, cli, agent }) => {
   const joined = cli("join", "--endpoint", "https://c.test", "--no-service");
   assert.equal(joined.status, 0, joined.stderr);
-  assert.match(joined.stdout, /No service runs the agent: it sends only while `npx @evref-bl\/pharo-agent-telemetry agent` runs\./);
+  assert.match(joined.stdout, /No service runs the agent: it sends only while `npx @example\/pharo-agent-study agent` runs\./);
   assert.equal(JSON.parse(fs.readFileSync(path.join(agent, "agent.json"), "utf8")).service, false);
   assert.deepEqual(installedDefinitions({ home, env, agent: path.join(agent, "agent.mjs") }), []);
   assert.equal(fs.existsSync(env.PHARO_AGENT_TELEMETRY_DRY_RUN) ? fs.readFileSync(env.PHARO_AGENT_TELEMETRY_DRY_RUN, "utf8") : "", "");
@@ -572,7 +573,7 @@ test("status and join know a joined preview from another program, and a preview 
 test("status shows the catalog of names the agent filters with: its date, the releases it was read from, and where it came from", () => withHome(({ cli, agent }) => {
   assert.equal(cli("join", "--endpoint", "https://c.test").status, 0);
   const releases = Object.entries(builtIn.releases).map(([name, release]) => `${name} ${release}`).join(", ");
-  assert.ok(cli("status").stdout.includes(`Catalog of the names kept: the package's, of ${builtIn.published}, read from ${releases}; it asks for none, sending to another collector than the project's.`));
+  assert.ok(cli("status").stdout.includes(`Catalog of the names kept: the package's, of ${builtIn.published}, read from ${releases}; it asks for none, sending to another collector than its study's.`));
   const config = JSON.parse(fs.readFileSync(path.join(agent, "agent.json"), "utf8"));
   fs.writeFileSync(path.join(agent, "agent.json"), JSON.stringify({ ...config, catalog: { url: "https://c.test/pharo-agent-telemetry/catalog.json", publicKey: "k" } }));
   const checked = new Date(Date.now() - 3 * 3_600_000).toISOString();

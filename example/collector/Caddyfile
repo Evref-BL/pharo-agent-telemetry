@@ -1,0 +1,56 @@
+# Only /v1/traces is served, with the signed catalog the agents ask for at
+# most once a day; bodies are capped and must arrive in time, and nothing
+# about the client (address, forwarded headers) reaches the collector. Caddy writes no access log unless asked to, and the loggers that
+# would write a request's address (a failed request, a failed upstream, a
+# failed TLS handshake) write nothing: what Caddy still logs is its own start
+# and its certificates. While guard.sh says the archive is full, new spans are
+# refused rather than old ones deleted.
+{
+	servers {
+		timeouts {
+			read_header 10s
+			read_body 30s
+		}
+	}
+	log default {
+		exclude http.log.error http.handlers.reverse_proxy http.stdlib
+	}
+}
+
+{$SITE_ADDRESS} {
+	@traces {
+		method POST
+		path /v1/traces
+	}
+	handle @traces {
+		@full file {
+			root /guard
+			try_files /full
+		}
+		respond @full 507
+		request_body {
+			max_size 4MB
+		}
+		reverse_proxy otelcol:4318 {
+			header_up -X-Forwarded-For
+			header_up -X-Forwarded-Host
+			header_up -X-Forwarded-Proto
+			header_up -X-Real-Ip
+			header_up -User-Agent
+		}
+	}
+	@catalog {
+		method GET
+		path /pharo-agent-telemetry/catalog.json
+	}
+	handle @catalog {
+		root * /published
+		rewrite * /catalog.json
+		header Content-Type application/json
+		header Cache-Control "public, max-age=3600"
+		file_server
+	}
+	handle {
+		respond 404
+	}
+}

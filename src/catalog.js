@@ -1,13 +1,10 @@
 // What scripts/catalog.js reads in the projects' source and in the files
 // scripts/exception-names.js writes, and how the allowlist takes in what it
-// wrote: collector/catalog.json, the tools MCP, PLexus and pharo-image-fs
+// wrote: a study's catalog.json, the tools MCP, PLexus and pharo-image-fs
 // publish, the words of their own names, and the classes MCP names
 // exceptions by.
 import { createPrivateKey, createPublicKey, sign } from "node:crypto";
 import { catalogSchema, nameWords } from "./rules.js";
-
-/** Where the catalog is, from the repository's root. */
-export const catalogFile = "collector/catalog.json";
 
 /**
  * The words of a name, as the filter reads a name it checks: split on `_`,
@@ -128,8 +125,8 @@ export function smalltalkToolNames(text) {
 /**
  * The allowlist with the catalog's sets among its own.
  *
- * @param {any} allowlist collector/allowlist.json
- * @param {any} catalog collector/catalog.json
+ * @param {any} allowlist a study's allowlist.json
+ * @param {any} catalog a study's catalog.json
  */
 export function withCatalog(allowlist, catalog) {
   for (const name of Object.keys(catalog.sets)) {

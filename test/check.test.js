@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { checkDeployment, checkRequest } from "../src/check.js";
-import { filter } from "../src/telemetry-transform.mjs";
+import { allowlist, transformModule } from "./support.js";
+
+const { filter } = transformModule;
 import { testKey } from "./support.js";
 
 test("the check's span is of no service of ours, so the rules keep nothing of it", () => {
@@ -23,10 +25,7 @@ test("says which expectation a collector broke, and what it answered instead", a
 test("the catalog is checked where the agents ask for it: signed, readable, dated no later than now, and holding only what they take", async () => {
   const { generateKeyPairSync } = await import("node:crypto");
   const http = await import("node:http");
-  const { fileURLToPath } = await import("node:url");
   const { catalogPayload, publicKeyOf, signCatalog } = await import("../src/catalog.js");
-  const { readAllowlist } = await import("../src/generate.js");
-  const allowlist = readAllowlist(fileURLToPath(new URL("..", import.meta.url)));
   const key = /** @type {string} */ (generateKeyPairSync("ed25519").privateKey.export({ type: "pkcs8", format: "pem" }));
   let served = "";
   const server = http.createServer((request, response) => (request.url === "/custom/catalog.json" ? response.writeHead(200).end(served) : response.writeHead(404).end()));

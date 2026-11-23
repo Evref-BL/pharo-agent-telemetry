@@ -5,7 +5,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { agentPorts, agentStatus, filterVersion, freePort, installAgent, keyFile, readAgentConfig, readKey, removeAgent } from "../src/install.js";
+import { agentPorts, agentStatus, filterVersion, freePort, installAgent, keyFile, packagedFiles, readAgentConfig, readKey, removeAgent } from "../src/install.js";
+import { studyCommand } from "../src/study.js";
+import { study } from "./support.js";
+
+const command = studyCommand(study);
 import { agentSettings, readSettings, removeSettings, settingsBlock, writeSettings } from "../src/settings.js";
 
 function withDirectory(run) {
@@ -21,7 +25,7 @@ const mode = (file) => fs.statSync(file).mode & 0o777;
 
 test("the agent's directory holds its code, its settings and its key, only its owner reading the last two", () => withDirectory((parent) => {
   const directory = path.join(parent, "agent");
-  installAgent(directory, { port: 4321, endpoint: "https://c.test", token: "t" });
+  installAgent(directory, { port: 4321, endpoint: "https://c.test", token: "t" }, packagedFiles(study));
   assert.equal(mode(directory), 0o700);
   assert.equal(mode(path.join(directory, "agent.mjs")), 0o644);
   assert.equal(mode(path.join(directory, "agent.json")), 0o600);
@@ -29,18 +33,18 @@ test("the agent's directory holds its code, its settings and its key, only its o
   assert.deepEqual(readAgentConfig(directory), { port: 4321, endpoint: "https://c.test", token: "t" });
   const key = readKey(directory);
   assert.match(key, /^[0-9a-f]{64}$/);
-  const status = agentStatus(directory);
+  const status = agentStatus(directory, packagedFiles(study));
   assert.equal(status.present, true);
   assert.equal(status.current, true);
   assert.equal(status.key, true);
-  assert.equal(status.version, JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")).version);
+  assert.equal(status.version, study.version);
 
   // A valid key stays across installs; one that is not is replaced.
-  installAgent(directory, { port: 4321, endpoint: "https://c.test" });
+  installAgent(directory, { port: 4321, endpoint: "https://c.test" }, packagedFiles(study));
   assert.equal(readKey(directory), key);
   fs.writeFileSync(path.join(directory, keyFile), "not a key\n");
   assert.equal(readKey(directory), undefined);
-  installAgent(directory, { port: 4321, endpoint: "https://c.test" });
+  installAgent(directory, { port: 4321, endpoint: "https://c.test" }, packagedFiles(study));
   assert.notEqual(readKey(directory), undefined);
   assert.notEqual(readKey(directory), key);
 
@@ -55,7 +59,7 @@ test("the agent's directory holds its code, its settings and its key, only its o
 
 test("the agent's directory stays when something not of ours is in it", () => withDirectory((parent) => {
   const directory = path.join(parent, "agent");
-  installAgent(directory, { port: 4321, endpoint: "https://c.test" });
+  installAgent(directory, { port: 4321, endpoint: "https://c.test" }, packagedFiles(study));
   fs.writeFileSync(path.join(directory, "notes.txt"), "mine");
   removeAgent(directory);
   assert.deepEqual(fs.readdirSync(directory), ["notes.txt"]);
@@ -69,7 +73,7 @@ test("a filter's version is read from its text", () => {
 
 test("a settings file says who wrote it, and leave takes out only our block", () => withDirectory((directory) => {
   const file = path.join(directory, "tool", "otel.env");
-  const block = settingsBlock("joined", agentSettings({ port: 4321 }));
+  const block = settingsBlock("joined", agentSettings({ port: 4321 }), command);
   assert.equal(readSettings(file), undefined);
   assert.equal(removeSettings(file), "absent");
 
@@ -93,7 +97,7 @@ test("a settings file says who wrote it, and leave takes out only our block", ()
 
   writeSettings(file, block.replace("joined.", "by hand."));
   assert.equal(readSettings(file)?.writer, "by hand");
-  writeSettings(file, settingsBlock("preview", agentSettings({ port: 1, environment: "preview" })));
+  writeSettings(file, settingsBlock("preview", agentSettings({ port: 1, environment: "preview" }), command));
   assert.equal(readSettings(file)?.writer, "preview");
   assert.match(fs.readFileSync(file, "utf8"), /^OTEL_RESOURCE_ATTRIBUTES=deployment\.environment\.name=preview$/m);
   assert.deepEqual(fs.readdirSync(path.dirname(file)), ["otel.env"]);

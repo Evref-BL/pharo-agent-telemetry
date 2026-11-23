@@ -1,0 +1,29 @@
+{
+  "name": "@example/pharo-agent-study",
+  "version": "0.1.0",
+  "description": "A study of how agents use the Pharo tools: join, preview or leave it.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "pharo-agent-study": "bin/study.js"
+  },
+  "files": [
+    "bin",
+    "study.json",
+    "allowlist.json",
+    "catalog.json",
+    "telemetry-transform.mjs",
+    "docs"
+  ],
+  "engines": {
+    "node": ">=22.15.0"
+  },
+  "dependencies": {
+    "@evref-bl/pharo-agent-telemetry": "^0.1.0"
+  },
+  "scripts": {
+    "generate": "pharo-agent-telemetry generate",
+    "test": "pharo-agent-telemetry check",
+    "prepublishOnly": "pharo-agent-telemetry check && pharo-agent-telemetry check-release"
+  }
+}

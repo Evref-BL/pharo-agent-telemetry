@@ -1,0 +1,19 @@
+{
+  "id": "example",
+  "page": null,
+  "collector": {
+    "endpoint": null,
+    "token": null,
+    "controller": null,
+    "dpo": null,
+    "host": null,
+    "catalogUrl": null,
+    "catalogPublicKey": null
+  },
+  "text": {
+    "purpose": "This study collects it so the tools can change to fit that use: tools nobody reaches, arguments agents expect but the tools do not take, answers that are too long, mistakes agents repair.",
+    "why": "To change the tools from how agents use them, rather than from their developers' own sessions alone.",
+    "retention": "Elasticsearch keeps the spans in one index a month, which the import's lifecycle policy deletes twelve months after it was made. Reports derived from them hold counts, never spans, and are kept.",
+    "authority": "in France, the CNIL (cnil.fr)."
+  }
+}

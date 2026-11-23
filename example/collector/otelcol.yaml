@@ -1,6 +1,6 @@
-# Generated from allowlist.json by `npm run generate`. Do not edit.
+# Generated from the study's allowlist.json by `pharo-agent-telemetry generate`. Do not edit.
 # The same rules as the filter `join` installs on a participant's machine
-# (src/telemetry-transform.mjs), applied again to whatever arrives.
+# (telemetry-transform.mjs), applied again to whatever arrives.
 extensions:
   bearertokenauth:
     token: ${env:COLLECTOR_TOKEN}

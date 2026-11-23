@@ -1,38 +1,61 @@
 # pharo-agent-telemetry
 
-Field telemetry for the Pharo agent tools: the pharo-agent plugin, PLexus and
-Pharo MCP. Usage shapes the tools: which tools agents reach, which arguments
-they expect, which answers are too long, which mistakes they repair.
+Run a study of how agents use the Pharo agent tools (the pharo-agent plugin,
+PLexus and Pharo MCP): which tools agents reach, which arguments they expect,
+which answers are too long, which mistakes they repair.
 
 The tools themselves only speak standard OpenTelemetry and name no collector.
-This repository is the experiment that uses them:
+This package is what a study needs around them, and names no study:
 
-- `bin/`, `src/`: `npx @evref-bl/pharo-agent-telemetry preview | join | status | leave`,
-  and the agent `join` installs.
-- `collector/`: the collector participants send to, as Docker Compose, which
-  also serves the signed catalog of names the agents update their filter
-  from.
-- `docs/participants.md`: what is sent.
+- the agent participants install, with `preview`, `join`, `status`, `leave`;
+- the collector they send to, as Docker Compose, which also serves the
+  signed catalog of names the agents update their filter from;
+- the commands that make, from a study's own data, the agent's filter, the
+  collector's configuration and the participants page, so they cannot
+  disagree, and the other commands its operators run
+  (`npx pharo-agent-telemetry` lists them).
 
-One file, [collector/allowlist.json](collector/allowlist.json), says what is
-kept, with the sets of [collector/catalog.json](collector/catalog.json): the
-tools MCP, PLexus and pharo-image-fs publish, the words of their own names,
-and the classes MCP names an exception by.
-`npm run generate` makes three things of them: the agent's filter
-(`src/telemetry-transform.mjs`), the collector's (`collector/otelcol.yaml`)
-and the page, so they cannot disagree.
-
-The archive the collector writes is loaded into Elasticsearch by a scheduled
+The archive a collector writes is loaded into Elasticsearch by a scheduled
 GitLab job, in its own repository (`pharo-agent-telemetry-import`).
+
+## A study
+
+A study is a directory, published as an npm package of its own, which
+participants run with npx:
+
+- `package.json`: its name, which participants run, and a dependency on this
+  package; its `bin` hands the study's directory to this package's commands
+  (`import { main } from "@evref-bl/pharo-agent-telemetry/cli"`);
+- `study.json`: its `id`, the `page` participants read, its `collector`
+  (`endpoint`, `token`, `controller`, `dpo`, `host`, `catalogUrl`,
+  `catalogPublicKey`, each `null` until set; [src/study.js](src/study.js)
+  says what each is), and the `text` its participants page says of it alone:
+  its `purpose`, `why`, `retention` and supervisory `authority`;
+- `allowlist.json`, what is kept, with the sets of `catalog.json`: the tools
+  MCP, PLexus and pharo-image-fs publish, the words of their own names, and
+  the classes MCP names an exception by;
+- `rules/`: a fixture per rule, a request and the spans the rules keep of it;
+- what `generate` makes of them: `telemetry-transform.mjs`, the filter;
+  `collector/`, this package's stack with the study's `otelcol.yaml`; and
+  `docs/participants.md`.
+
+[example/](example) is a complete study with no collector set, which this
+package's tests run. `npx pharo-agent-telemetry init <directory>` starts a
+study from it.
+
+The rules are code, in this package; a study is data, so it runs nothing on
+a participant's machine that this package does not ship. A home joins one
+study at a time, since the tools read one block of settings: `join` of
+another study refuses until `leave`, which any study's package runs.
 
 ## Joining
 
-See [docs/participants.md](docs/participants.md). `join`:
+See the study's `docs/participants.md`. `join`:
 
 - copies the agent (`src/agent.js`, dependency-free) and its filter into
   `pharo-agent-telemetry/` under `$XDG_CONFIG_HOME`, `~/.config` or
   `%APPDATA%` on Windows, with `agent.json` (its port, the collector and its
-  token, and, for the project's collector, where to ask for a newer catalog
+  token, and, for the study's collector, where to ask for a newer catalog
   and the key that signs it) and a key of its own that hashes ids and never
   leaves the machine, both readable by their owner only;
 - runs it as a service of the user, started at login and again when it fails,
@@ -72,7 +95,7 @@ port, and stops on a request that proves the key, as `preview`, `join` and
 it received and sent to `state.json`, which `status` shows.
 
 `join --no-service` installs no service: the agent runs only while
-`npx @evref-bl/pharo-agent-telemetry agent` does, as where the service manager
+`npx <the study's package> agent` does, as where the service manager
 refuses one (over SSH on macOS, on Linux without a systemd user session).
 
 `leave` stops and removes the service, the agent's files and key, and both
@@ -121,11 +144,13 @@ is ever deleted but by the import.
 
 ## Deploying
 
-What only people can decide comes first:
+A study's operators run these commands in its directory (or give
+`--study <directory>`), with this package installed there as its
+dependency. What only people can decide comes first:
 
 1. The controller and the address participants write to, and the DPO's
-   reading of [docs/participants.md](docs/participants.md) and the
-   allowlist, which make the GDPR notice for the connection.
+   reading of the study's `docs/participants.md` and allowlist, which make
+   the GDPR notice for the connection.
 2. A VM in the EU with Docker, a DNS name pointing at it, ports 80 and 443
    open, and SSH for the import job. Its provider is the processor the
    notice names.
@@ -135,7 +160,7 @@ What only people can decide comes first:
 Then, on the VM:
 
 ```sh
-git clone <this repository> /srv/pharo-agent-telemetry
+git clone <the study's repository> /srv/pharo-agent-telemetry
 cd /srv/pharo-agent-telemetry/collector
 cp .env.example .env            # set SITE_ADDRESS and COLLECTOR_TOKEN
 install -d -o 10001 -g 10001 -m 0770 archive
@@ -153,14 +178,14 @@ spans all together; it stays at 100 unless the volume outgrows the import.
 
 Caddy also serves `GET /pharo-agent-telemetry/catalog.json` from
 `collector/published/` (`PUBLISHED_DIR`): the catalog the agents ask for at
-most once a day, signed with the administrators' Ed25519 key. Make that key
-once, outside the repository and outside the VM's checkout if you can, and
-sign from the commit you deploy, so that the catalog holds the sets the
-collector's configuration was generated from:
+most once a day, signed with the operators' Ed25519 key. Make that key
+once, outside the study's directory and outside the VM's checkout if you
+can, and sign from the commit you deploy, so that the catalog holds the sets
+the collector's configuration was generated from:
 
 ```sh
-npm run sign-catalog -- --new-key <file outside this repository>   # once: prints the public key
-npm run sign-catalog -- --key <that file>                           # each deployment
+npx pharo-agent-telemetry sign-catalog --new-key <file outside the study>   # once: prints the public key
+npx pharo-agent-telemetry sign-catalog --key <that file>                    # each deployment
 ```
 
 From anywhere, check what participants rely on: the token is required,
@@ -170,28 +195,28 @@ this checkout's sets. The span it sends is of no service of ours, so the
 collector keeps nothing of it.
 
 ```sh
-npm run check-deployment -- https://<SITE_ADDRESS> <COLLECTOR_TOKEN>
+npx pharo-agent-telemetry check-deployment https://<SITE_ADDRESS> <COLLECTOR_TOKEN>
 ```
 
-Then set `publicEndpoint`, `publicToken`, `controller`, `dpo`, `host`,
-`catalogUrl` (on the collector's host) and `catalogPublicKey` in
-[src/collector.js](src/collector.js), run `npm run generate`, and publish the
-package. `join` refuses the project's collector until all are set, and the
-participants page says what is missing until then. `npm publish` refuses
-(`npm run check-release`) while the page lacks any of them: the DPO's contact
-shows as a placeholder until `dpo` is set.
+Then set the study's `collector` in `study.json` (`catalogUrl` on the
+collector's host), run `npx pharo-agent-telemetry generate`, and publish the
+study's package. `join` refuses the study's collector until all are set, and
+the participants page says what is missing until then. The study's
+`npm publish` refuses (`pharo-agent-telemetry check-release`) while the page
+lacks any of them: the DPO's contact shows as a placeholder until `dpo` is
+set.
 
 The import job reads the archive over SSH as a user in the archive's group,
 loads each finished day's files, and deletes them once Elasticsearch holds
 their spans. Its README says how to set it up.
 
-At any time, `npm run audit -- <archive files>` says what an archive holds,
-by tool and span, and fails on anything the allowlist does not allow. On the
-VM, without Node:
+At any time, `npx pharo-agent-telemetry audit <archive files>` says what an
+archive holds, by tool and span, and fails on anything the study's allowlist
+does not allow. On the VM, without Node installed:
 
 ```sh
 docker run --rm -v /srv/pharo-agent-telemetry:/r:ro -w /r node:24-alpine \
-  sh -c 'node scripts/audit-archive.js collector/archive/traces-*.jsonl'
+  sh -c 'npx --yes @evref-bl/pharo-agent-telemetry audit collector/archive/traces-*.jsonl'
 ```
 
 Locally, `SITE_ADDRESS=http://:80` and `HTTP_PORT=127.0.0.1:4318` serve plain
@@ -199,18 +224,18 @@ HTTP on `http://127.0.0.1:4318`.
 
 ## Changing what is kept
 
-Edit `collector/allowlist.json`, then `npm run generate`, which rewrites
-`src/telemetry-transform.mjs`, `collector/otelcol.yaml` and
-`docs/participants.md`. `npm test` fails while any is stale. Each rule has a
-fixture in `test/fixtures/rules/`, a request and the spans it keeps: the
-agent's filter must keep exactly those, and so must the collector, run in
-Docker, which also gets a span carrying everything the allowlist forbids. A
-tool that starts sending an attribute needs it here too, or both drop it: run
-a session with `preview`, or against a local collector and `npm run audit`
-its archive, to see what arrives.
+Edit the study's `allowlist.json`, then `npx pharo-agent-telemetry generate`,
+which rewrites `telemetry-transform.mjs`, `collector/` and
+`docs/participants.md`. `npx pharo-agent-telemetry check` fails while any is
+stale. Each rule has a fixture in `rules/`, a request and the spans it keeps:
+`check` requires the agent's filter to keep exactly those, and the
+collector, run in Docker, too, which also gets a span carrying everything the
+allowlist forbids. A tool that starts sending an attribute needs it here
+too, or both drop it: run a session with `preview`, or against a local
+collector and `audit` its archive, to see what arrives.
 
 A name an agent chooses is kept only when it is a published tool's or made
-of the vocabulary's words: those of `collector/catalog.json` and of the
+of the vocabulary's words: those of the study's `catalog.json` and of the
 allowlist's own `guessed words`. An exception's class is kept only when it
 is one MCP can name: MCP names it by its nearest class in Pharo's own
 packages or MCP's, which only an image of each Pharo version knows. The
@@ -219,9 +244,9 @@ release of MCP, PLexus or pharo-image-fs, run, from checkouts of the
 releases in use and with the PLexus release in use (its `dist/cli.js`),
 
 ```sh
-npm run exception-names -- --mcp <MCP> --cli <PLexus CLI> --out <directory>
-npm run catalog -- --mcp <MCP> --plexus <PLexus> --pharo-image-fs <pharo-image-fs> --exceptions <directory>
-npm run generate
+npx pharo-agent-telemetry exception-names --mcp <MCP> --cli <PLexus CLI> --out <directory>
+npx pharo-agent-telemetry catalog --mcp <MCP> --plexus <PLexus> --pharo-image-fs <pharo-image-fs> --exceptions <directory>
+npx pharo-agent-telemetry generate
 ```
 
 `exception-names` has PLexus make an image of each Pharo version MCP's CI
@@ -237,8 +262,8 @@ Until then, a tool or word the release adds is dropped, or kept as `_OTHER`.
 images MCP named the exception classes in, and `published` when it was read.
 
 The agents already installed need no new package for it: deployed and
-signed again (`npm run sign-catalog`), the catalog reaches them within a day.
-An agent sending to the project's collector asks `catalogUrl` for it at most
+signed again (`sign-catalog`), the catalog reaches them within a day.
+An agent sending to its study's collector asks `catalogUrl` for it at most
 once a day, and takes it only when its Ed25519 signature holds by
 `catalogPublicKey` (never a key of small order, which anyone can sign for),
 its form (`schema`) is the one its filter reads, and its date (`published`,
@@ -250,10 +275,12 @@ A catalog only adds, and only to the sets the allowlist's `grows` names (the
 tools, the words, PLexus's error codes, the exception classes), each member
 of its set's strict shape and at most `catalogAdditionCap` a set; any other
 member is left out on its own. The agent hosts and the other sets come from
-the package alone, and the rules stay code, so a catalog never changes which
-attributes are kept or in what shape. `sign-catalog` refuses a catalog the
-agents would trim, and a date in the future. A change to the rules, or to a
-set's form, needs a new package: raise `catalogSchema` in `src/rules.js` when
-the form changes, so that older agents refuse the catalogs they cannot read.
-A compromised key is replaced only by a package naming a new one, which
-participants get by joining again.
+the study's package alone, and the rules stay code, so a catalog never
+changes which attributes are kept or in what shape. `sign-catalog` refuses a
+catalog the agents would trim, and a date in the future. A change to the
+allowlist needs a new package of the study, and a change to the rules, or to
+a set's form, a new one of this package and then of the study: raise
+`catalogSchema` in `src/rules.js` when the form changes, so that older agents
+refuse the catalogs they cannot read. A compromised key is replaced only by
+a study's package naming a new one, which participants get by joining
+again.

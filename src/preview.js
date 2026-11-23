@@ -68,10 +68,11 @@ export function recoverPreview(file) {
  *   print: (line: string) => void,
  *   signal: AbortSignal,
  *   port?: number,
- * }} options `key`: the joined agent's, so ids hash as it hashes them
+ *   command: string,
+ * }} options `key`: the joined agent's, so ids hash as it hashes them; `command`: how the participant runs the study's package
  * @returns {Promise<{ port: number, done: Promise<void> }>}
  */
-export async function startPreview({ files, filter, key, print, signal, port }) {
+export async function startPreview({ files, filter, key, print, signal, port, command }) {
   for (const file of files) recoverPreview(file);
   const transform = filter(key ?? crypto.randomBytes(32).toString("hex"));
   const started = await startAgent({
@@ -91,7 +92,7 @@ export async function startPreview({ files, filter, key, print, signal, port }) 
       backUp(file, `${file}${backupSuffix}`);
       backups.push(file);
     }
-    writeSettings(file, settingsBlock("preview", agentSettings({ port: started.port, environment: "preview" })));
+    writeSettings(file, settingsBlock("preview", agentSettings({ port: started.port, environment: "preview" }), command));
   }
 
   // A leave run meanwhile has put the files back already: only a file that is still the preview's is.

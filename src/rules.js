@@ -1,11 +1,11 @@
 // The rules that decide what of a span is kept, as JavaScript: the filter
 // `join` installs on a participant's machine runs them on everything PLexus
-// sends, and `npm run audit` runs them on an archive to see whether it holds
+// sends, and `pharo-agent-telemetry audit` runs them on an archive to see whether it holds
 // anything they would not have kept. collector/otelcol.yaml applies the same
 // rules again, written in OTTL by src/generate.js from the same allowlist; a
 // test runs one set of fixtures through both and requires them to agree.
 //
-// generate.js copies this file into src/telemetry-transform.mjs, so it
+// generate.js copies this file into a study's telemetry-transform.mjs, so it
 // imports nothing but Node's own modules.
 import { createHash } from "node:crypto";
 
@@ -444,7 +444,7 @@ function keepSpan(rules, span, service, options) {
  *   report?: (problem: string) => void,
  *   sessionOffset?: (session: string, start: bigint) => bigint,
  * }} [options]
- *   without `hash`, ids and session ids are kept as they are, as `npm run audit` reads an archive;
+ *   without `hash`, ids and session ids are kept as they are, as `pharo-agent-telemetry audit` reads an archive;
  *   with `sessionOffset`, each span with a session gets its offset in it, as the agent adds it
  */
 export function transformTraces(rules, request, options = {}) {

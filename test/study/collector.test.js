@@ -8,19 +8,17 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { after, before, test } from "node:test";
-import { fileURLToPath } from "node:url";
 import { generateKeyPairSync } from "node:crypto";
-import { fetchCatalog, verifyCatalog } from "../src/agent.js";
-import { audit } from "../src/audit.js";
-import { catalogPayload, publicKeyOf, signCatalog } from "../src/catalog.js";
-import { checkDeployment } from "../src/check.js";
-import { readAllowlist } from "../src/generate.js";
-import { freePort } from "../src/install.js";
-import { comparable, expectedSpans, hashedTrace, ruleFixtures, testKey } from "./support.js";
+import { fetchCatalog, verifyCatalog } from "../../src/agent.js";
+import { audit } from "../../src/audit.js";
+import { catalogPayload, publicKeyOf, signCatalog } from "../../src/catalog.js";
+import { checkDeployment } from "../../src/check.js";
+import { freePort } from "../../src/install.js";
+import { studyPath } from "../../src/study.js";
+import { allowlist, comparable, expectedSpans, hashedTrace, ruleFixtures, study, testKey } from "../support.js";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
-const composeFile = path.join(root, "collector", "compose.yaml");
-const forbidden = fs.readFileSync(new URL("./fixtures/forbidden.json", import.meta.url), "utf8");
+const composeFile = path.join(studyPath(study, "collector"), "compose.yaml");
+const forbidden = fs.readFileSync(new URL("../fixtures/forbidden.json", import.meta.url), "utf8");
 const token = "test-token";
 const project = `pat-collector-test-${process.pid}`;
 const dockerRuns = spawnSync("docker", ["info"], { stdio: "ignore" }).status === 0;
@@ -31,7 +29,6 @@ let archive;
 /** @type {string} */
 let published;
 const catalogKey = /** @type {string} */ (generateKeyPairSync("ed25519").privateKey.export({ type: "pkcs8", format: "pem" }));
-const allowlist = readAllowlist(root);
 /** @type {string} */
 let endpoint;
 /** @type {Record<string, string>} */
@@ -168,7 +165,7 @@ test("nothing forbidden reaches the archive, and npm run audit finds nothing in 
   }
   const ours = JSON.stringify(comparable(archiveLines().map((line) => JSON.parse(line))).filter((span) => kept.has(span.trace)));
   for (const secret of ["acme", "Acme", "AAAA", "built by"]) assert.equal(ours.includes(secret), false, `${secret} reached the archive: ${ours}`);
-  assert.deepEqual(audit(archiveLines(), readAllowlist(root)).problems, []);
+  assert.deepEqual(audit(archiveLines(), allowlist).problems, []);
 });
 
 /** One component's span of a call in a session, sent on its own as that component would. */

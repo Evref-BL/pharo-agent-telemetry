@@ -1,11 +1,9 @@
-<!-- Generated from collector/allowlist.json, collector/catalog.json and src/collector.js by `npm run generate`. Do not edit. -->
+<!-- Generated from study.json, allowlist.json and catalog.json by `pharo-agent-telemetry generate`. Do not edit. -->
 # What the Pharo tools send when you join
 
 The Pharo agent tools (the pharo-agent plugin, PLexus and Pharo MCP) can
-record how agents use them, so the tools can change to fit that use: tools
-nobody reaches, arguments agents expect but the tools do not take, answers
-that are too long, mistakes agents repair. Joining is opt-in, and nothing is
-sent until you join. The tools never ask you to.
+record how agents use them. This study collects it so the tools can change to fit that use: tools nobody reaches, arguments agents expect but the tools do not take, answers that are too long, mistakes agents repair. Joining is opt-in, and
+nothing is sent until you join. The tools never ask you to.
 
 ## How it leaves your machine
 
@@ -20,12 +18,13 @@ says, all send to the agent.
 The collector applies the same rules again to whatever arrives, and drops
 what they do not keep. Both are made from one list, and so is this page.
 
-The agent updates its lists of our tools' names and words, and nothing else,
-from the project's server: at most once a day it asks the collector's server
-for a newer catalog, and takes it only when the project's key signed it. A
-catalog can only add, and only to the lists that grow with our releases
-(MCP tools, PLexus tools, pharo-image-fs tools, project words, guessed words, PLexus error codes, Node exception classes, MCP exception classes): it never removes a name, adds an agent host or any other value,
-or changes which attributes are kept or in what shape. The project's key can
+The agent updates its lists of the Pharo tools' names and words, and nothing
+else, from the study's server: at most once a day it asks the collector's
+server for a newer catalog, and takes it only when the study's key signed it.
+A catalog can only add, and only to the lists that grow with the tools'
+releases (MCP tools, PLexus tools, pharo-image-fs tools, project words, guessed words, PLexus error codes, Node exception classes, MCP exception classes): it never removes a name, adds an agent host or any
+other value, or changes which attributes are kept or in what shape. The
+study's key can
 thus add names and words to those lists, which would let names made of such
 words through; `status` shows what the catalog in use added. Were that key
 compromised, it would be replaced only by joining again with a package that
@@ -80,11 +79,11 @@ when it is the name of a tool a project publishes, or when every word of it
 pharo-image-fs (their tools, arguments, errors and the rest), read from
 their source (MCP v4.3.1, PLexus v0.21.1, pharo-image-fs v0.14.1), and of a list of words agents guess. Any
 other name is dropped, or becomes `_OTHER`. A name is kept only when it is
-made of words our tools use, so a name of your own made only of such words
+made of words the tools use, so a name of your own made only of such words
 can pass, such as a class `ClassName` or an argument `class_name`; a name
 with any other word in it cannot. Both lists are in
-[collector/catalog.json](../collector/catalog.json) and
-[collector/allowlist.json](../collector/allowlist.json).
+[catalog.json](../catalog.json) and
+[allowlist.json](../allowlist.json).
 
 The names of a tool another package added to an image (`pharo.mcp.tool.origin`
 `other`, or no origin) are not kept: its tool's name becomes `_OTHER` and
@@ -103,7 +102,7 @@ Where it ran:
 | `os.type` | plexus, pharo-mcp | The OS family. | one of the OS types |
 | `process.runtime.name` | plexus, pharo-mcp | nodejs or pharo. | one of `nodejs`, `pharo` |
 | `process.runtime.version` | plexus, pharo-mcp | Node's major version, or Pharo's major and minor. | a version, major from plexus, major and minor from pharo-mcp |
-| `deployment.environment.name` | plexus, pharo-mcp | field for participants, eval for our own evaluation runs, preview while previewing, check for npm run check-deployment. | one of `field`, `eval`, `preview`, `check` |
+| `deployment.environment.name` | plexus, pharo-mcp | field for participants, eval for evaluation runs, preview while previewing, check for pharo-agent-telemetry check-deployment. | one of `field`, `eval`, `preview`, `check` |
 | `pharo_agent_evals.variant` | plexus, pharo-mcp | Which variant of an evaluation run sent the span: the build under test, which may report a released version. Kept only for eval. | a build's name, only beside `deployment.environment.name` `eval` |
 
 What happened:
@@ -176,9 +175,9 @@ The closed sets the table names, the tools each project publishes among them:
 ## Is it anonymous?
 
 The archive is. A session's spans share a `session.id`: PLexus makes one at
-random for the calls of an agent host, and MCP makes one when a call comes
-without one (MCP's part ships in its next release; until then a call to MCP
-alone carries no session, and is not kept). The agent hashes it within its
+random for the calls of an agent host, and MCP, from 4.3, makes one when a
+call comes without one (a call to an earlier MCP alone carries no session,
+and is not kept). The agent hashes it within its
 week, and the collector again, so the calls of one session can be studied
 together, and in order, but no id links a session to another session, to a
 machine or to a person.
@@ -203,7 +202,7 @@ its notice.
 
 ## Who answers for it
 
-*The controller and how to reach them: not set yet. Nobody can join until it is.* Its data protection officer can be reached at **[DPO CONTACT: TO BE FILLED IN src/collector.js BEFORE PUBLISHING]**.
+*The controller and how to reach them: not set yet. Nobody can join until it is.* Its data protection officer can be reached at **[DPO CONTACT: TO BE FILLED IN study.json BEFORE PUBLISHING]**.
 
 ## Who else holds it
 
@@ -213,8 +212,7 @@ Nobody else receives it.
 
 ## Why, and on what basis
 
-To change the tools from how agents use them, rather than from our own
-sessions alone. The basis is your consent: running `join` after reading this
+To change the tools from how agents use them, rather than from their developers' own sessions alone. The basis is your consent: running `join` after reading this
 page gives it, and `leave` withdraws it, at any time and with no effect on
 what the tools do for you.
 
@@ -225,10 +223,7 @@ it arrived, a day the file's spans also carry; the import keeps neither. The
 collector never deletes a file the daily import has not loaded, and the
 import deletes each file once Elasticsearch holds its spans. Should the
 import stop, the collector refuses new spans once its archive takes half its
-disk's free space, rather than delete any. Elasticsearch keeps the spans in
-one index a month, under the lifecycle policy as the import repository ships
-it, which deletes each index twelve months after it was made. Reports
-derived from them hold counts, never spans, and are kept.
+disk's free space, rather than delete any. Elasticsearch keeps the spans in one index a month, which the import's lifecycle policy deletes twelve months after it was made. Reports derived from them hold counts, never spans, and are kept.
 
 ## Your rights
 
@@ -237,17 +232,17 @@ Access, correction and erasure apply to data about a person; since nothing in
 the archive is about one, or can be traced back to one, there is nothing to
 look up, correct or delete for you (GDPR Art. 11), and what was sent before
 you left stays in the archive, as anonymous as it arrived. You can complain to
-your data protection authority; in France, the CNIL (cnil.fr).
+your data protection authority: in France, the CNIL (cnil.fr).
 
 ## Joining and leaving
 
 With Node 22.15 or later:
 
 ```sh
-npx @evref-bl/pharo-agent-telemetry preview   # see what would be sent, sending nothing
-npx @evref-bl/pharo-agent-telemetry join
-npx @evref-bl/pharo-agent-telemetry status
-npx @evref-bl/pharo-agent-telemetry leave
+npx @example/pharo-agent-study preview   # see what would be sent, sending nothing
+npx @example/pharo-agent-study join
+npx @example/pharo-agent-study status
+npx @example/pharo-agent-study leave
 ```
 
 `join` copies the agent into `pharo-agent-telemetry/` under
@@ -262,7 +257,7 @@ in PLexus's settings file, `plexus/otel.env`, and in MCP's,
 `$XDG_CONFIG_HOME` too when it is set:
 
 ```text
-# pharo-agent-telemetry: joined. Run `npx @evref-bl/pharo-agent-telemetry leave`, or delete these lines down to the end line, to stop.
+# pharo-agent-telemetry: joined. Run `npx @example/pharo-agent-study leave`, or delete these lines down to the end line, to stop.
 OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:<its port>
 OTEL_EXPORTER_OTLP_PROTOCOL=http/json
 OTEL_TRACES_EXPORTER=otlp
@@ -283,10 +278,10 @@ spans but those "What is kept" says it cannot tell from MCP's.
 Where your system will not run a service of your account (over SSH on macOS,
 or on Linux without a systemd user session), `join --no-service` installs
 none: the agent then sends only while
-`npx @evref-bl/pharo-agent-telemetry agent` runs.
+`npx @example/pharo-agent-study agent` runs.
 
 PLexus reads its file at start, and passes it on to the images it starts; an
-image reads MCP's at every start. From PLexus's and MCP's next releases, a
+image reads MCP's at every start. From PLexus 0.21 and MCP 4.3, a
 tool's file replaces any OpenTelemetry settings (`OTEL_*`) it inherits from
 the agent host; before, an agent host that passes such settings sends the
 tools' spans where they say instead. Restart your agent host after joining:
@@ -309,8 +304,8 @@ tools never slow down or fail a call because of it.
 
 ### With MCP alone
 
-Using Pharo MCP in your own image, without PLexus? It records calls from
-MCP's next release, which makes a session of its own. Join as above, then,
+Using Pharo MCP in your own image, without PLexus? From MCP 4.3, it records
+calls, in a session of its own. Join as above, then,
 in the image:
 
 1. Load MCP's `Telemetry` group from the repository you loaded MCP from:

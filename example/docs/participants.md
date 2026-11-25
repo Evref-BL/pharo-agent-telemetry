@@ -205,7 +205,7 @@ its notice.
 
 ## Who else holds it
 
-*Where the collector runs, the GitLab that copies its archive, and where the archive is kept: not set yet. Nobody can join until it is.*
+*Where the collector runs, the job that copies its archive, and where the archive is kept: not set yet. Nobody can join until it is.*
 
 Nobody else receives it.
 
@@ -220,9 +220,9 @@ what the tools do for you.
 The collector writes what arrives into one file a day, named after the day
 it arrived, a day the file's spans also carry; the import keeps neither. The
 collector never deletes a file the daily import has not loaded, and the
-import deletes each file once Elasticsearch holds its spans. Should the
+import deletes each file once the study's store holds its spans. Should the
 import stop, the collector refuses new spans once its archive takes half its
-disk's free space, rather than delete any. Elasticsearch keeps the spans in one index a month, which the import's lifecycle policy deletes twelve months after it was made. Reports derived from them hold counts, never spans, and are kept.
+disk's free space, rather than delete any. The study's store keeps the spans twelve months after they arrive, then deletes them. Reports derived from them hold counts, never spans, and are kept.
 
 ## Your rights
 

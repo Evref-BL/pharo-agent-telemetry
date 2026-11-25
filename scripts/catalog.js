@@ -112,10 +112,14 @@ function plexusCheckout(directory) {
   const close = text.indexOf("\n];", open);
   if (start === -1 || open === -1 || close === -1) throw new Error(`No imageTools array in ${file}.`);
   const literal = text.slice(open, close + 2).replace(/\bas const\b/g, "");
-  const imageTools = vm.runInNewContext(`(${literal})`, {
-    nameProperty: { type: "string" },
-    schema: (properties, required = []) => ({ type: "object", properties, required }),
-  });
+  // The properties the tools share are declared before them, each as `const
+  // name = { … } as const;`: read them all rather than a list of names that a
+  // new one breaks.
+  const context = { schema: (properties, required = []) => ({ type: "object", properties, required }) };
+  for (const [, name, value] of text.slice(0, start).matchAll(/^const (\w+) = (\{[\s\S]*?\}) as const;$/gm)) {
+    context[name] = vm.runInNewContext(`(${value})`);
+  }
+  const imageTools = vm.runInNewContext(`(${literal})`, context);
   const tools = imageTools.map((tool) => tool.name).sort();
   const words = new Set();
   const visit = (schema) => {

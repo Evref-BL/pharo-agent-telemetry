@@ -519,7 +519,7 @@ processors:
 exporters:
   # One file a day, traces-YYYY-MM-DD.jsonl, by the day each request arrived;
   # a day over 10 MB goes on in a further file. None is ever deleted here:
-  # the import deletes each once Elasticsearch holds its spans, and guard.sh
+  # the import deletes each once the study's store holds its spans, and guard.sh
   # stops new spans should it fall behind.
   file/archive:
     path: /archive/traces-*.jsonl

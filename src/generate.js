@@ -351,7 +351,7 @@ ${rules.blocked.map(({ pattern }) => `      - ${quoted(pattern)}`).join("\n")}
 exporters:
   # One file a day, traces-YYYY-MM-DD.jsonl, by the day each request arrived;
   # a day over 10 MB goes on in a further file. None is ever deleted here:
-  # the import deletes each once Elasticsearch holds its spans, and guard.sh
+  # the import deletes each once the study's store holds its spans, and guard.sh
   # stops new spans should it fall behind.
   file/archive:
     path: /archive/traces-*.jsonl
@@ -588,7 +588,7 @@ export function participantsPage(allowlist, study) {
     ? `- ${collector.host.provider} hosts the virtual machine the collector runs on, in ${collector.host.region}, and processes the data on the controller's behalf.
 - Once a day, a scheduled job in ${collector.host.importer} copies what the collector received, loads it into ${collector.host.archive}, and deletes it from the machine and from the job's own workspace.
 - ${collector.host.archive} keeps it, as "How long" says.`
-    : unsettled("Where the collector runs, the GitLab that copies its archive, and where the archive is kept");
+    : unsettled("Where the collector runs, the job that copies its archive, and where the archive is kept");
   return `<!-- Generated from study.json, allowlist.json and catalog.json by \`pharo-agent-telemetry generate\`. Do not edit. -->
 # What the Pharo tools send when you join
 
@@ -761,7 +761,7 @@ what the tools do for you.
 The collector writes what arrives into one file a day, named after the day
 it arrived, a day the file's spans also carry; the import keeps neither. The
 collector never deletes a file the daily import has not loaded, and the
-import deletes each file once Elasticsearch holds its spans. Should the
+import deletes each file once the study's store holds its spans. Should the
 import stop, the collector refuses new spans once its archive takes half its
 disk's free space, rather than delete any. ${text.retention.trim()}
 

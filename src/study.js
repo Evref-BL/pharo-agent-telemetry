@@ -39,7 +39,7 @@ import { withCatalog } from "./catalog.js";
  * @property {string} [token] the shared token. Public: it keeps scanners out, not people
  * @property {{ name: string, contact: string }} [controller] who decides why and how the data is processed, the GDPR's controller, and how a participant reaches them
  * @property {string} [dpo] how a participant reaches the controller's data protection officer
- * @property {{ provider: string, region: string, importer: string, archive: string }} [host] where the data is: the company hosting the collector's VM, the GDPR's processor, its region, the GitLab whose scheduled job copies the archive every day, and where it keeps it
+ * @property {{ provider: string, region: string, importer: string, archive: string }} [host] where the data is: the company hosting the collector's VM, the GDPR's processor, its region, what runs the scheduled job that copies the archive every day, and where it keeps it
  * @property {string} [catalogUrl] where the agents ask for a newer catalog: a URL on the collector's own host, which serves it as /pharo-agent-telemetry/catalog.json
  * @property {string} [catalogPublicKey] the Ed25519 public key the agents check a catalog's signature with, as `sign-catalog --new-key` prints it; the private key is the operators' alone
  */

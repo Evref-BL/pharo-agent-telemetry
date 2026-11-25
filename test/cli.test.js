@@ -240,7 +240,7 @@ test("a span is described with its week, ids, attributes and where it ran", () =
 test("the page names who answers for the data, its officer and where it is once they are set, and says so while they are not", () => {
   const unset = participantsPage(allowlist, { ...study, collector: {} });
   assert.match(unset, /The controller and how to reach them: not set yet/);
-  assert.match(unset, /Where the collector runs, the GitLab that copies its archive, and where the archive is kept: not set yet/);
+  assert.match(unset, /Where the collector runs, the job that copies its archive, and where the archive is kept: not set yet/);
   assert.ok(unset.includes(dpoPlaceholder));
   const set = participantsPage(allowlist, { ...study, collector: {
     endpoint: "https://c.test",

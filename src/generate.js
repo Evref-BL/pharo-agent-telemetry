@@ -509,7 +509,7 @@ export function keptAs(allowlist, spec) {
     return names[spec.pattern] ?? "text";
   };
   const conditions = [
-    ...(spec.own ? [", only for MCP's own tools"] : []),
+    ...(spec.own ? [", not for another package's tool that no project publishes"] : []),
     ...(spec.beside ? [`, only beside a ${code(spec.beside)} of that set`] : []),
     ...(spec.when ? [`, only beside ${Object.entries(spec.when).map(([key, value]) => `${code(key)} ${code(value)}`).join(" and ")}`] : []),
   ].join("");
@@ -580,6 +580,8 @@ export function participantsPage(allowlist, study) {
   const kept = Object.keys(allowlist.services).map((name) => serviceNames[name]).join(" and ");
   const growing = Object.keys(allowlist.grows ?? {}).join(", ");
   const releases = Object.entries(allowlist.releases ?? {}).map(([project, release]) => `${project} ${release}`).join(", ");
+  const projectNames = Object.keys(allowlist.releases ?? {});
+  const projects = projectNames.length > 1 ? `${projectNames.slice(0, -1).join(", ")} and ${projectNames.at(-1)}` : projectNames[0] ?? "the tools' projects";
   const who = collector.controller
     ? `${collector.controller.name} decides why and how this data is processed, the GDPR's controller. Write to ${collector.controller.contact} with any question, or to withdraw.`
     : unsettled("The controller and how to reach them");
@@ -665,7 +667,7 @@ masked, whole, and the mask has no attribute's shape.
 A name an agent or another package chooses (${checkedKeys}) is kept only
 when it is the name of a tool a project publishes, or when every word of it
 (split at \`_\`, \`-\` and capitals) is in the vocabulary: the
-${vocabularySize} words of the names in the code of MCP and PLexus (their
+${vocabularySize} words of the names in the code of ${projects} (their
 tools, arguments, errors and the rest), read from
 their source (${releases}), and of a list of words agents guess. Any
 other name is dropped, or becomes \`_OTHER\`. A name is kept only when it is
@@ -676,12 +678,12 @@ with any other word in it cannot. Both lists are in
 [allowlist.json](../allowlist.json).
 
 The names of a tool another package added to an image (\`pharo.mcp.tool.origin\`
-\`other\`, or no origin) are not kept: its tool's name becomes \`_OTHER\` and
-the other names are dropped, unless a project publishes that tool. PLexus
+\`other\`, or no origin) are kept only when a project publishes that tool:
+otherwise its tool's name becomes \`_OTHER\`, and the other names and its
+error code are dropped. PLexus
 names only its own tools: on a call PLexus passes on to an image, its span
 keeps the tool's name only when a project publishes it, and never the
-arguments' names, which the image's span reports as above. An error code is
-kept only for MCP's own tools.
+arguments' names, which the image's span reports as above.
 
 Where it ran:
 

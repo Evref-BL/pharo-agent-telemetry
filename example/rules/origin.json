@@ -1,5 +1,5 @@
 {
-  "about": "Tool and argument names kept from pharo-mcp only for its own tools (origin mcp) and names no tool has (unknown), and only when made of vocabulary words; for another package's tool (other, an unknown origin, or none), the tool is _OTHER and the other names go; a discovery call keeps only the tools a project publishes.",
+  "about": "Tool and argument names kept from pharo-mcp only for its own tools (origin mcp) and names no tool has (unknown), and only when made of vocabulary words; for another package's tool (other, an unknown origin, or none) that no project publishes, the tool is _OTHER and the other names go; a discovery call keeps only the tools a project publishes.",
   "request": {
     "resourceSpans": [
       {

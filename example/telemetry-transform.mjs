@@ -196,7 +196,7 @@ const allowlist = {
       "type": "bool"
     },
     "pharo.mcp.tool.origin": {
-      "about": "mcp for one of MCP's own tools, other for a tool another package added, unknown for a name no tool has. Names are kept only for mcp and unknown.",
+      "about": "mcp for one of MCP's own tools, other for a tool another package added, unknown for a name no tool has. Names are kept for mcp and unknown, and for a tool a project publishes.",
       "from": ["pharo-mcp"],
       "type": "string",
       "values": ["mcp", "other", "unknown"],

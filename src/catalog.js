@@ -1,9 +1,11 @@
 // What scripts/catalog.js reads in the projects' source and in the files
 // scripts/exception-names.js writes, and how the allowlist takes in what it
-// wrote: a study's catalog.json, the tools MCP and PLexus
-// publish, the words of their own names, and the classes MCP names
-// exceptions by.
+// wrote: a study's catalog.json, the tools the projects it covers publish
+// (MCP's, PLexus's and any other's), the words of their own names, and the
+// classes MCP names exceptions by.
 import { createPrivateKey, createPublicKey, sign } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import { catalogSchema, nameWords } from "./rules.js";
 
 /**
@@ -120,6 +122,49 @@ export function exceptionNames(text) {
  */
 export function smalltalkToolNames(text) {
   return [...text.matchAll(/class >> toolName \[\s*\^\s*'([a-z][a-z0-9_]*)'\s*\]/g)].map((match) => match[1]);
+}
+
+/**
+ * The Tonel files of a Pharo project's packages, tests and baselines left
+ * out, in the source directory its `.project` names (`src` without one): of
+ * the packages whose name starts with a prefix when one is given, else of
+ * those that hold a tool.
+ *
+ * @param {string} checkout
+ * @param {string} [packagePrefix]
+ * @returns {string[]} their texts
+ */
+function tonelTexts(checkout, packagePrefix) {
+  const project = path.join(checkout, ".project");
+  const named = fs.existsSync(project) ? /'srcDirectory'\s*:\s*'([^']*)'/.exec(fs.readFileSync(project, "utf8"))?.[1] : undefined;
+  const source = path.join(checkout, named || "src");
+  if (!fs.existsSync(source)) throw new Error(`No Tonel source in ${checkout}: no ${source}.`);
+  return fs.readdirSync(source, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !/Tests/.test(entry.name) && !entry.name.startsWith("BaselineOf"))
+    .filter((entry) => packagePrefix === undefined || entry.name.startsWith(packagePrefix))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((entry) => fs.readdirSync(path.join(source, entry.name)).filter((name) => name.endsWith(".st")).sort().map((name) => fs.readFileSync(path.join(source, entry.name, name), "utf8")))
+    .filter((texts) => packagePrefix !== undefined || texts.some((text) => smalltalkToolNames(text).length > 0))
+    .flat();
+}
+
+/**
+ * A Pharo project's tools, the names its tool classes give themselves, and
+ * the words of its own names (every string and symbol of its packages, and
+ * its tools' names), read from each checkout given: from the packages whose
+ * name starts with a prefix, as MCP's, or else from those that hold a tool,
+ * where the names a call to one carries are.
+ *
+ * @param {string[]} checkouts
+ * @param {{ packagePrefix?: string }} [options]
+ */
+export function pharoProject(checkouts, { packagePrefix } = {}) {
+  const texts = checkouts.flatMap((checkout) => tonelTexts(checkout, packagePrefix));
+  if (texts.length === 0) throw new Error(`No ${packagePrefix === undefined ? "package with a tool" : `${packagePrefix} package`} under ${checkouts.join(", ")}.`);
+  const tools = [...new Set(texts.flatMap(smalltalkToolNames))].sort();
+  const words = new Set(texts.flatMap(smalltalkLiterals).flatMap(wordsOf));
+  for (const tool of tools) for (const word of wordsOf(tool)) words.add(word);
+  return { tools, words };
 }
 
 /**

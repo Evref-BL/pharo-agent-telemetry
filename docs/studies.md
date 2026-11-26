@@ -13,8 +13,8 @@ participants run with npx:
   its `purpose`, `why`, `retention` and supervisory `authority`, and, when
   anyone besides its hosts may receive the data, `publication`;
 - `allowlist.json`, what is kept, with the sets of `catalog.json`: the tools
-  MCP and PLexus publish, the words of their own names, and
-  the classes MCP names an exception by;
+  MCP, PLexus and any other project the study covers publish, the words of
+  their own names, and the classes MCP names an exception by;
 - `rules/`: a fixture per rule, a request and the spans the rules keep of it;
 - what `generate` makes of them: `telemetry-transform.mjs`, the filter;
   `collector/`, this package's stack with the study's `otelcol.yaml`; and

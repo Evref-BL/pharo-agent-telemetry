@@ -19,14 +19,27 @@ allowlist's own `guessed words`. An exception's class is kept only when it
 is one MCP can name: MCP names it by its nearest class in Pharo's own
 packages or MCP's, which only an image of each Pharo version knows. The
 catalog is read from the projects' source, and from such images; for each
-release of MCP or PLexus, run, from checkouts of the
-releases in use and with the PLexus release in use (its `dist/cli.js`),
+release of MCP, PLexus or another project the study covers, run, from
+checkouts of the releases in use and with the PLexus release in use (its
+`dist/cli.js`),
 
 ```sh
 npx @evref-bl/pharo-agent-telemetry exception-names --mcp <MCP> --cli <PLexus CLI> --out <directory>
-npx @evref-bl/pharo-agent-telemetry catalog --mcp <MCP> --plexus <PLexus> --exceptions <directory>
+npx @evref-bl/pharo-agent-telemetry catalog --mcp <MCP> --plexus <PLexus> --exceptions <directory> [--project <name>=<checkout>]...
 npx @evref-bl/pharo-agent-telemetry generate
 ```
+
+A project that adds its own tools to MCP in an image (MCP records a call
+to one with `pharo.mcp.tool.origin` `other`) is named with `--project`. Its
+tools are read as MCP's are, from its Tonel source, in the directory its
+`.project` names: the names its classes give themselves (`class >>
+toolName`), and the words of the packages that hold a tool, tests and
+baselines left out. They go in sets of its own, `<name> tools` and `<name>
+words`, and its commit under `releases`. Their names are kept once the
+allowlist lists `<name> tools` under `published` and `<name> words` under
+`vocabulary`, and both under `grows` for later catalogs to add to them;
+`catalog` says which it does not list. A project's exception classes need
+nothing: MCP names them by their nearest class in Pharo's or its own.
 
 `exception-names` has PLexus make an image of each Pharo version MCP's CI
 runs, with MCP's Telemetry group, named `exceptions-<version>`, recording

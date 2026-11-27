@@ -83,19 +83,25 @@ export function ciPharoVersions(text) {
 
 /**
  * The template PLexus makes an image of a Pharo version from: a 64-bit
- * Pharo of that version, its stable one first, then one of a distribution's
- * category; undefined when PLexus has none.
+ * Pharo of that version, of any minor release (`Pharo 13.1`), its stable one
+ * first, then one of a distribution's category, then the latest minor;
+ * undefined when PLexus has none.
  *
  * @param {number} version
  * @param {Array<{ name: string, category?: string }>} templates as `plexus image templates` lists them
  */
 export function pharoTemplate(version, templates) {
-  const shape = new RegExp(`^Pharo ${version}\\.0 - 64bit(?: \\(([^)]*)\\))?$`);
+  const shape = new RegExp(`^Pharo ${version}\\.([0-9]+) - 64bit(?: \\(([^)]*)\\))?$`);
   const rank = (template) => {
-    const suffix = shape.exec(template.name)?.[1];
-    return (suffix === "stable" ? 0 : suffix === undefined ? 2 : 4) + (/distributions$/i.test(template.category ?? "") ? 0 : 1);
+    const [, minor, suffix] = shape.exec(template.name);
+    return [(suffix === "stable" ? 0 : suffix === undefined ? 2 : 4) + (/distributions$/i.test(template.category ?? "") ? 0 : 1), -Number(minor)];
   };
-  return templates.filter((template) => shape.test(template.name)).sort((a, b) => rank(a) - rank(b))[0];
+  return templates
+    .filter((template) => shape.test(template.name))
+    .sort((a, b) => {
+      const [first, second] = [rank(a), rank(b)];
+      return first[0] - second[0] || first[1] - second[1];
+    })[0];
 }
 
 /**

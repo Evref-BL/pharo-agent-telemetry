@@ -31,7 +31,7 @@ test("the Pharo versions a CI runs are the smalltalkCI images its workflow names
   assert.deepEqual(ciPharoVersions("smalltalk: [ Squeak64-6.0 ]"), []);
 });
 
-test("an image of a Pharo version is made from its 64-bit template, the stable one and a distribution's first, or from none", () => {
+test("an image of a Pharo version is made from its 64-bit template of any minor release, the stable one and a distribution's first, or from none", () => {
   const templates = [
     { name: "Pharo 10.0 - 64bit", category: "Pharo Courses" },
     { name: "Pharo 14.0 - 64bit (next stable)", category: "Official distributions" },
@@ -45,6 +45,8 @@ test("an image of a Pharo version is made from its 64-bit template, the stable o
   assert.deepEqual(pharoTemplate(10, templates), { name: "Pharo 10.0 - 64bit", category: "Deprecated distributions" });
   assert.equal(pharoTemplate(13, templates), undefined);
   assert.equal(pharoTemplate(1, templates), undefined);
+  assert.deepEqual(pharoTemplate(13, [{ name: "Pharo 13.1 - 64bit (old stable)", category: "Official distributions" }]), { name: "Pharo 13.1 - 64bit (old stable)", category: "Official distributions" });
+  assert.deepEqual(pharoTemplate(13, [{ name: "Pharo 13.0 - 64bit", category: "Official distributions" }, { name: "Pharo 13.1 - 64bit", category: "Official distributions" }]), { name: "Pharo 13.1 - 64bit", category: "Official distributions" });
 });
 
 test("the exception names an image wrote are its lines but those that start with #, which say what named them", () => {

@@ -7,7 +7,7 @@
 // - package.json: its name, the package participants run with npx, and its
 //   version, which the filter generated from it carries;
 // - study.json: its id, its collector, who answers for it, and what the
-//   participants page says of its purpose, retention and authority (below);
+//   participants page says of its purpose and retention (below);
 // - allowlist.json and catalog.json: what is kept, and the names that grow
 //   with the Pharo tools' releases;
 // - rules/: a fixture per rule, a request and the spans the rules keep of it;
@@ -16,9 +16,11 @@
 //   participants page (docs/participants.md).
 //
 // study.json's collector facts stay null until the collector is deployed and
-// the controller named: `join` refuses the study's collector until all are
-// set, the participants page says what is missing rather than inventing it,
-// and `check-release` refuses to publish while it says so.
+// whoever runs the study named: `join` refuses the study's collector until
+// those it needs are set, the participants page says what is missing rather
+// than inventing it, and `check-release` refuses to publish while it says so.
+// A study under a law that asks for more, such as the GDPR's data protection
+// officer and supervisory authority, sets `dpo` and `text.authority` too.
 import fs from "node:fs";
 import path from "node:path";
 import { weakPublicKey } from "./agent.js";
@@ -32,14 +34,14 @@ import { withCatalog } from "./catalog.js";
  * @property {string} version its package's version
  * @property {string | undefined} page where participants read its participants page
  * @property {Collector} collector
- * @property {{ purpose: string, why: string, retention: string, authority: string, publication?: string }} text what the participants page says of it alone; publication, when set, says who else may receive the data, in place of "Nobody else receives it."
+ * @property {{ purpose: string, why: string, retention: string, authority?: string, publication?: string }} text what the participants page says of it alone; authority, when set, is where participants can complain, such as a data protection authority; publication, when set, says who else may receive the data, in place of "Nobody else receives it."
  *
  * @typedef {object} Collector
  * @property {string} [endpoint] the collector's public URL
  * @property {string} [token] the shared token. Public: it keeps scanners out, not people
- * @property {{ name: string, contact: string }} [controller] who decides why and how the data is processed, the GDPR's controller, and how a participant reaches them
- * @property {string} [dpo] how a participant reaches the controller's data protection officer
- * @property {{ provider: string, region: string, importer: string, archive: string }} [host] where the data is: the company hosting the collector's VM, the GDPR's processor, its region, what runs the scheduled job that copies the archive every day, and where it keeps it
+ * @property {{ name: string, contact: string }} [controller] who runs the study and decides why and how the data is processed (under the GDPR, its controller), and how a participant reaches them
+ * @property {string} [dpo] how a participant reaches a data protection officer, for a study that has one; `join` does not wait for it
+ * @property {{ provider: string, region: string, importer: string, archive: string }} [host] where the data is: the company hosting the collector's VM (under the GDPR, a processor), its region, what runs the scheduled job that copies the archive every day, and where it keeps it
  * @property {string} [catalogUrl] where the agents ask for a newer catalog: a URL on the collector's own host, which serves it as /pharo-agent-telemetry/catalog.json
  * @property {string} [catalogPublicKey] the Ed25519 public key the agents check a catalog's signature with, as `sign-catalog --new-key` prints it; the private key is the operators' alone
  */
@@ -57,6 +59,9 @@ export const studyFiles = {
 
 /** The facts of a collector, in the order `join` names what is missing. */
 const collectorFacts = ["endpoint", "token", "controller", "dpo", "host", "catalogUrl", "catalogPublicKey"];
+
+/** The facts a study's law may ask for, which `join` does not wait for. */
+const optionalFacts = ["dpo"];
 
 const readJson = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 
@@ -93,13 +98,14 @@ export function readStudy(directory) {
   if (typeof pkg.version !== "string" || !/^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/.test(pkg.version)) throw new Error("package.json needs a version of the form 1.2.3.");
   if (study.page !== null && study.page !== undefined && !/^https:\/\/[^\s<>()[\]`]+$/.test(study.page)) throw new Error(`${studyFiles.study}: page is an https:// URL.`);
   const text = study.text ?? {};
-  for (const name of ["purpose", "why", "retention", "authority"]) {
+  for (const name of ["purpose", "why", "retention"]) {
     if (typeof text[name] !== "string" || text[name].trim() === "") throw new Error(`${studyFiles.study} needs text.${name}, which the participants page says.`);
     unmarked(`text.${name}`, text[name]);
   }
-  if (text.publication !== undefined && text.publication !== null) {
-    if (typeof text.publication !== "string" || text.publication.trim() === "") throw new Error(`${studyFiles.study}: text.publication, when set, is text.`);
-    unmarked("text.publication", text.publication);
+  for (const name of ["authority", "publication"]) {
+    if (text[name] === undefined || text[name] === null) continue;
+    if (typeof text[name] !== "string" || text[name].trim() === "") throw new Error(`${studyFiles.study}: text.${name}, when set, is text.`);
+    unmarked(`text.${name}`, text[name]);
   }
   const collector = set(study.collector);
   for (const name of Object.keys(collector)) {
@@ -193,7 +199,7 @@ export function endpointProblem(endpoint, { https = false } = {}) {
 export function missingForJoin(collector) {
   return collectorFacts.filter((name) => {
     const value = collector[name];
-    if (value === undefined) return true;
+    if (value === undefined) return !optionalFacts.includes(name);
     // The agent sends over verified TLS, to a collector reached by name.
     if (name === "endpoint") return endpointProblem(value, { https: true }) !== undefined;
     if (name === "catalogUrl") return collector.endpoint !== undefined && !onHostOf(value, collector.endpoint);

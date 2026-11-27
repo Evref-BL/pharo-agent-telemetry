@@ -539,14 +539,13 @@ export function keptAs(allowlist, spec) {
 /** What the page says where a fact is not settled yet. */
 const unsettled = (what) => `*${what}: not set yet. Nobody can join until it is.*`;
 
-/** The placeholder for the DPO's contact, which scripts/check-release.js refuses to publish. */
-export const dpoPlaceholder = "**[DPO CONTACT: TO BE FILLED IN study.json BEFORE PUBLISHING]**";
-
 /**
  * What a participant reads before joining: what is kept, what never is, who
  * answers for it, on what basis, for how long, their rights, and how to leave.
- * It is the GDPR's notice (Art. 13) for the one moment personal data is
- * processed, the connection, and says why the archive itself is anonymous.
+ * It names no law: what it says holds for the package's own stack anywhere,
+ * and a study adds what its law asks for (a DPO, an authority). Under the
+ * GDPR, for example, it is the notice (Art. 13) for the one moment personal
+ * data is processed, the connection, and says why the archive is anonymous.
  *
  * @param {Allowlist} allowlist
  */
@@ -583,11 +582,11 @@ export function participantsPage(allowlist, study) {
   const projectNames = Object.keys(allowlist.releases ?? {});
   const projects = projectNames.length > 1 ? `${projectNames.slice(0, -1).join(", ")} and ${projectNames.at(-1)}` : projectNames[0] ?? "the tools' projects";
   const who = collector.controller
-    ? `${collector.controller.name} decides why and how this data is processed, the GDPR's controller. Write to ${collector.controller.contact} with any question, or to withdraw.`
-    : unsettled("The controller and how to reach them");
-  const officer = `Its data protection officer can be reached at ${collector.dpo ?? dpoPlaceholder}.`;
+    ? `${collector.controller.name} runs this study and decides why and how this data is processed. Write to ${collector.controller.contact} with any question, or to withdraw.`
+    : unsettled("Who runs the study and how to reach them");
+  const officer = collector.dpo ? ` Its data protection officer can be reached at ${collector.dpo}.` : "";
   const where = collector.host
-    ? `- ${collector.host.provider} hosts the virtual machine the collector runs on, in ${collector.host.region}, and processes the data on the controller's behalf.
+    ? `- ${collector.host.provider} hosts the virtual machine the collector runs on, in ${collector.host.region}, and processes the data for the study.
 - Once a day, a scheduled job in ${collector.host.importer} copies what the collector received, loads it into ${collector.host.archive}, and deletes it from the machine and from the job's own workspace.
 - ${collector.host.archive} keeps it, as "How long" says.`
     : unsettled("Where the collector runs, the job that copies its archive, and where the archive is kept");
@@ -744,7 +743,7 @@ its notice.
 
 ## Who answers for it
 
-${who} ${officer}
+${who}${officer}
 
 ## Who else holds it
 
@@ -772,9 +771,9 @@ disk's free space, rather than delete any. ${text.retention.trim()}
 You can withdraw at any time with \`leave\`, and nothing is sent from then on.
 Access, correction and erasure apply to data about a person; since nothing in
 the archive is about one, or can be traced back to one, there is nothing to
-look up, correct or delete for you (GDPR Art. 11), and what was sent before
-you left stays in the archive, as anonymous as it arrived. You can complain to
-your data protection authority: ${text.authority.trim()}
+look up, correct or delete for you, and what was sent before you left stays
+in the archive, as anonymous as it arrived.${text.authority ? ` You can complain to
+your data protection authority: ${text.authority.trim()}` : ""}
 
 ## Joining and leaving
 

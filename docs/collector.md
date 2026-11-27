@@ -16,12 +16,14 @@ A study's operators run these commands in its directory (or give
 `--study <directory>`), with this package installed there as its
 dependency. What only people can decide comes first:
 
-1. The controller and the address participants write to, and the DPO's
-   reading of the study's `docs/participants.md` and allowlist, which make
-   the GDPR notice for the connection.
-2. A VM in the EU, Ubuntu 24.04, with a DNS name pointing at it and SSH
-   for its administrators and the import job. Its provider is the processor
-   the notice names. 2 vCPU, 2 GB of memory and 20 GB of disk take a study's
+1. Who runs the study and the address participants write to, and what the
+   law the study follows asks of them: under the GDPR, for example, the
+   DPO's reading of the study's `docs/participants.md` and allowlist, which
+   make the notice for the connection.
+2. A VM, Ubuntu 24.04, with a DNS name pointing at it and SSH for its
+   administrators and the import job, where the study's law lets the data
+   be (in the EU, for example, under the GDPR). The participants page names
+   its provider and region. 2 vCPU, 2 GB of memory and 20 GB of disk take a study's
    volume many times over.
 3. Where the spans go from the archive: a store, and a scheduled job that
    copies the archive over SSH, loads each finished file into it, and
@@ -78,11 +80,10 @@ npx @evref-bl/pharo-agent-telemetry check-deployment https://<SITE_ADDRESS> <COL
 
 Then set the study's `collector` in `study.json` (`catalogUrl` on the
 collector's host), run `npx @evref-bl/pharo-agent-telemetry generate`, and publish the
-study's package. `join` refuses the study's collector until all are set, and
-the participants page says what is missing until then. The study's
-`npm publish` refuses (`pharo-agent-telemetry check-release`) while the page
-lacks any of them: the DPO's contact shows as a placeholder until `dpo` is
-set.
+study's package. `join` refuses the study's collector until all but `dpo`
+are set, and the participants page says what is missing until then. The
+study's `npm publish` refuses (`pharo-agent-telemetry check-release`) while
+the page lacks any of them.
 
 The import job reads the archive over SSH as `importer`, whose key
 `setup-vm.sh` locks to rsync of the archive, loads each finished file into

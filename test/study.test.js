@@ -33,7 +33,9 @@ test("a study needs an id, the page's texts, and only collector facts; null is n
   assert.throws(() => readStudy(directory), /is not a study: it needs a package\.json and a study\.json/);
   assert.throws(() => readStudy(copyOf(directory, (each) => ({ ...each, id: "Not One" }))), /needs an id of lowercase letters/);
   fs.rmSync(path.join(directory, "study"), { recursive: true });
-  assert.throws(() => readStudy(copyOf(directory, (each) => ({ ...each, text: { ...each.text, authority: " " } }))), /needs text\.authority/);
+  assert.throws(() => readStudy(copyOf(directory, (each) => ({ ...each, text: { ...each.text, why: " " } }))), /needs text\.why/);
+  fs.rmSync(path.join(directory, "study"), { recursive: true });
+  assert.throws(() => readStudy(copyOf(directory, (each) => ({ ...each, text: { ...each.text, authority: " " } }))), /text\.authority, when set, is text/);
   fs.rmSync(path.join(directory, "study"), { recursive: true });
   assert.throws(() => readStudy(copyOf(directory, (each) => ({ ...each, collector: { ...each.collector, password: "x" } }))), /collector\.password is no collector fact/);
   assert.deepEqual(study.collector, {});

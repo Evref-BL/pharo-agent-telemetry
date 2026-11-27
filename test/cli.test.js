@@ -8,7 +8,7 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { dpoPlaceholder, participantsPage } from "../src/generate.js";
+import { participantsPage } from "../src/generate.js";
 import { describeRequest, recoverPreview, startPreview } from "../src/preview.js";
 import { fakesMarker, installedDefinitions, serviceDefinition, serviceNames, stableNode } from "../src/service.js";
 import { everySettingsFile, readSettings, settingsBlock, settingsFiles, agentSettings } from "../src/settings.js";
@@ -110,7 +110,7 @@ test("join installs the agent and points both tools at it without the token; lea
 }));
 
 test("join refuses before the collector exists, and never replaces settings it did not write unless forced", () => withHome(({ cli, settings, agent }) => {
-  assert.match(cli("join").stderr, /its endpoint, token, controller, dpo, host, catalogUrl, catalogPublicKey are not set yet/);
+  assert.match(cli("join").stderr, /its endpoint, token, controller, host, catalogUrl, catalogPublicKey are not set yet/);
   fs.mkdirSync(path.dirname(settings.mcp), { recursive: true });
   fs.writeFileSync(settings.mcp, "OTEL_EXPORTER_OTLP_ENDPOINT=http://mine\n");
   const refused = cli("join", "--endpoint", "https://c.test");
@@ -239,9 +239,9 @@ test("a span is described with its week, ids, attributes and where it ran", () =
 
 test("the page names who answers for the data, its officer and where it is once they are set, and says so while they are not", () => {
   const unset = participantsPage(allowlist, { ...study, collector: {} });
-  assert.match(unset, /The controller and how to reach them: not set yet/);
+  assert.match(unset, /Who runs the study and how to reach them: not set yet/);
   assert.match(unset, /Where the collector runs, the job that copies its archive, and where the archive is kept: not set yet/);
-  assert.ok(unset.includes(dpoPlaceholder));
+  assert.doesNotMatch(unset, /officer/);
   const set = participantsPage(allowlist, { ...study, collector: {
     endpoint: "https://c.test",
     token: "t",
@@ -250,8 +250,7 @@ test("the page names who answers for the data, its officer and where it is once 
     host: { provider: "Example Cloud", region: "Paris", importer: "Example's GitLab", archive: "Example's Elasticsearch, in France" },
   } });
   assert.doesNotMatch(set, /not set yet/);
-  assert.equal(set.includes(dpoPlaceholder), false);
-  assert.match(set, /Example SA decides why and how/);
+  assert.match(set, /Example SA runs this study and decides why and how/);
   assert.match(set, /privacy@example\.test/);
   assert.match(set, /officer can be reached at dpo@example\.test/);
   assert.match(set, /Example Cloud hosts the virtual machine the collector runs on, in Paris/);
@@ -259,6 +258,7 @@ test("the page names who answers for the data, its officer and where it is once 
   assert.match(set, /Example's Elasticsearch, in France keeps it/);
   assert.match(set, /consent/);
   assert.match(set, /CNIL/);
+  assert.doesNotMatch(set, /GDPR/);
   assert.match(set, /Nobody else receives it\./);
   const published = participantsPage(allowlist, { ...study, text: { ...study.text, publication: "The spans may be published as an open dataset." } });
   assert.match(published, /The spans may be published as an open dataset\./);
@@ -275,7 +275,7 @@ test("join --endpoint naming the study's collector, however written, joins it as
 });
 
 test("join refuses the study's collector while anything about it is missing", () => {
-  assert.deepEqual(missingForJoin({}), ["endpoint", "token", "controller", "dpo", "host", "catalogUrl", "catalogPublicKey"]);
+  assert.deepEqual(missingForJoin({}), ["endpoint", "token", "controller", "host", "catalogUrl", "catalogPublicKey"]);
   const ready = { endpoint: "https://c.test", token: "t", controller: { name: "n", contact: "c" }, dpo: "d", host: { provider: "p", region: "r", importer: "i", archive: "a" }, catalogUrl: "https://c.test/pharo-agent-telemetry/catalog.json", catalogPublicKey: "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo" };
   assert.deepEqual(missingForJoin(ready), []);
   // The catalog comes from the collector's own host, and no other.

@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 // pharo-agent-telemetry check-release [--study <directory>], run by the
 // study's npm publish: refuses while its participants page lacks a fact a
-// participant is owed, the DPO's contact first among them.
+// participant is owed.
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
-import { dpoPlaceholder } from "../src/generate.js";
 import { missingForJoin, readStudy, studyPath } from "../src/study.js";
 
 /**
@@ -21,7 +20,6 @@ export function releaseProblems(page, missing, study = undefined) {
   if (study?.id === "example" || study?.name?.startsWith("@example/")) problems.push("the study is still named as the example: give it its own id in study.json and name in package.json");
   const pinned = study?.dependencies?.["@evref-bl/pharo-agent-telemetry"];
   if (study !== undefined && !/^[0-9]+\.[0-9]+\.[0-9]+$/.test(pinned ?? "")) problems.push("package.json does not depend on one exact release of @evref-bl/pharo-agent-telemetry: participants would run an agent its page does not describe");
-  if (page.includes(dpoPlaceholder)) problems.push("the participants page has no DPO contact: set collector.dpo in study.json and run pharo-agent-telemetry generate");
   if (/not set yet/.test(page)) problems.push("the participants page says a fact is not set yet");
   if (missing.length > 0) problems.push(`study.json does not set its collector's ${missing.join(", ")}`);
   return problems;

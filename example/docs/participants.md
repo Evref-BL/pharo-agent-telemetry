@@ -202,7 +202,7 @@ its notice.
 
 ## Who answers for it
 
-*The controller and how to reach them: not set yet. Nobody can join until it is.* Its data protection officer can be reached at **[DPO CONTACT: TO BE FILLED IN study.json BEFORE PUBLISHING]**.
+*Who runs the study and how to reach them: not set yet. Nobody can join until it is.*
 
 ## Who else holds it
 
@@ -230,8 +230,8 @@ disk's free space, rather than delete any. The study's store keeps the spans twe
 You can withdraw at any time with `leave`, and nothing is sent from then on.
 Access, correction and erasure apply to data about a person; since nothing in
 the archive is about one, or can be traced back to one, there is nothing to
-look up, correct or delete for you (GDPR Art. 11), and what was sent before
-you left stays in the archive, as anonymous as it arrived. You can complain to
+look up, correct or delete for you, and what was sent before you left stays
+in the archive, as anonymous as it arrived. You can complain to
 your data protection authority: in France, the CNIL (cnil.fr).
 
 ## Joining and leaving

@@ -118,6 +118,7 @@ What happened:
 | `plexus.client.version` | plexus | The agent host's version, major and minor, beside a name the allowlist knows. | a version, major and minor, only beside a `plexus.client.name` of that set |
 | `plexus.call.index` | plexus | Where the call comes in its session: 1 for the first. | a whole number from 1 |
 | `plexus.call.forwarded` | plexus | Whether PLexus passed the call on to an image, which then names the tool. | true or false |
+| `plexus.image.telemetry` | plexus | Whether the image PLexus passed the call on to records its calls: on, or why not. | one of `on`, `off`, `not-asked`, `base-failed`, `no-backend`, `switch-failed`, else `_OTHER` |
 | `plexus.argument.names` | plexus | The names of the arguments a call to one of PLexus's own tools gave, never their values. | a list of at most 32, each an identifier, made of the vocabulary's words |
 | `plexus.argument.unknown_names` | plexus | Argument names a call gave that PLexus's own tool does not take. | a list of at most 32, each an identifier, made of the vocabulary's words |
 | `plexus.error.code` | plexus | Why PLexus refused a call before any image saw it. | one of the PLexus error codes, else `_OTHER` |

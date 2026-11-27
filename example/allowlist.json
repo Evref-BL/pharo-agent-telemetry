@@ -56,6 +56,7 @@
     "plexus.client.version": {"about": "The agent host's version, major and minor, beside a name the allowlist knows.", "from": ["plexus"], "beside": "plexus.client.name", "type": "string", "extract": "^v?([0-9]{1,4}\\.[0-9]{1,4})(?:[.+-][\\s\\S]*)?$", "pattern": "version"},
     "plexus.call.index": {"about": "Where the call comes in its session: 1 for the first.", "from": ["plexus"], "type": "int", "min": 1},
     "plexus.call.forwarded": {"about": "Whether PLexus passed the call on to an image, which then names the tool.", "from": ["plexus"], "type": "bool"},
+    "plexus.image.telemetry": {"about": "Whether the image PLexus passed the call on to records its calls: on, or why not.", "from": ["plexus"], "type": "string", "values": ["on", "off", "not-asked", "base-failed", "no-backend", "switch-failed"], "otherwise": "_OTHER"},
     "plexus.argument.names": {"about": "The names of the arguments a call to one of PLexus's own tools gave, never their values.", "from": ["plexus"], "type": "string[]", "pattern": "identifier", "words": "name", "max": 32, "name": true},
     "plexus.argument.unknown_names": {"about": "Argument names a call gave that PLexus's own tool does not take.", "from": ["plexus"], "type": "string[]", "pattern": "identifier", "words": "name", "max": 32, "name": true},
     "plexus.error.code": {"about": "Why PLexus refused a call before any image saw it.", "from": ["plexus"], "type": "string", "values": "PLexus error codes", "otherwise": "_OTHER"},

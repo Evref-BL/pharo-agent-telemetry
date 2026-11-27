@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import { releaseProblems } from "../scripts/check-release.js";
-import { dpoPlaceholder, participantsPage } from "../src/generate.js";
+import { participantsPage } from "../src/generate.js";
 import { missingForJoin, studyPath } from "../src/study.js";
 import { allowlist, study } from "./support.js";
 
@@ -14,17 +14,17 @@ const settled = {
   host: { provider: "Example Cloud", region: "Paris", importer: "Example's GitLab", archive: "Example's Elasticsearch" },
 };
 
-test("the example study's publish refuses its page as it stands: it has no DPO contact", () => {
+test("the example study's publish refuses its page as it stands: its collector is not set", () => {
   const page = fs.readFileSync(studyPath(study, "page"), "utf8");
-  assert.ok(page.includes(dpoPlaceholder));
-  assert.ok(releaseProblems(page, missingForJoin(study.collector)).some((problem) => problem.includes("no DPO contact")));
+  assert.ok(releaseProblems(page, missingForJoin(study.collector)).includes("the participants page says a fact is not set yet"));
 });
 
-test("a page missing only the DPO contact is still refused, and a settled one is not", () => {
-  const withoutOfficer = participantsPage(allowlist, { ...study, collector: { ...settled, dpo: undefined } });
-  assert.deepEqual(releaseProblems(withoutOfficer, ["dpo"]), [
-    "the participants page has no DPO contact: set collector.dpo in study.json and run pharo-agent-telemetry generate",
-    "study.json does not set its collector's dpo",
-  ]);
+test("a settled page is released with or without a DPO, and without an authority", () => {
   assert.deepEqual(releaseProblems(participantsPage(allowlist, { ...study, collector: settled }), []), []);
+  const { dpo, ...noOfficer } = settled;
+  const { authority, ...noAuthority } = study.text;
+  const page = participantsPage(allowlist, { ...study, collector: noOfficer, text: noAuthority });
+  assert.equal(missingForJoin(noOfficer).includes("dpo"), false);
+  assert.deepEqual(releaseProblems(page, []), []);
+  assert.doesNotMatch(page, /officer|authority/);
 });

@@ -7,11 +7,13 @@ participants run with npx:
   package; its `bin` hands the study's directory to this package's commands
   (`import { main } from "@evref-bl/pharo-agent-telemetry/cli"`);
 - `study.json`: its `id`, the `page` participants read, its `collector`
-  (`endpoint`, `token`, `controller`, `dpo`, `host`, `catalogUrl`,
-  `catalogPublicKey`, each `null` until set; [src/study.js](../src/study.js)
-  says what each is), and the `text` its participants page says of it alone:
-  its `purpose`, `why`, `retention` and supervisory `authority`, and, when
-  anyone besides its hosts may receive the data, `publication`;
+  (`endpoint`, `token`, `controller`, `host`, `catalogUrl`,
+  `catalogPublicKey`, each `null` until set, and `dpo` for a study that has
+  a data protection officer; [src/study.js](../src/study.js) says what each
+  is), and the `text` its participants page says of it alone: its `purpose`,
+  `why` and `retention`; `authority`, where participants can complain under
+  the study's law; and, when anyone besides its hosts may receive the data,
+  `publication`;
 - `allowlist.json`, what is kept, with the sets of `catalog.json`: the tools
   MCP, PLexus and any other project the study covers publish, the words of
   their own names, and the classes MCP names an exception by;
@@ -36,17 +38,18 @@ this package (`check-release` refuses a range), so its participants run the
 agent and rules its page describes.
 
 The participants page, `docs/participants.md` in the study's directory, is
-what participants read before they join, and the GDPR notice the study's
-DPO reads. It is generated: what it says of the spans, attributes,
+what participants read before they join. It names no law: a study under
+one has the page read as its notice by whoever that law asks, as a DPO does
+under the GDPR. It is generated: what it says of the spans, attributes,
 names and sets comes from the allowlist, and what it says of the study
-(purpose, who answers for it, where the data is, retention, authority) from
-`study.json`. The rest is this package's own text and holds for its rules
+(purpose, who answers for it, where the data is, retention, and its officer
+and authority when it has them) from `study.json`. The rest is this package's own text and holds for its rules
 and stack: no participant ids, ids hashed twice, times to the week, consent
 by `join`, no client address logged. Its "What is never sent" and "Is it
 anonymous?" also hold for an allowlist that keeps names only as published
 tools or vocabulary words and values only in closed sets, buckets or the
 shapes of versions and identifiers, as the example's does: a study whose
-allowlist keeps more must have its DPO read the page against it.
+allowlist keeps more must have the page read again against it.
 
 A home joins one study at a time, since the tools read one block of
 settings: `join` and `preview` of another study refuse while any agent of

@@ -1,5 +1,5 @@
 {
-  "about": "PLexus names only its own tools and those a project publishes: on a call it forwarded to an image (plexus.call.forwarded, a client span, or a tool not its own) its span keeps the tool's name only when a project publishes it, else _OTHER, and no argument names.",
+  "about": "PLexus names only its own tools and those a project publishes: on a call it forwarded to an image (plexus.call.forwarded, a client span, or a tool not its own) its span keeps the tool's name only when a project publishes it, else _OTHER, and no argument names. Whether the image a forwarded call went to records its calls is kept as one of the values PLexus gives, else _OTHER.",
   "request": {
     "resourceSpans": [
       {
@@ -125,6 +125,12 @@
                     "key": "session.id",
                     "value": {
                       "stringValue": "forwarded-session"
+                    }
+                  },
+                  {
+                    "key": "plexus.image.telemetry",
+                    "value": {
+                      "stringValue": "no-backend"
                     }
                   }
                 ]
@@ -282,6 +288,12 @@
                     "value": {
                       "stringValue": "forwarded-session"
                     }
+                  },
+                  {
+                    "key": "plexus.image.telemetry",
+                    "value": {
+                      "stringValue": "sleeping"
+                    }
                   }
                 ]
               },
@@ -402,7 +414,8 @@
         "session.id": "forwarded-session",
         "span.duration_ms": {
           "double": 250
-        }
+        },
+        "plexus.image.telemetry": "no-backend"
       }
     },
     {
@@ -481,7 +494,8 @@
         "session.id": "forwarded-session",
         "span.duration_ms": {
           "double": 250
-        }
+        },
+        "plexus.image.telemetry": "_OTHER"
       }
     },
     {

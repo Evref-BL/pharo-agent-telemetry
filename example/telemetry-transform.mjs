@@ -165,6 +165,13 @@ const allowlist = {
       "from": ["plexus"],
       "type": "bool"
     },
+    "plexus.image.telemetry": {
+      "about": "Whether the image PLexus passed the call on to records its calls: on, or why not.",
+      "from": ["plexus"],
+      "type": "string",
+      "values": ["on", "off", "not-asked", "base-failed", "no-backend", "switch-failed"],
+      "otherwise": "_OTHER"
+    },
     "plexus.argument.names": {
       "about": "The names of the arguments a call to one of PLexus's own tools gave, never their values.",
       "from": ["plexus"],
